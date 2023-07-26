@@ -1,0 +1,15 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: canhnv-com
+  namespace: default
+spec:
+  secretName: canhnv-com-staging-tls
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+  commonName: "*.canhnv.com"
+  dnsNames:
+    - "canhnv.com"
+    - "*.canhnv.com"
