@@ -102,6 +102,12 @@ ansible-playbook playbooks/upgrade.yml -i inventory.yml
 ansible-playbook playbooks/reset.yml -i inventory.yml
 ```
 
+## Setup Ingress Nginx Controller
+
+```bash
+  kubectl apply -f ingress-nginx/v1.11.1_deploy.yaml
+```
+
 ## Setup NFS storage
 
 - Required helm installed on your local machine
