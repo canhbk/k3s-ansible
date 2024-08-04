@@ -6,7 +6,7 @@ metadata:
   namespace: cert-manager
 type: Opaque
 stringData:
-  cloudflare-token: <Replace with your Cloudflare API Token>
+  cloudflare-token: T9Zqzn8sscmZnG1TFBNNTO7FLj5BxRPxloWaWyGV
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer

@@ -4,3 +4,4 @@ venv
 .vagrant
 inventory.yml
 playbook/debug.yml
+*.local
