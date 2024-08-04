@@ -102,11 +102,9 @@ ansible-playbook playbooks/upgrade.yml -i inventory.yml
 ansible-playbook playbooks/reset.yml -i inventory.yml
 ```
 
-## Setup Ingress Nginx Controller
+## Ingress Treafik Controller
 
-```bash
-  kubectl apply -f ingress-nginx/v1.11.1_deploy.yaml
-```
+- K3s has built-in support for Treafik ingress controller
 
 ## Setup TLS with Cloudflare
 
