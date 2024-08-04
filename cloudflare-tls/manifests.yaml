@@ -1,0 +1,44 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-token-secret
+  namespace: cert-manager
+type: Opaque
+stringData:
+  cloudflare-token: <Replace with your Cloudflare API Token>
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-canhnv-com-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: canhcvp1998@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-canhnv-com-staging
+    solvers:
+      - dns01:
+          cloudflare:
+            email: canhcvp1998@gmail.com
+            apiTokenSecretRef:
+              name: cloudflare-token-secret
+              key: cloudflare-token
+        selector:
+          dnsZones:
+            - "canhnv.com"
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: canhnv-com-staging-cert
+spec:
+  secretName: canhnv-com-staging-tls
+  issuerRef:
+    name: letsencrypt-canhnv-com-staging
+    kind: ClusterIssuer
+  commonName: "canhnv.com"
+  dnsNames:
+    - "canhnv.com"
+    - "*.canhnv.com"

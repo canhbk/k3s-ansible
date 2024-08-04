@@ -108,6 +108,23 @@ ansible-playbook playbooks/reset.yml -i inventory.yml
   kubectl apply -f ingress-nginx/v1.11.1_deploy.yaml
 ```
 
+## Setup TLS with Cloudflare
+
+- We use [Cert-manager](https://cert-manager.io/docs/) to automatically manage TLS certificates
+- Install `cert-manager`
+
+  ```bash
+  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.2/cert-manager.yaml
+  ```
+
+- Replace with the Cloudflare API token into the `cloudflare-tls/manifests.yaml` file
+- Edit the file if you wish to add more TLS cert
+- Then, run
+
+```bash
+  kubectl apply -f cloudflare-tls/manifests.yaml
+```
+
 ## Setup NFS storage
 
 - Required helm installed on your local machine
