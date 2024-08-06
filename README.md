@@ -102,25 +102,7 @@ ansible-playbook playbooks/upgrade.yml -i inventory.yml
 ansible-playbook playbooks/reset.yml -i inventory.yml
 ```
 
-## Install Rancher UI
-
-```bash
-  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
-
-
-  helm install rancher rancher-latest/rancher \
-  --namespace cattle-system \
-  --create-namespace \
-  --set hostname=<your_dns> \
-  --set replicas=1 \
-  --set bootstrapPassword=admin
-```
-
-## Ingress Treafik Controller
-
-- K3s has built-in support for Treafik ingress controller
-
-## Setup TLS with Cloudflare
+## Install Cert-manager
 
 - We use [Cert-manager](https://cert-manager.io/docs/) to automatically manage TLS certificates
 - Install `cert-manager`
@@ -129,12 +111,53 @@ ansible-playbook playbooks/reset.yml -i inventory.yml
   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.2/cert-manager.yaml
   ```
 
+## Setup TLS with Cloudflare
+
+- This step requires `Cert-manager` installed
 - Replace with the Cloudflare API token into the `cloudflare-tls/manifests.yaml` file
 - Edit the file if you wish to add more TLS cert
 - Then, run
 
 ```bash
   kubectl apply -f cloudflare-tls/manifests.yaml
+```
+
+## Install Rancher UI
+
+- This step required `Cert-manager` installed
+
+```bash
+  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+
+  helm repo update
+
+  helm install rancher rancher-latest/rancher \
+  --namespace cattle-system \
+  --create-namespace \
+  --set hostname=clusterdb.canhnv.com \
+  --set replicas=1 \
+  --set bootstrapPassword=admin
+```
+
+- Check deployment status
+
+  ```bash
+     kubectl -n cattle-system rollout status deploy/rancher
+  ```
+
+## Ingress Treafik Controller
+
+- K3s has built-in support for Treafik ingress controller
+
+## Setup Longhorn
+
+```bash
+  kubectl apply -f longhorn/prerequisites.yaml
+  kubectl apply -f longhorn/longhorn.yaml
+```
+
+```bash
+  kubectl get pods --namespace longhorn-system --watch
 ```
 
 ## Setup NFS storage
