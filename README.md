@@ -102,6 +102,20 @@ ansible-playbook playbooks/upgrade.yml -i inventory.yml
 ansible-playbook playbooks/reset.yml -i inventory.yml
 ```
 
+## Install Rancher UI
+
+```bash
+  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+
+
+  helm install rancher rancher-latest/rancher \
+  --namespace cattle-system \
+  --create-namespace \
+  --set hostname=<your_dns> \
+  --set replicas=1 \
+  --set bootstrapPassword=admin
+```
+
 ## Ingress Treafik Controller
 
 - K3s has built-in support for Treafik ingress controller
