@@ -1,0 +1,35 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: longhorn-auth
+  namespace: longhorn-system
+spec:
+  basicAuth:
+    secret: basic-auth
+    realm: "Authentication Required"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn-ingress
+  namespace: longhorn-system
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: longhorn-system-longhorn-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - vn2.longhorn.canhnv.com
+    secretName: letsencrypt-canhnv-com-staging
+  rules:
+  - host: vn2.longhorn.canhnv.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: longhorn-frontend
+            port:
+              number: 80
