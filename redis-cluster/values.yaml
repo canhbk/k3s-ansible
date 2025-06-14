@@ -1,0 +1,13 @@
+
+existingSecret: redis-password-secret
+existingSecretPasswordKey: redis-password
+
+cluster:
+  nodes: 9
+  replicas: 2
+
+
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClass: longhorn-retain

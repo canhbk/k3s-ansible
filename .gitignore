@@ -8,3 +8,6 @@ playbook/debug.yml
 
 # Longhorn
 longhorn/auth
+
+# K3s
+*.kubeconfig.yaml
