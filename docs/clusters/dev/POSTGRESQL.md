@@ -21,6 +21,7 @@ The development cluster runs a PostgreSQL HA instance using CloudNative PG opera
 | postgresql-ha-rw | ClusterIP | Read-Write (Primary) | postgresql-ha-rw.postgres-db.svc.cluster.local:5432 |
 | postgresql-ha-ro | ClusterIP | Read-Only | postgresql-ha-ro.postgres-db.svc.cluster.local:5432 |
 | postgresql-ha-r | ClusterIP | Read Replicas | postgresql-ha-r.postgres-db.svc.cluster.local:5432 |
+| postgres-murror-ai | LoadBalancer | AI Team External Access | 154.26.131.23:5432 (and 4 other IPs) |
 
 ### Databases and Users
 
@@ -295,6 +296,24 @@ SELECT query, calls, mean_exec_time
 FROM pg_stat_statements
 ORDER BY mean_exec_time DESC
 LIMIT 10;"
+```
+
+## Current External Access
+
+### AI Team Access (Active)
+
+- **Service**: `postgres-murror-ai`
+- **Type**: LoadBalancer (Open to Internet)
+- **Created**: 2025-07-31
+- **Database**: murror-ai only
+- **User**: ai
+- **External IPs**: 154.26.131.23, 154.38.172.89, 209.126.10.183, 46.250.232.10, 5.104.86.195
+- **Purpose**: AI team development with pgvector
+
+To remove this access:
+
+```bash
+kubectl delete svc -n postgres-db postgres-murror-ai
 ```
 
 ## Security Considerations
