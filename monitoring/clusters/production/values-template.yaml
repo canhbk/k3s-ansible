@@ -1,0 +1,125 @@
+# Production cluster template for kube-prometheus-stack
+# Copy this file to clusters/<cluster-name>/values.yaml and modify as needed
+
+# Global labels to identify this cluster
+global:
+  additionalLabels:
+    cluster: CLUSTER_NAME  # e.g., eu, jp, sg, sg2, us, vn, vn2
+    environment: production
+    region: REGION  # e.g., europe, asia, us
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # External labels for federation/remote write
+    externalLabels:
+      cluster: CLUSTER_NAME
+      environment: production
+      region: REGION
+
+    # Production resource limits
+    resources:
+      requests:
+        cpu: 1
+        memory: 4Gi
+      limits:
+        memory: 8Gi
+
+    # Production storage
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path  # Change if different storage class
+          resources:
+            requests:
+              storage: 100Gi  # Adjust based on cluster size
+
+    # High availability (if multiple nodes available)
+    replicas: 1  # Change to 2 for HA
+
+# Grafana configuration
+grafana:
+  # Set the external URL
+  grafana.ini:
+    server:
+      domain: grafana.CLUSTER_NAME.k3s.canhnv.com
+      root_url: "https://grafana.CLUSTER_NAME.k3s.canhnv.com/"
+
+  # Production resources
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+  # Production persistence
+  persistence:
+    size: 20Gi
+
+  # High availability (optional)
+  replicas: 1  # Change to 2+ for HA with shared database
+
+# Alertmanager configuration
+alertmanager:
+  alertmanagerSpec:
+    # Production storage
+    storage:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 20Gi
+
+    # Production resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+
+    # High availability (if needed)
+    replicas: 1  # Change to 3 for HA
+
+  # Production alerting config
+  config:
+    global:
+      resolve_timeout: 5m
+      # Add SMTP/Slack/PagerDuty configuration here
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'production-alerts'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'critical-alerts'
+      - match:
+          alertname: Watchdog
+        receiver: 'null'
+    receivers:
+    - name: 'null'
+    - name: 'production-alerts'
+      # Configure your notification channels here
+    - name: 'critical-alerts'
+      # Configure critical alert channels here
+
+# Node exporter for production
+nodeExporter:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# Additional ServiceMonitors for production services
+additionalServiceMonitors: []
+
+# Cluster-specific labels
+commonLabels:
+  cluster: CLUSTER_NAME
+  monitoring: kube-prometheus

@@ -97,6 +97,13 @@ Common development domains:
 - Available at `signoz.dev.canhnv.com`
 - Traces, metrics, and logs
 
+#### Prometheus & Grafana (monitoring namespace)
+
+- Metrics collection and visualization
+- Grafana available at `grafana.dev.k3s.canhnv.com`
+- 30-day metrics retention
+- Pre-configured dashboards for K3s monitoring
+
 ### Application Namespaces
 
 Multiple application instances for testing:
@@ -193,14 +200,21 @@ kubectl top pods -n namespace
 kubectl describe pod -n namespace pod-name
 ```
 
-### SigNoz Integration
+### Monitoring Integration
 
+#### SigNoz
 Access comprehensive monitoring at `signoz.dev.canhnv.com`:
-
 - Application traces
 - Infrastructure metrics
 - Log aggregation
 - Custom dashboards
+
+#### Grafana
+Access metrics visualization at `grafana.dev.k3s.canhnv.com`:
+- Kubernetes resource metrics
+- Node and pod statistics
+- Custom application metrics
+- Pre-built K3s dashboards
 
 ## Development Workflows
 

@@ -1,0 +1,197 @@
+# Base values for kube-prometheus-stack
+# These values are shared across all clusters
+# Cluster-specific values should override these
+
+# Global settings
+global:
+  evaluation_interval: 30s
+  scrape_interval: 30s
+  scrape_timeout: 10s
+
+# Prometheus Operator
+prometheusOperator:
+  resources:
+    limits:
+      memory: 400Mi
+    requests:
+      cpu: 100m
+      memory: 200Mi
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # Retention settings - 30 days
+    retention: 30d
+    retentionSize: "50GB"
+
+    # Resource limits
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        memory: 4Gi
+
+    # Storage configuration
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 60Gi
+
+    # Service discovery
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+
+    # Enable features
+    enableFeatures:
+      - memory-snapshot-on-shutdown
+      - new-service-discovery-manager
+
+    # Additional scrape configs for K3s components
+    additionalScrapeConfigs:
+    - job_name: 'k3s-components'
+      static_configs:
+      - targets:
+        - 'localhost:10250'  # kubelet
+        - 'localhost:10257'  # kube-controller-manager
+        - 'localhost:10259'  # kube-scheduler
+      relabel_configs:
+      - source_labels: [__address__]
+        regex: 'localhost:(.*)'
+        target_label: __address__
+        replacement: '${1}'
+
+# Grafana configuration
+grafana:
+  # Admin credentials will be generated and stored in secret
+  adminUser: admin
+
+  # Persistence
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: local-path
+
+  # Resources
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+
+  # Default dashboards
+  defaultDashboardsEnabled: true
+  defaultDashboardsTimezone: utc
+
+  # Grafana.ini configuration
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s/"
+    auth:
+      disable_login_form: false
+    users:
+      auto_assign_org_role: Editor
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+
+  # Sidecar for dashboard/datasource provisioning
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      provider:
+        disableDelete: false
+        allowUiUpdates: true
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: true
+
+  # Pre-install dashboards via ConfigMaps
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+      - name: 'k3s'
+        orgId: 1
+        folder: 'K3s'
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/k3s
+
+# Alertmanager configuration
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+# Node exporter
+nodeExporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+# Kube-state-metrics
+kubeStateMetrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# Disable components we don't need
+kubeApiServer:
+  enabled: true
+kubeControllerManager:
+  enabled: false  # K3s doesn't expose controller-manager metrics by default
+kubeScheduler:
+  enabled: false  # K3s doesn't expose scheduler metrics by default
+kubeProxy:
+  enabled: false  # K3s uses different proxy implementation
+kubeEtcd:
+  enabled: false  # K3s uses embedded etcd
+
+# ServiceMonitors for K3s
+defaultRules:
+  create: true
+  rules:
+    kubeProxy: false  # Disable kube-proxy rules for K3s
+
+# Additional labels for multi-cluster identification
+commonLabels:
+  prometheus: kube-prometheus
