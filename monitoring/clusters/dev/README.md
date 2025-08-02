@@ -5,7 +5,7 @@ This directory contains the monitoring configuration specific to the development
 ## Access
 
 - **Grafana URL**: <https://grafana.dev.k3s.canhnv.com>
-- **Prometheus URL**: Internal only (port-forward for access)
+- **Prometheus URL**: <https://prometheus.dev.k3s.canhnv.com>
 
 ## Configuration Details
 
@@ -18,8 +18,9 @@ This directory contains the monitoring configuration specific to the development
 ### Ingress
 
 - Uses Traefik ingress controller
-- TLS certificate from `canhnv-com-staging` ClusterIssuer
-- Accessible at grafana.dev.k3s.canhnv.com
+- TLS certificate from `canhnv-com` ClusterIssuer
+- Grafana accessible at grafana.dev.k3s.canhnv.com
+- Prometheus accessible at prometheus.dev.k3s.canhnv.com
 
 ### Labels
 
@@ -43,12 +44,6 @@ kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.da
 ```
 
 ## Port-forwarding (for internal access)
-
-Access Prometheus:
-
-```bash
-kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
-```
 
 Access Alertmanager:
 

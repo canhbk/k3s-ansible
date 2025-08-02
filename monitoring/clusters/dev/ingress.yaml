@@ -4,7 +4,7 @@ metadata:
   name: grafana
   namespace: monitoring
   annotations:
-    cert-manager.io/cluster-issuer: "canhnv-com-staging"
+    cert-manager.io/cluster-issuer: "canhnv-com"
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     # Additional annotations for SSL compatibility
@@ -27,3 +27,33 @@ spec:
             name: kube-prometheus-stack-grafana
             port:
               number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Additional annotations for SSL compatibility
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/ssl-ciphers: "ECDHE+AESGCM:ECDHE+AES256:ECDHE+AES128:RSA+AESGCM:RSA+AES256:RSA+AES128"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - prometheus.dev.k3s.canhnv.com
+    secretName: prometheus-dev-tls
+  rules:
+  - host: prometheus.dev.k3s.canhnv.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kube-prometheus-stack-prometheus
+            port:
+              number: 9090

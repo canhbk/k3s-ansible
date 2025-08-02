@@ -9,7 +9,8 @@ The dev cluster runs a complete Prometheus and Grafana stack for monitoring all 
 ## Access Information
 
 - **Grafana**: https://grafana.dev.k3s.canhnv.com
-- **Username**: admin
+- **Prometheus**: https://prometheus.dev.k3s.canhnv.com
+- **Username**: admin (for Grafana)
 - **Password**: Retrieved from Kubernetes secret (see below)
 
 ## Components
@@ -34,8 +35,11 @@ The dev cluster runs a complete Prometheus and Grafana stack for monitoring all 
 
 2. Access via browser: https://grafana.dev.k3s.canhnv.com
 
-### Access Prometheus (Internal)
+### Access Prometheus
 
+Prometheus is now exposed externally via: https://prometheus.dev.k3s.canhnv.com
+
+For internal access via port-forward:
 ```bash
 kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
 # Then access http://localhost:9090
