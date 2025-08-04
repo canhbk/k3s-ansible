@@ -1,0 +1,149 @@
+# PostgreSQL HA Cluster Template for Production
+# Using CloudNative-PG Operator
+#
+# IMPORTANT: This is a template. Copy to your cluster directory and modify.
+#
+# Prerequisites:
+# 1. CloudNative-PG operator installed
+# 2. Namespace created: kubectl create namespace postgres-db
+# 3. Secrets applied: kubectl apply -f secrets.yaml
+#
+# Deploy:
+# kubectl apply -f cluster.yaml
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ClusterImageCatalog
+metadata:
+  name: postgresql
+  namespace: postgres-db
+spec:
+  images:
+    - major: 16
+      image: ghcr.io/cloudnative-pg/postgresql:16.8
+    - major: 17
+      image: ghcr.io/cloudnative-pg/postgresql:17.5
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-ha
+  namespace: postgres-db
+spec:
+  # Number of instances for HA (minimum 3 for production)
+  instances: 3
+
+  # PostgreSQL version
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    name: postgresql
+    major: 17
+
+  # Enable superuser access
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: superuser-secret
+
+  # Bootstrap configuration
+  bootstrap:
+    initdb:
+      database: <database-name>
+      owner: <owner-username>
+      encoding: UTF8
+      locale: en_US.UTF-8
+      secret:
+        name: <owner-secret-name>
+
+  # Storage configuration
+  storage:
+    storageClass: <your-storage-class>
+    size: 50Gi
+
+  # Resources (adjust based on workload)
+  resources:
+    requests:
+      memory: "4Gi"
+      cpu: "2"
+    limits:
+      memory: "8Gi"
+      cpu: "4"
+
+  # Affinity configuration for HA
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    nodeSelector:
+      # Add your node selector labels
+      node-type: database
+    tolerations:
+      # Add your tolerations if needed
+      - key: database
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+
+  # Monitoring
+  monitoring:
+    enabled: true
+
+  # PostgreSQL configuration
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "2GB"
+      effective_cache_size: "6GB"
+      maintenance_work_mem: "512MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "10MB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+      max_worker_processes: "8"
+      max_parallel_workers_per_gather: "4"
+      max_parallel_workers: "8"
+      max_parallel_maintenance_workers: "4"
+
+  # Backup configuration (configure based on your backup solution)
+  # backup:
+  #   retentionPolicy: "30d"
+  #   target: "s3://your-bucket/backups"
+
+---
+# Managed roles template
+# Uncomment and modify as needed
+# apiVersion: postgresql.cnpg.io/v1
+# kind: Cluster
+# metadata:
+#   name: postgresql-ha
+#   namespace: postgres-db
+# spec:
+#   managed:
+#     roles:
+#       - name: app_user
+#         login: true
+#         ensure: present
+#         superuser: false
+#         createdb: false
+#         createrole: false
+#         inherit: true
+#         bypassrls: false
+#         passwordSecret:
+#           name: app-user-secret
+
+---
+# Database template
+# apiVersion: postgresql.cnpg.io/v1
+# kind: Database
+# metadata:
+#   name: <database-name>
+#   namespace: postgres-db
+# spec:
+#   name: <database-name>
+#   owner: <owner-username>
+#   cluster:
+#     name: postgresql-ha

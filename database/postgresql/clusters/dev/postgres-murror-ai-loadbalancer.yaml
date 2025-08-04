@@ -1,3 +1,12 @@
+# PostgreSQL LoadBalancer Service for AI Team
+# WARNING: This exposes PostgreSQL to the internet - DEVELOPMENT ONLY
+#
+# This service provides external access to the PostgreSQL primary instance
+# for the AI team to access the murror-ai database.
+#
+# Deploy:
+# kubectl apply -f postgres-murror-ai-loadbalancer.yaml
+
 apiVersion: v1
 kind: Service
 metadata:

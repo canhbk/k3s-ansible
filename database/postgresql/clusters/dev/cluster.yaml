@@ -1,0 +1,119 @@
+# PostgreSQL HA Cluster Configuration for Dev
+# Using CloudNative-PG Operator with pgvector extension
+#
+# Prerequisites:
+# 1. CloudNative-PG operator installed
+# 2. Namespace created: kubectl create namespace postgres-db
+# 3. Secrets applied: kubectl apply -f secrets.yaml
+#
+# Deploy:
+# kubectl apply -f cluster.yaml
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ClusterImageCatalog
+metadata:
+  name: postgresql
+  namespace: postgres-db
+spec:
+  images:
+    - major: 17
+      image: pgvector/pgvector:0.8.0-pg17
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-ha
+  namespace: postgres-db
+spec:
+  # User/Group IDs
+  postgresUID: 999
+  postgresGID: 999
+
+  # Managed roles
+  managed:
+    roles:
+      - name: be
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: be-secret
+      - name: ai
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: ai-secret
+      - name: dev
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: dev-secret
+
+  # Cluster configuration
+  instances: 1
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: superuser-secret
+
+  # Bootstrap configuration
+  bootstrap:
+    initdb:
+      database: default
+      owner: dev
+      encoding: UTF8
+      locale: en_US.UTF-8
+      secret:
+        name: dev-secret
+
+  # Image configuration
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    name: postgresql
+    major: 17
+
+  # Storage configuration
+  storage:
+    storageClass: local-path
+    size: 10Gi
+
+---
+# Database definitions
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: murror-ai
+  namespace: postgres-db
+spec:
+  name: murror-ai
+  owner: ai
+  cluster:
+    name: postgresql-ha
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: murror-be
+  namespace: postgres-db
+spec:
+  name: murror-be
+  owner: be
+  cluster:
+    name: postgresql-ha

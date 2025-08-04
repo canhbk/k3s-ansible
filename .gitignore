@@ -4,3 +4,16 @@ venv
 .vagrant
 inventory.yml
 playbook/debug.yml
+
+# PostgreSQL secrets with actual passwords
+*.local
+secrets.yaml.local
+**/secrets.yaml.local
+
+# Backup files
+*.backup
+*.bak
+
+# Database dumps
+*.sql
+*.dump
