@@ -1,0 +1,52 @@
+# Dev cluster specific values for InfluxDB
+# This file overrides the base values
+
+# Dev-specific admin configuration
+adminUser:
+  organization: "k3s-dev"
+  bucket: "dev"
+  retention_policy: "7d"  # Shorter retention for dev
+
+# Smaller persistence for dev
+persistence:
+  size: 10Gi
+
+# Dev-specific resources (lower than production)
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 100m
+  limits:
+    memory: 1Gi
+    cpu: 500m
+
+# Additional labels for dev
+podLabels:
+  environment: development
+  cluster: dev
+
+# Dev-specific environment variables
+env:
+  - name: INFLUXDB_LOG_LEVEL
+    value: "debug"
+  - name: INFLUXDB_HTTP_LOG_ENABLED
+    value: "true"
+
+# Enable additional metrics for development
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    labels:
+      prometheus: kube-prometheus-stack
+      environment: dev
+
+# Node affinity for dev (prefer nodes with more resources)
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+        - key: node-role.kubernetes.io/worker
+          operator: Exists

@@ -57,6 +57,9 @@ Common development domains:
 - `*.murror.api.ambercare.app` - Murror API endpoints
 - `redis.dev.canhnv.com` - Redis management
 - `signoz.dev.canhnv.com` - Monitoring
+- `influxdb.dev.k3s.canhnv.com` - InfluxDB time-series database
+- `grafana.dev.k3s.canhnv.com` - Grafana dashboards
+- `prometheus.dev.k3s.canhnv.com` - Prometheus metrics
 
 ## Key Services
 
@@ -82,6 +85,15 @@ Common development domains:
 
 - Message broker for async communication
 - Management UI at `dev.rabbitmq.ambercare.app`
+
+#### InfluxDB (influxdb namespace)
+
+- Time-series database for metrics and analytics
+- **Version**: InfluxDB 2.7
+- **Organization**: k3s-dev
+- **Default Bucket**: dev (7-day retention)
+- **Access**: Web UI at `influxdb.dev.k3s.canhnv.com`
+- **API**: http://influxdb.influxdb.svc.cluster.local:8086 (internal)
 
 ### Development Tools
 
