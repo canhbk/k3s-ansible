@@ -1,0 +1,26 @@
+- include_tasks: generate_keys.yaml
+
+- name: Gather public keys from all hosts
+  add_host:
+    name: "{{ item }}"
+    ansible_host: "{{ hostvars[item].ansible_host }}"
+    wg_ip: "{{ hostvars[item].wg_ip }}"
+    public_key: "{{ hostvars[item].my_public_key }}"
+  loop: "{{ groups['all'] }}"
+
+- name: Render wg0.conf
+  template:
+    src: wg0.conf.j2
+    dest: /etc/wireguard/{{ wg_interface }}.conf
+    mode: 0600
+  become: true
+
+- name: Bring down WireGuard interface if already exists
+  command: wg-quick down {{ wg_interface }}
+  become: true
+  ignore_errors: true
+
+- name: Start WireGuard interface
+  command: wg-quick up {{ wg_interface }}
+  become: true
+

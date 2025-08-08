@@ -42,11 +42,14 @@ All nodes connect to all other nodes (full mesh topology)
 
 1. Clone this repository
 2. Copy the inventory template and add your passwords:
+
    ```bash
    cp inventory/hosts.yaml inventory/hosts.local.yaml
    # Edit hosts.local.yaml to add your passwords
    ```
+
 3. Run the playbook with the local inventory:
+
    ```bash
    ansible-playbook -i inventory/hosts.local.yaml playbook.yaml
    ```
@@ -71,10 +74,13 @@ This project uses a two-file approach for inventory management to keep passwords
 
 1. The repository includes `hosts.yaml` as a template
 2. Create your local inventory with passwords:
+
    ```bash
    cp inventory/hosts.yaml inventory/hosts.local.yaml
    ```
+
 3. Edit `inventory/hosts.local.yaml` and add your actual passwords:
+
    ```yaml
    all:
      hosts:

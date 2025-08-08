@@ -1,0 +1,28 @@
+- name: Ensure wireguard-tools is installed
+  apt:
+    name: wireguard
+    state: present
+  become: true
+
+- name: Generate new private key
+  command: wg genkey
+  register: wg_private_key
+  become: true
+
+- name: Save private key
+  copy:
+    content: "{{ wg_private_key.stdout_lines[0] }}"
+    dest: /etc/wireguard/privatekey
+    owner: root
+    mode: '0600'
+  become: true
+
+- name: Generate public key
+  shell: cat /etc/wireguard/privatekey | wg pubkey
+  register: wg_public_key
+  changed_when: false
+  become: true
+
+- set_fact:
+    my_public_key: "{{ wg_public_key.stdout }}"
+    my_private_key: "{{ wg_private_key.stdout_lines[0] }}"
