@@ -28,13 +28,30 @@ All managed nodes in inventory must have:
 
 It is also recommended that all managed nodes disable firewalls and swap. See [K3s Requirements](https://docs.k3s.io/installation/requirements) for more information.
 
+## Documentation
+
+- [Inventory Management](docs/INVENTORY_MANAGEMENT.md) - **Start here** - How to manage inventory files securely
+- [Adding Nodes to Existing Clusters](docs/ADDING_NODES.md) - Comprehensive guide for adding new nodes
+- [Clusters Overview](docs/CLUSTERS_OVERVIEW.md) - Overview of all managed clusters
+- [Infrastructure Guide](docs/INFRASTRUCTURE.md) - Architecture and patterns
+- [Security Guidelines](docs/SECURITY_GUIDELINES.md) - Security best practices
+
 ## Usage
 
-First copy the sample inventory to `inventory.yml`.
+First, create your inventory from the example file:
 
 ```bash
-cp inventory-sample.yml inventory.yml
+# Copy the example inventory (contains structure without passwords)
+cp inventory.yml.example inventory.yml
+
+# Edit inventory.yml with your actual passwords and tokens
+vim inventory.yml
 ```
+
+⚠️ **Important**: The `inventory.yml` file contains sensitive data and is excluded from git. 
+Always use `inventory.yml.example` when sharing configurations.
+
+See [Inventory Management Guide](docs/INVENTORY_MANAGEMENT.md) for detailed security practices.
 
 Second edit the inventory file to match your cluster setup. For example:
 ```bash

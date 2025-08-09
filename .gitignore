@@ -10,6 +10,15 @@ playbook/debug.yml
 secrets.yaml.local
 **/secrets.yaml.local
 
+# Inventory files with sensitive data
+inventory.*.local.yml
+inventory.dev.yml
+inventory.prod.yml
+inventory.vn.yml
+inventory.vn-2.yml
+inventory.us.yml
+inventory.db.yml
+
 # Backup files
 *.backup
 *.bak
