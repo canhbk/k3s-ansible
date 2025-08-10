@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kubectl config:*)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(mkdir:*)",
+      "mcp__serena__write_memory",
+      "mcp__serena__activate_project",
+      "Bash(find:*)",
+      "Bash(kubectl logs:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(git add:*)",
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__onboarding",
+      "mcp__serena__list_dir",
+      "mcp__serena__find_file",
+      "mcp__serena__think_about_whether_you_are_done"
+    ],
+    "deny": []
+  }
+}
