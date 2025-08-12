@@ -1,0 +1,50 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: longhorn-auth
+  namespace: longhorn-system
+spec:
+  basicAuth:
+    secret: basic-auth
+    realm: "Authentication Required"
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: canhnv-com-staging-cert
+  namespace: longhorn-system
+spec:
+  secretName: canhnv-com-staging-tls
+  issuerRef:
+    name: letsencrypt-canhnv-com-staging
+    kind: ClusterIssuer
+  commonName: "canhnv.com"
+  dnsNames:
+    - "canhnv.com"
+    - "*.canhnv.com"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn-ingress
+  namespace: longhorn-system
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: longhorn-system-longhorn-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - dev.longhorn.canhnv.com
+    secretName: canhnv-com-staging-tls
+  rules:
+  - host: dev.longhorn.canhnv.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: longhorn-frontend
+            port:
+              number: 80

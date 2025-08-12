@@ -1,0 +1,45 @@
+# Dev cluster specific Longhorn values
+# These values override the base configuration in base/values-base.yaml
+
+# Dev cluster has 7 nodes, so we can use 2-3 replicas
+persistence:
+  defaultClassReplicaCount: 2  # Good balance for dev environment
+
+csi:
+  # Keep higher replica counts for dev cluster (7 nodes)
+  attacherReplicaCount: 2
+  provisionerReplicaCount: 2
+  resizerReplicaCount: 2
+  snapshotterReplicaCount: 2
+
+defaultSettings:
+  defaultReplicaCount: 2  # 2 replicas for dev environment
+  # No specific node taints/tolerations for dev cluster
+  taintToleration: ""
+  systemManagedComponentsNodeSelector: ""
+
+longhornManager:
+  tolerations: []
+  nodeSelector: {}
+
+longhornDriver:
+  tolerations: []
+  nodeSelector: {}
+
+longhornUI:
+  replicas: 2  # HA for UI
+  tolerations: []
+  nodeSelector: {}
+
+ingress:
+  host: dev.longhorn.canhnv.com
+  annotations:
+    cert-manager.io/cluster-issuer: canhnv-com-staging
+    # Add any dev-specific annotations here
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      cluster: dev
+      environment: development

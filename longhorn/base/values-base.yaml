@@ -1,0 +1,217 @@
+# Base Longhorn Helm values - Common settings across all clusters
+# This file contains shared configuration that applies to all clusters
+# Cluster-specific overrides should be placed in clusters/<cluster>/values.yaml
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  tolerations: []
+  nodeSelector: {}
+  cattle:
+    systemDefaultRegistry: ""
+    windowsCluster:
+      enabled: false
+
+networkPolicies:
+  enabled: false
+  type: "k3s"
+
+image:
+  longhorn:
+    engine:
+      repository: longhornio/longhorn-engine
+      tag: v1.9.1
+    manager:
+      repository: longhornio/longhorn-manager
+      tag: v1.9.1
+    ui:
+      repository: longhornio/longhorn-ui
+      tag: v1.9.1
+    instanceManager:
+      repository: longhornio/longhorn-instance-manager
+      tag: v1.9.1
+    shareManager:
+      repository: longhornio/longhorn-share-manager
+      tag: v1.9.1
+    backingImageManager:
+      repository: longhornio/backing-image-manager
+      tag: v1.9.1
+    supportBundleKit:
+      repository: longhornio/support-bundle-kit
+      tag: v0.0.60
+  pullPolicy: IfNotPresent
+
+service:
+  ui:
+    type: ClusterIP
+    nodePort: null
+  manager:
+    type: ClusterIP
+    nodePort: ""
+
+persistence:
+  defaultClass: false
+  defaultFsType: ext4
+  defaultMkfsParams: ""
+  defaultClassReplicaCount: 3  # Base default, can be overridden per cluster
+  defaultDataLocality: disabled
+  reclaimPolicy: Retain
+  volumeBindingMode: "Immediate"
+  migratable: false
+  disableRevisionCounter: "true"
+  nfsOptions: ""
+  recurringJobSelector:
+    enable: false
+    jobList: []
+  backingImage:
+    enable: false
+    name: ~
+    dataSourceType: ~
+    dataSourceParameters: ~
+    expectedChecksum: ~
+  defaultDiskSelector:
+    enable: false
+    selector: ""
+  defaultNodeSelector:
+    enable: false
+    selector: ""
+  unmapMarkSnapChainRemoved: ignored
+  dataEngine: v1
+  backupTargetName: default
+
+preUpgradeChecker:
+  jobEnabled: true
+  upgradeVersionCheck: true
+
+csi:
+  kubeletRootDir: ~
+  # Base CSI replica counts - suitable for multi-node clusters
+  attacherReplicaCount: 2
+  provisionerReplicaCount: 2
+  resizerReplicaCount: 2
+  snapshotterReplicaCount: 2
+
+defaultSettings:
+  # Storage settings
+  defaultDataPath: ~
+  defaultDataLocality: ~
+  storageOverProvisioningPercentage: ~
+  storageMinimalAvailablePercentage: ~
+  storageReservedPercentageForDefaultDisk: ~
+  
+  # Replica settings
+  defaultReplicaCount: 3  # Base default for multi-node clusters
+  replicaSoftAntiAffinity: ~
+  replicaAutoBalance: ~
+  replicaZoneSoftAntiAffinity: ~
+  replicaDiskSoftAntiAffinity: ~
+  
+  # Backup settings
+  failedBackupTTL: ~
+  backupExecutionTimeout: ~
+  backupCompressionMethod: ~
+  backupConcurrentLimit: ~
+  restoreConcurrentLimit: ~
+  
+  # System settings
+  priorityClass: &defaultPriorityClassNameRef "longhorn-critical"
+  upgradeChecker: ~
+  upgradeResponderURL: ~
+  taintToleration: ""  # Base: no taints, can be overridden per cluster
+  systemManagedComponentsNodeSelector: ""  # Base: no node selector
+  
+  # Performance settings
+  concurrentReplicaRebuildPerNodeLimit: ~
+  concurrentVolumeBackupRestorePerNodeLimit: ~
+  concurrentAutomaticEngineUpgradePerNodeLimit: ~
+  engineReplicaTimeout: ~
+  
+  # Other settings
+  disableRevisionCounter: "true"
+  logLevel: ~
+  kubernetesClusterAutoscalerEnabled: ~
+  orphanResourceAutoDeletion: ~
+  orphanResourceAutoDeletionGracePeriod: ~
+  deletingConfirmationFlag: ~
+
+longhornManager:
+  log:
+    format: plain
+  priorityClass: *defaultPriorityClassNameRef
+  tolerations: []  # Base: no tolerations
+  nodeSelector: {}  # Base: no node selector
+  serviceAnnotations: {}
+
+longhornDriver:
+  log:
+    format: plain
+  priorityClass: *defaultPriorityClassNameRef
+  tolerations: []  # Base: no tolerations
+  nodeSelector: {}  # Base: no node selector
+
+longhornUI:
+  replicas: 2  # Base: 2 replicas for HA
+  priorityClass: *defaultPriorityClassNameRef
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - longhorn-ui
+            topologyKey: kubernetes.io/hostname
+  tolerations: []  # Base: no tolerations
+  nodeSelector: {}  # Base: no node selector
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  # host: Will be set per cluster
+  tls: true
+  secureBackends: false
+  tlsSecret: longhorn-tls
+  path: /
+  pathType: ImplementationSpecific
+  annotations:
+    cert-manager.io/cluster-issuer: canhnv-com-staging
+  secrets: []
+
+enablePSP: false
+namespaceOverride: ""
+annotations: {}
+
+serviceAccount:
+  annotations: {}
+
+metrics:
+  serviceMonitor:
+    enabled: true  # Enable metrics collection
+    additionalLabels: {}
+    annotations: {}
+    interval: ""
+    scrapeTimeout: ""
+    relabelings: []
+    metricRelabelings: []
+
+openshift:
+  enabled: false
+
+enableGoCoverDir: false
+extraObjects: []
+
+# Default backup store - can be overridden per cluster
+defaultBackupStore:
+  backupTarget: ~
+  backupTargetCredentialSecret: ~
+  pollInterval: ~
+
+privateRegistry:
+  createSecret: ~
+  registryUrl: ~
+  registryUser: ~
+  registryPasswd: ~
+  registrySecret: ~

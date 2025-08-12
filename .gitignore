@@ -26,3 +26,10 @@ inventory.db.yml
 # Database dumps
 *.sql
 *.dump
+
+# Longhorn sensitive files
+longhorn/.secrets.env
+longhorn/longhornctl
+longhorn/auth
+longhorn/basic-auth
+**/basic-auth-secret.yaml
