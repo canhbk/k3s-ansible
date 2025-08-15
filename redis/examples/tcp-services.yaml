@@ -1,0 +1,12 @@
+tcp:
+  routers:
+    redis-master-router:
+      entryPoints:
+        - redis
+      rule: "HostSNI(`*`)"
+      service: redis-master-service
+  services:
+    redis-master-service:
+      loadBalancer:
+        servers:
+          - address: "redis-master.mystery-join.svc.cluster.local:6379"

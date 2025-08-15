@@ -13,15 +13,18 @@ Welcome to the comprehensive documentation for the K3s Ansible infrastructure pr
 ### Cluster-Specific Documentation
 
 #### Development
+
 - **[Dev Cluster](./clusters/dev/README.md)** - Development environment details
 - **[Dev PostgreSQL](./clusters/dev/POSTGRESQL.md)** - PostgreSQL setup and access in dev
 
 #### Production
+
 - **[Production Guidelines](./clusters/production/README.md)** - Production cluster best practices
 
 ### Service Documentation
 
 #### PostgreSQL
+
 - **[PostgreSQL Exposure Guide](./services/postgresql/EXPOSURE.md)** - How to safely expose PostgreSQL
 - **[PostgreSQL Setup](./services/postgresql/SETUP.md)** - General PostgreSQL configuration
 - **[PostgreSQL Security](./services/postgresql/SECURITY.md)** - Database security practices
@@ -86,6 +89,7 @@ Always check the [Security Guidelines](./SECURITY_GUIDELINES.md) before making c
 ### Emergency Procedures
 
 See cluster-specific documentation for:
+
 - Incident response
 - Backup/restore procedures
 - Disaster recovery plans
@@ -110,6 +114,7 @@ When updating documentation:
 ## 📞 Support
 
 For questions or issues:
+
 1. Check cluster-specific documentation
 2. Review service guides
 3. Consult security guidelines

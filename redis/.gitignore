@@ -1,1 +1,37 @@
+# Authentication files
 auth
+*.auth
+basic-auth
+
+# Password files
+*-password
+*.password
+
+# Secrets - exclude from git
+*-secret.yaml
+*-secret.yml
+secrets/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Local overrides
+*.local.yaml
+*.local.yml
+values.local.yaml
+
+# Helm release files
+*.tgz
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

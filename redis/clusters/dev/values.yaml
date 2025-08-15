@@ -1,0 +1,45 @@
+
+global:
+  defaultStorageClass: longhorn-vn
+
+auth:
+  enabled: true
+  existingSecret: redis-password-secret
+  existingSecretPasswordKey: redis-password
+
+master:
+  count: 1
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClass: longhorn-vn
+  persistentVolumeClaimRetentionPolicy:
+    enabled: true
+    whenDeleted: Delete
+    whenScaled: Retain
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "storage"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: role
+            operator: In
+            values:
+            - storage
+
+replica:
+  count: 3 # Less than 3 is not affect as it always set to 3 replicas is less than 3
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClass: longhorn-vn
+  persistentVolumeClaimRetentionPolicy:
+    enabled: true
+    whenDeleted: Delete
+    whenScaled: Retain

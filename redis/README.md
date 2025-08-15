@@ -1,6 +1,41 @@
-# Redis Setup Guide
+# Redis Deployments
 
-This guide walks through setting up a Redis using Helm and Bitnami charts in Kubernetes.
+This directory contains Redis deployment configurations for different K3s clusters.
+
+## Directory Structure
+
+```
+redis/
+├── clusters/           # Cluster-specific deployments
+│   ├── vn/            # VN cluster (standalone deployment)
+│   │   ├── README.md
+│   │   └── standalone.yaml
+│   └── dev/           # Dev cluster (Helm-based deployment)
+│       ├── README.md
+│       ├── values.yaml
+│       ├── redisinsight.yaml
+│       └── oauth2-proxy/
+├── common/            # Shared scripts and examples
+│   ├── auth.example
+│   └── delete-redis-cluster-pvs.sh
+├── examples/          # Example configurations
+└── .gitignore         # Excludes sensitive files
+```
+
+## Cluster Deployments
+
+### VN Cluster
+- **Type**: Standalone Redis (single instance)
+- **Method**: Direct YAML manifest
+- **Details**: See [clusters/vn/README.md](clusters/vn/README.md)
+
+### Dev Cluster
+- **Type**: Redis cluster with master-replica architecture
+- **Method**: Bitnami Helm chart
+- **Includes**: RedisInsight management UI
+- **Details**: See [clusters/dev/README.md](clusters/dev/README.md)
+
+## General Setup Guide
 
 ## Prerequisites
 
@@ -8,7 +43,7 @@ This guide walks through setting up a Redis using Helm and Bitnami charts in Kub
 - Helm installed and configured
 - kubectl configured to access your cluster
 
-## Initial Setup
+## Common Setup Steps
 
 ### Add Bitnami Helm Repository
 
@@ -30,7 +65,7 @@ Create a secret to store the Redis password:
 ```bash
 kubectl create secret generic redis-password-secret \
   --namespace redis \
-  --from-literal=redis-password="your-redis-password"
+  --from-literal=redis-password="wcduuh69TXJbbuMprAYz"
 ```
 
 ### Install Redis
@@ -134,10 +169,22 @@ Configure RedisInsight with these connection details:
 
 ## Troubleshooting
 
+### Common Issues
+
+#### Permission Denied Error (Fixed in standalone.yaml)
+If you encounter the error:
+```
+MISCONF Redis is configured to save RDB snapshots, but it's currently unable to persist to disk
+```
+
+This indicates Redis cannot write to its data directory. The standalone deployment includes the proper security context to prevent this issue. If using a custom deployment, ensure you include the security context settings described above.
+
+#### General Troubleshooting Steps
 - Verify all pods are running: `kubectl get pods -n redis`
 - Check pod logs: `kubectl logs <pod-name> -n redis`
 - Ensure storage classes are properly configured for persistent volumes
 - Confirm network connectivity between RedisInsight and Redis cluster
+- Check Redis can save RDB snapshots: `kubectl exec -it <redis-pod> -n redis -- redis-cli BGSAVE`
 
 helm repo add oauth2-proxy <https://oauth2-proxy.github.io/manifests>
 

@@ -43,10 +43,26 @@ prometheus:
               storage: 60Gi
 
     # Service discovery
-    serviceMonitorSelector: {}
+    serviceMonitorSelector:
+      matchLabels:
+        prometheus: kube-prometheus-stack  # This label is required for Prometheus to pick it up
     serviceMonitorNamespaceSelector: {}
     podMonitorSelector: {}
     podMonitorNamespaceSelector: {}
+
+    # ScrapeConfig selector - allows selecting ScrapeConfig resources from any namespace
+    # This enables creating ScrapeConfig CRs in other namespaces that will be picked up by Prometheus
+    scrapeConfigSelector:
+      matchLabels:
+        prometheus: kube-prometheus-stack
+    # Example which selects scrapeConfigs with label "prometheus" set to "kube-prometheus-stack"
+    # scrapeConfigSelector:
+    #   matchLabels:
+    #     prometheus: kube-prometheus-stack
+
+    # Namespace selector for ScrapeConfig resources
+    # Leave empty to select from all namespaces
+    scrapeConfigNamespaceSelector: {}
 
     # Enable features
     enableFeatures:
@@ -54,18 +70,16 @@ prometheus:
       - new-service-discovery-manager
 
     # Additional scrape configs for K3s components
-    additionalScrapeConfigs:
-    - job_name: 'k3s-components'
-      static_configs:
-      - targets:
-        - 'localhost:10250'  # kubelet
-        - 'localhost:10257'  # kube-controller-manager
-        - 'localhost:10259'  # kube-scheduler
-      relabel_configs:
-      - source_labels: [__address__]
-        regex: 'localhost:(.*)'
-        target_label: __address__
-        replacement: '${1}'
+    # Note: K3s embeds controller-manager and scheduler in the k3s server process
+    # These components don't expose metrics on standard ports like in vanilla K8s
+    # Commenting out for now as kubelet metrics are already collected via ServiceMonitor
+    # additionalScrapeConfigs:
+    # - job_name: 'k3s-components'
+    #   static_configs:
+    #   - targets:
+    #     - '154.26.131.23:10250'  # kubelet on control plane
+    #     - '154.26.131.23:10257'  # kube-controller-manager (not available in K3s)
+    #     - '154.26.131.23:10259'  # kube-scheduler (not available in K3s)
 
 # Grafana configuration
 grafana:

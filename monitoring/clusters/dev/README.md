@@ -64,6 +64,11 @@ All services in the dev cluster are automatically discovered if they have:
    prometheus.io/path: "/metrics"
    ```
 
+3. ScrapeConfig CRDs (NEW):
+   - Can be created in any namespace
+   - Must have label: `prometheus: kube-prometheus-stack`
+   - See [ScrapeConfig Usage Guide](../../docs/SCRAPECONFIG_USAGE.md)
+
 ## Custom Dashboards
 
 To add custom dashboards:

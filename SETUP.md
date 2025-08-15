@@ -16,15 +16,18 @@ helm repo update
 helm install cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
+  --version v1.18.2 \
   --set crds.enabled=true
 
 # Create `manifest.yaml.local` from cloudflare--tls/manifests.yaml.example, then run bellow command
 
 kubectl apply -f cloudflare-tls/manifests.yaml.local
+kubectl apply -f cloudflare-tls/manifests.murror.local
 
 helm install rancher rancher-stable/rancher \
   --namespace cattle-system \
-  --set hostname=vn.k3s.canhnv.com \
+  --create-namespace \
+  --set hostname=sg.k3s.canhnv.com \
   --set bootstrapPassword=admin \
   --set ingress.tls.source=letsEncrypt \
   --set letsEncrypt.email=canhcvp1998@gmail.com \
