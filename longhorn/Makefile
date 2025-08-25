@@ -61,6 +61,11 @@ deploy-vn: update-repo
 	@echo "Deploying Longhorn to vn cluster..."
 	@./scripts/deploy.sh -c vn -v $(CHART_VERSION)
 
+# Deploy to us cluster
+deploy-us: update-repo
+	@echo "Deploying Longhorn to us cluster..."
+	@./scripts/deploy.sh -c us -v $(CHART_VERSION)
+
 # Deploy to all clusters
 deploy-all: deploy-dev deploy-vn
 	@echo "Deployment to all clusters completed"
@@ -74,6 +79,11 @@ dry-run-dev:
 dry-run-vn:
 	@echo "Running dry-run for vn cluster..."
 	@./scripts/deploy.sh -c vn -v $(CHART_VERSION) -d
+
+# Dry run for us cluster
+dry-run-us:
+	@echo "Running dry-run for us cluster..."
+	@./scripts/deploy.sh -c us -v $(CHART_VERSION) -d
 
 # Check status for dev cluster
 status-dev:
@@ -92,6 +102,19 @@ status-dev:
 status-vn:
 	@echo "Checking Longhorn status in vn cluster..."
 	@kubectl config use-context vn
+	@echo "\n=== Longhorn Pods ==="
+	@kubectl -n $(NAMESPACE) get pods
+	@echo "\n=== Storage Classes ==="
+	@kubectl get storageclass | grep longhorn || echo "No Longhorn storage classes found"
+	@echo "\n=== Persistent Volumes ==="
+	@kubectl get pv | grep longhorn || echo "No Longhorn volumes found"
+	@echo "\n=== Ingress ==="
+	@kubectl -n $(NAMESPACE) get ingress
+
+# Check status for us cluster
+status-us:
+	@echo "Checking Longhorn status in us cluster..."
+	@kubectl config use-context us
 	@echo "\n=== Longhorn Pods ==="
 	@kubectl -n $(NAMESPACE) get pods
 	@echo "\n=== Storage Classes ==="
@@ -122,3 +145,14 @@ uninstall-vn:
 	@kubectl delete -f base/storageclass-base.yaml || true
 	@kubectl delete -f clusters/vn/ingress.yaml || true
 	@echo "Longhorn uninstalled from vn cluster"
+
+# Uninstall from us cluster
+uninstall-us:
+	@echo "WARNING: This will uninstall Longhorn from us cluster!"
+	@echo "Press Ctrl+C to cancel, or Enter to continue..."
+	@read confirm
+	@kubectl config use-context us
+	@helm uninstall $(HELM_RELEASE) -n $(NAMESPACE)
+	@kubectl delete -f clusters/us/storageclass.yaml || true
+	@kubectl delete -f clusters/us/ingress.yaml || true
+	@echo "Longhorn uninstalled from us cluster"

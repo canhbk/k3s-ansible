@@ -211,8 +211,15 @@ if [ "$DRY_RUN" = false ]; then
     kubectl -n "$NAMESPACE" wait --for=condition=ready pod -l app=longhorn-manager --timeout=300s || true
 
     # Apply additional resources
-    print_info "Applying storage classes..."
-    kubectl apply -f "${BASE_DIR}/base/storageclass-base.yaml"
+    # Apply storage classes - check for cluster-specific first
+    CLUSTER_STORAGECLASS="${BASE_DIR}/clusters/${CLUSTER}/storageclass.yaml"
+    if [ -f "$CLUSTER_STORAGECLASS" ]; then
+        print_info "Applying cluster-specific storage classes..."
+        kubectl apply -f "$CLUSTER_STORAGECLASS"
+    else
+        print_info "Applying base storage classes..."
+        kubectl apply -f "${BASE_DIR}/base/storageclass-base.yaml"
+    fi
 
     # Apply cluster-specific ingress if exists
     CLUSTER_INGRESS="${BASE_DIR}/clusters/${CLUSTER}/ingress.yaml"
