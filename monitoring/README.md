@@ -51,7 +51,7 @@ Each cluster has its own Grafana instance:
 - JP: <https://grafana.jp.k3s.canhnv.com>
 - SG: <https://grafana.sg.k3s.canhnv.com>
 - SG2: <https://grafana.sg2.k3s.canhnv.com>
-- US: <https://grafana.us.k3s.canhnv.com>
+- US: <https://grafana.us.k3s.canhnv.com> ✅ (Deployed)
 - VN: <https://grafana.vn.k3s.canhnv.com>
 - VN2: <https://grafana.vn2.k3s.canhnv.com>
 

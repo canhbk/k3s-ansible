@@ -1,0 +1,250 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"postgresql.cnpg.io/v1","kind":"Cluster","metadata":{"annotations":{},"name":"postgresql-pgvector","namespace":"postgres-db"},"spec":{"affinity":{"nodeAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":{"nodeSelectorTerms":[{"matchExpressions":[{"key":"longhorn","operator":"In","values":["true"]}]}]}},"tolerations":[{"effect":"NoSchedule","key":"dedicated","operator":"Equal","value":"storage"}]},"bootstrap":{"initdb":{"database":"default","encoding":"UTF8","locale":"en_US.UTF-8","owner":"dev","secret":{"name":"dev-pgvector-secret"}}},"enableSuperuserAccess":true,"imageCatalogRef":{"apiGroup":"postgresql.cnpg.io","kind":"ClusterImageCatalog","major":17,"name":"postgresql-pgvector"},"instances":1,"managed":{"roles":[{"bypassrls":false,"createdb":false,"createrole":false,"ensure":"present","inherit":false,"login":true,"name":"be","passwordSecret":{"name":"be-pgvector-secret"},"superuser":false},{"bypassrls":false,"createdb":false,"createrole":false,"ensure":"present","inherit":false,"login":true,"name":"ai","passwordSecret":{"name":"ai-pgvector-secret"},"superuser":false},{"bypassrls":false,"createdb":false,"createrole":false,"ensure":"present","inherit":false,"login":true,"name":"dev","passwordSecret":{"name":"dev-pgvector-secret"},"superuser":false}]},"postgresGID":999,"postgresUID":999,"storage":{"size":"4Gi","storageClass":"longhorn-vn"},"superuserSecret":{"name":"superuser-pgvector-secret"}}}
+  creationTimestamp: "2025-08-05T03:16:08Z"
+  generation: 1
+  name: postgresql-pgvector
+  namespace: postgres-db
+  resourceVersion: "15942476"
+  uid: 0c3cb0ef-1362-4114-8a6a-6bb7bf768f71
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: longhorn
+            operator: In
+            values:
+            - "true"
+    podAntiAffinityType: preferred
+    tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
+      value: storage
+  bootstrap:
+    initdb:
+      database: default
+      encoding: UTF8
+      locale: en_US.UTF-8
+      localeCType: C
+      localeCollate: C
+      owner: dev
+      secret:
+        name: dev-pgvector-secret
+  enablePDB: true
+  enableSuperuserAccess: true
+  failoverDelay: 0
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    major: 17
+    name: postgresql-pgvector
+  instances: 1
+  logLevel: info
+  managed:
+    roles:
+    - bypassrls: false
+      connectionLimit: -1
+      createdb: false
+      createrole: false
+      ensure: present
+      inherit: false
+      login: true
+      name: be
+      passwordSecret:
+        name: be-pgvector-secret
+      superuser: false
+    - bypassrls: false
+      connectionLimit: -1
+      createdb: false
+      createrole: false
+      ensure: present
+      inherit: false
+      login: true
+      name: ai
+      passwordSecret:
+        name: ai-pgvector-secret
+      superuser: false
+    - bypassrls: false
+      connectionLimit: -1
+      createdb: false
+      createrole: false
+      ensure: present
+      inherit: false
+      login: true
+      name: dev
+      passwordSecret:
+        name: dev-pgvector-secret
+      superuser: false
+  maxSyncReplicas: 0
+  minSyncReplicas: 0
+  monitoring:
+    customQueriesConfigMap:
+    - key: queries
+      name: cnpg-default-monitoring
+    disableDefaultQueries: false
+    enablePodMonitor: false
+  postgresGID: 999
+  postgresUID: 999
+  postgresql:
+    parameters:
+      archive_mode: "on"
+      archive_timeout: 5min
+      dynamic_shared_memory_type: posix
+      full_page_writes: "on"
+      log_destination: csvlog
+      log_directory: /controller/log
+      log_filename: postgres
+      log_rotation_age: "0"
+      log_rotation_size: "0"
+      log_truncate_on_rotation: "false"
+      logging_collector: "on"
+      max_parallel_workers: "32"
+      max_replication_slots: "32"
+      max_worker_processes: "32"
+      shared_memory_type: mmap
+      shared_preload_libraries: ""
+      ssl_max_protocol_version: TLSv1.3
+      ssl_min_protocol_version: TLSv1.3
+      wal_keep_size: 512MB
+      wal_level: logical
+      wal_log_hints: "on"
+      wal_receiver_timeout: 5s
+      wal_sender_timeout: 5s
+    syncReplicaElectionConstraint:
+      enabled: false
+  primaryUpdateMethod: restart
+  primaryUpdateStrategy: unsupervised
+  replicationSlots:
+    highAvailability:
+      enabled: true
+      slotPrefix: _cnpg_
+    synchronizeReplicas:
+      enabled: true
+    updateInterval: 30
+  resources: {}
+  smartShutdownTimeout: 180
+  startDelay: 3600
+  stopDelay: 1800
+  storage:
+    resizeInUseVolumes: true
+    size: 4Gi
+    storageClass: longhorn-vn
+  superuserSecret:
+    name: superuser-pgvector-secret
+  switchoverDelay: 3600
+status:
+  availableArchitectures:
+  - goArch: amd64
+    hash: 024c5162e1dee336b21121d781397b347d04939a857d9d8a47664d1796e8b7c9
+  - goArch: arm64
+    hash: 63f3a3fbe19b8fe1c26a0e516ecb965c3412e390729a02706825399f585d9298
+  certificates:
+    clientCASecret: postgresql-pgvector-ca
+    expirations:
+      postgresql-pgvector-ca: 2025-11-03 03:11:08 +0000 UTC
+      postgresql-pgvector-replication: 2025-11-03 03:11:08 +0000 UTC
+      postgresql-pgvector-server: 2025-11-03 03:11:08 +0000 UTC
+    replicationTLSSecret: postgresql-pgvector-replication
+    serverAltDNSNames:
+    - postgresql-pgvector-rw
+    - postgresql-pgvector-rw.postgres-db
+    - postgresql-pgvector-rw.postgres-db.svc
+    - postgresql-pgvector-rw.postgres-db.svc.cluster.local
+    - postgresql-pgvector-r
+    - postgresql-pgvector-r.postgres-db
+    - postgresql-pgvector-r.postgres-db.svc
+    - postgresql-pgvector-r.postgres-db.svc.cluster.local
+    - postgresql-pgvector-ro
+    - postgresql-pgvector-ro.postgres-db
+    - postgresql-pgvector-ro.postgres-db.svc
+    - postgresql-pgvector-ro.postgres-db.svc.cluster.local
+    serverCASecret: postgresql-pgvector-ca
+    serverTLSSecret: postgresql-pgvector-server
+  cloudNativePGCommitHash: 1535f3c17
+  cloudNativePGOperatorHash: 024c5162e1dee336b21121d781397b347d04939a857d9d8a47664d1796e8b7c9
+  conditions:
+  - lastTransitionTime: "2025-08-15T15:40:01Z"
+    message: Cluster is Ready
+    reason: ClusterIsReady
+    status: "True"
+    type: Ready
+  - lastTransitionTime: "2025-08-05T03:17:18Z"
+    message: Continuous archiving is working
+    reason: ContinuousArchivingSuccess
+    status: "True"
+    type: ContinuousArchiving
+  configMapResourceVersion:
+    metrics:
+      cnpg-default-monitoring: "385047"
+  currentPrimary: postgresql-pgvector-1
+  currentPrimaryTimestamp: "2025-08-05T03:17:18.030412Z"
+  healthyPVC:
+  - postgresql-pgvector-1
+  image: pgvector/pgvector:0.8.0-pg17
+  instanceNames:
+  - postgresql-pgvector-1
+  instances: 1
+  instancesReportedState:
+    postgresql-pgvector-1:
+      ip: 10.42.2.108
+      isPrimary: true
+      timeLineID: 1
+  instancesStatus:
+    healthy:
+    - postgresql-pgvector-1
+  latestGeneratedNode: 1
+  managedRolesStatus:
+    byStatus:
+      reconciled:
+      - be
+      - ai
+      - dev
+      reserved:
+      - streaming_replica
+      - postgres
+    passwordStatus:
+      ai:
+        resourceVersion: "9601271"
+        transactionID: 743
+      be:
+        resourceVersion: "9601274"
+        transactionID: 742
+      dev:
+        resourceVersion: "9601270"
+        transactionID: 1307
+  pgDataImageInfo:
+    image: pgvector/pgvector:0.8.0-pg17
+    majorVersion: 17
+  phase: Cluster in healthy state
+  poolerIntegrations:
+    pgBouncerIntegration: {}
+  pvcCount: 1
+  readService: postgresql-pgvector-r
+  readyInstances: 1
+  secretsResourceVersion:
+    applicationSecretVersion: "9601270"
+    clientCaSecretVersion: "9604613"
+    managedRoleSecretVersion:
+      ai-pgvector-secret: "9601271"
+      be-pgvector-secret: "9601274"
+      dev-pgvector-secret: "9601270"
+    replicationSecretVersion: "9604616"
+    serverCaSecretVersion: "9604613"
+    serverSecretVersion: "9604614"
+    superuserSecretVersion: "9601269"
+  switchReplicaClusterStatus: {}
+  targetPrimary: postgresql-pgvector-1
+  targetPrimaryTimestamp: "2025-08-05T03:16:09.463023Z"
+  timelineID: 1
+  topology:
+    instances:
+      postgresql-pgvector-1: {}
+    nodesUsed: 1
+    successfullyExtracted: true
+  writeService: postgresql-pgvector-rw

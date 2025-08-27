@@ -1,28 +1,71 @@
-# PostgreSQL High Availability
+# PostgreSQL High Availability with Distributed Replication
 
-This directory contains the PostgreSQL HA deployment configurations using CloudNative-PG operator for all K3s clusters.
+This directory contains PostgreSQL HA deployment configurations using CloudNative-PG operator, including distributed cross-region replication with WAL archiving.
 
 ## Overview
 
-CloudNative-PG is a Kubernetes operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
+CloudNative-PG is a Kubernetes operator that manages highly available PostgreSQL clusters. This implementation includes:
+
+- Primary/standby architecture within clusters
+- Cross-region streaming replication (VN primary → US replica)
+- WAL archiving to MinIO for point-in-time recovery
+- pgvector extension support for AI/ML workloads
+
+## Current Architecture
+
+```
+┌─────────────────────────────────────┐     ┌─────────────────────────────────────┐
+│      VN Cluster (Primary)           │     │      US Cluster (Replica)           │
+│                                     │     │                                     │
+│  PostgreSQL 17.2 (CloudNativePG)    │     │  PostgreSQL 17.2 (CloudNativePG)    │
+│  • pgvector extension               │────►│  • pgvector extension               │
+│  • WAL archiving via barman-cloud   │     │  • Streaming replication (async)    │
+│  • External access on :5433         │     │  • Read-only standby mode          │
+└─────────────────┬───────────────────┘     └─────────────────────────────────────┘
+                  │                                            ▲
+                  │ WAL Archives (gzip)                        │ Streaming
+                  └────────────────────────────────────────────┘
+                                       │
+                           ┌───────────▼───────────┐
+                           │    MinIO (US)         │
+                           │  postgres-wal bucket  │
+                           │  64.71.161.44:9000    │
+                           └───────────────────────┘
+```
 
 ## Directory Structure
 
 ```
 postgresql/
-├── README.md                 # This file
-├── base/                     # Base configurations
-│   ├── namespace.yaml       # PostgreSQL namespace
-│   ├── cnpg-operator/       # CloudNative-PG operator installation
-│   └── secrets/             # Secret templates and documentation
-├── clusters/                 # Cluster-specific configurations
-│   ├── dev/                 # Development cluster
-│   ├── vn/                  # Vietnam production cluster
-│   ├── production/          # Production templates
-│   └── ...                  # Other clusters (eu, jp, sg, sg2, us, vn2)
-└── scripts/                  # Deployment and management scripts
-    ├── deploy.sh            # Automated deployment script
-    └── backup.sh            # Backup management script
+├── README.md                           # This file
+├── DISTRIBUTED_SETUP_PLAN.md          # Implementation plan
+├── DISTRIBUTED_POSTGRESQL_FINAL.md     # Final status report
+├── PHASE2_IMPLEMENTATION_PLAN.md       # Detailed Phase 2 steps
+├── base/                              # Base configurations
+│   ├── namespace.yaml                 # PostgreSQL namespace
+│   ├── cnpg-operator/                 # CloudNative-PG operator installation
+│   └── secrets/                       # Secret templates and documentation
+├── clusters/                          # Cluster-specific configurations
+│   ├── dev/                          # Development cluster
+│   ├── vn/                           # Vietnam production cluster (PRIMARY)
+│   │   ├── cluster-pgvector-with-barman.yaml     # Current config with WAL archiving
+│   │   ├── secrets-minio.yaml                    # MinIO credentials
+│   │   └── streaming-replica-pgvector-secret.yaml # Replication user
+│   ├── us/                           # US cluster (REPLICA)
+│   │   ├── cluster-pgvector-replica-streaming.yaml # Streaming replica config
+│   │   ├── postgres-wal-credentials.yaml          # MinIO access details
+│   │   └── minio/                                 # MinIO deployment files
+│   ├── production/                   # Production templates
+│   └── ...                           # Other clusters (eu, jp, sg, sg2, vn2)
+├── scripts/                          # Deployment and management scripts
+│   ├── deploy.sh                     # Automated deployment script
+│   ├── backup.sh                     # Backup management script
+│   ├── configure-minio-wal.sh        # MinIO WAL bucket setup
+│   └── verify-wal-archiving.sh       # WAL archiving verification
+└── docs/
+    └── clusters/
+        └── vn/
+            └── BARMAN_CLOUD_FIX.md   # Troubleshooting guide
 ```
 
 ## Quick Start
@@ -64,15 +107,67 @@ kubectl get pods -n postgres-db
 kubectl get svc -n postgres-db
 ```
 
+## Distributed Replication Setup
+
+### Current Implementation
+
+- **Primary**: VN cluster (postgresql-pgvector)
+- **Replica**: US cluster (postgresql-pgvector-replica)
+- **WAL Storage**: MinIO in US cluster
+- **Replication**: Asynchronous streaming + WAL archiving
+
+### Key Configuration Requirements
+
+1. **PostgreSQL Image**: Must use CloudNativePG image for barman-cloud support:
+
+   ```yaml
+   image: ghcr.io/cloudnative-pg/postgresql:17.2
+   ```
+
+2. **Replica Configuration**: Enable continuous replication:
+
+   ```yaml
+   replica:
+     enabled: true
+     source: postgresql-pgvector-primary-vn
+   ```
+
+3. **WAL Archiving**: Configure MinIO backend:
+
+   ```yaml
+   backup:
+     barmanObjectStore:
+       destinationPath: "s3://postgres-wal/pgvector-vn"
+       endpointURL: "http://64.71.161.44:9000"
+   ```
+
+### Verification Commands
+
+```bash
+# Check replication status on primary (VN)
+kubectl exec -it postgresql-pgvector-1 -n postgres-db -- psql -U postgres \
+  -c "SELECT client_addr, state, sync_state FROM pg_stat_replication;"
+
+# Verify replica is in standby mode (US)
+kubectl exec -it postgresql-pgvector-replica-1 -n postgres-db -- psql -U postgres \
+  -c "SELECT pg_is_in_recovery();"
+
+# Check WAL archiving status
+kubectl get clusters.postgresql.cnpg.io postgresql-pgvector -n postgres-db \
+  -o jsonpath='{.status.conditions[?(@.type=="ContinuousArchiving")]}'
+```
+
 ## Features
 
 ### Development Clusters
+
 - Single instance deployment
 - pgvector extension support (AI/ML workloads)
 - External LoadBalancer access (dev only)
 - Local storage
 
 ### Production Clusters
+
 - High availability with 3+ instances
 - Pod anti-affinity for fault tolerance
 - Resource limits and requests
@@ -85,17 +180,18 @@ kubectl get svc -n postgres-db
 | Cluster | Environment | Storage Class | Instance Count | Special Features |
 |---------|-------------|---------------|----------------|------------------|
 | dev     | Development | local-path    | 1              | pgvector, LoadBalancer |
-| vn      | Production  | longhorn-vn   | 1 (scalable)   | Production settings |
+| vn      | Production  | longhorn-vn   | 1              | PRIMARY, WAL archiving, pgvector |
+| us      | Production  | longhorn-replicated | 1         | REPLICA from VN, read-only |
 | eu      | Production  | TBD           | 3              | HA configuration |
 | jp      | Production  | TBD           | 3              | HA configuration |
 | sg      | Production  | TBD           | 3              | HA configuration |
 | sg2     | Production  | TBD           | 3              | HA configuration |
-| us      | Production  | TBD           | 3              | HA configuration |
 | vn2     | Production  | TBD           | 3              | HA configuration |
 
 ## Management Scripts
 
 ### deploy.sh
+
 Automated deployment script for PostgreSQL clusters.
 
 ```bash
@@ -110,6 +206,7 @@ Automated deployment script for PostgreSQL clusters.
 ```
 
 ### backup.sh
+
 Comprehensive backup management for PostgreSQL clusters.
 
 ```bash
@@ -135,9 +232,11 @@ Comprehensive backup management for PostgreSQL clusters.
 
 1. **Never commit real passwords** - Use templates in `base/secrets/`
 2. **Generate strong passwords**:
+
    ```bash
    openssl rand -base64 32
    ```
+
 3. **Use separate passwords** for each environment and user
 4. **Enable encryption at rest** for etcd
 5. **Configure RBAC** appropriately
@@ -159,6 +258,7 @@ monitoring:
 ```
 
 Key metrics to monitor:
+
 - PostgreSQL connections
 - Replication lag
 - Disk usage
@@ -168,12 +268,15 @@ Key metrics to monitor:
 ## Backup Strategies
 
 ### On-Demand Backups
+
 ```bash
 ./scripts/backup.sh create
 ```
 
 ### Scheduled Backups
+
 Configure in cluster spec:
+
 ```yaml
 backup:
   retentionPolicy: "30d"
@@ -182,6 +285,7 @@ backup:
 ```
 
 ### Backup Storage Options
+
 - S3/S3-compatible storage
 - Azure Blob Storage
 - Google Cloud Storage
@@ -192,21 +296,37 @@ backup:
 ### Common Issues
 
 1. **Cluster not becoming ready**
+
    ```bash
    kubectl describe cluster postgresql-ha -n postgres-db
    kubectl logs -n postgres-db -l cnpg.io/cluster=postgresql-ha
    ```
 
 2. **Connection issues**
+
    ```bash
    kubectl exec -it -n postgres-db postgresql-ha-1 -- psql -U postgres
    ```
 
 3. **Storage issues**
+
    ```bash
    kubectl get pvc -n postgres-db
    kubectl describe pvc -n postgres-db
    ```
+
+4. **WAL Archiving failures** (barman-cloud not found)
+   - Ensure using CloudNativePG PostgreSQL image (not pgvector image alone)
+   - Check: `docs/clusters/vn/BARMAN_CLOUD_FIX.md` for detailed solution
+   - Verify: `kubectl logs <pod> | grep "archive"`
+
+5. **Replication not continuous** (replica becomes independent)
+   - Must include `replica.enabled: true` in replica cluster config
+   - Check: `SELECT pg_is_in_recovery();` should return `true` on replica
+   
+6. **High replication lag**
+   - Check network connectivity between regions
+   - Monitor: `SELECT now() - pg_last_xact_replay_timestamp() AS lag;`
 
 ### Useful Commands
 

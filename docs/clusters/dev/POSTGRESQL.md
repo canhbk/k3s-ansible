@@ -21,7 +21,8 @@ The development cluster runs a PostgreSQL HA instance using CloudNative PG opera
 | postgresql-ha-rw | ClusterIP | Read-Write (Primary) | postgresql-ha-rw.postgres-db.svc.cluster.local:5432 |
 | postgresql-ha-ro | ClusterIP | Read-Only | postgresql-ha-ro.postgres-db.svc.cluster.local:5432 |
 | postgresql-ha-r | ClusterIP | Read Replicas | postgresql-ha-r.postgres-db.svc.cluster.local:5432 |
-| postgres-murror-ai | LoadBalancer | AI Team External Access | 154.26.131.23:5432 (and 4 other IPs) |
+| postgres-murror-ai | LoadBalancer | AI Team External Access | 154.26.131.23:5432 (and 6 other IPs) |
+| postgres-murror-be-nodeport | NodePort | BE Team External Access | Any node IP:30543 |
 
 ### Databases and Users
 
@@ -314,6 +315,35 @@ To remove this access:
 
 ```bash
 kubectl delete svc -n postgres-db postgres-murror-ai
+```
+
+### BE Team Access (Active)
+
+- **Service**: `postgres-murror-be-nodeport`
+- **Type**: NodePort (Open to Internet)
+- **Created**: 2025-08-22
+- **Database**: murror-be
+- **User**: be
+- **NodePort**: 30543
+- **External Access**: Available on all node IPs at port 30543
+  - 154.26.131.23:30543
+  - 46.250.232.10:30543
+  - 5.104.86.195:30543
+  - 160.191.245.234:30543
+  - 163.61.110.120:30543
+  - 160.250.136.247:30543
+  - 163.61.110.117:30543
+- **Purpose**: Backend team development access
+
+Connection string example:
+```
+postgresql://be:__REDACTED__@154.26.131.23:30543/murror-be?schema=public
+```
+
+To remove this access:
+
+```bash
+kubectl delete svc -n postgres-db postgres-murror-be-nodeport
 ```
 
 ## Security Considerations
