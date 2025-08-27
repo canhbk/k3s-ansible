@@ -32,11 +32,64 @@ Before deploying Longhorn, ensure:
 2. **Helm**: Helm 3.x is installed
 3. **Storage**: Nodes have sufficient storage available
 4. **Network**: Cluster nodes can communicate on required ports
+5. **System Prerequisites**: Required packages installed on all nodes:
+   - `open-iscsi` / `iscsid`
+   - `nfs-common` (for NFS backups)
+   - `cryptsetup` (for encrypted volumes)
+   - `dm_crypt` kernel module
 
 The deployment script will automatically:
 - Download `longhornctl` CLI tool (v1.9.1)
-- Check and install cluster prerequisites
+- Check cluster prerequisites
 - Deploy Longhorn using Helm
+
+### Installing Missing Prerequisites
+
+If prerequisites are missing, install them using Longhorn's official DaemonSets:
+
+```bash
+# Install NFS utilities
+kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.9.1/deploy/prerequisite/longhorn-nfs-installation.yaml
+
+# Install iSCSI utilities
+kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.9.1/deploy/prerequisite/longhorn-iscsi-installation.yaml
+
+# For dm_crypt module, create a DaemonSet to load it
+kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: enable-dm-crypt
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: enable-dm-crypt
+  template:
+    metadata:
+      labels:
+        name: enable-dm-crypt
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: enable-dm-crypt
+        image: alpine
+        command: ["nsenter", "--target", "1", "--mount", "--uts", "--ipc", "--net", "--pid", "--", "sh", "-c", "modprobe dm_crypt && echo 'dm_crypt module loaded' && sleep infinity"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: host-modules
+          mountPath: /lib/modules
+          readOnly: true
+      volumes:
+      - name: host-modules
+        hostPath:
+          path: /lib/modules
+EOF
+```
+
+Wait for prerequisites to be installed before deploying Longhorn.
 
 ## Configuration
 

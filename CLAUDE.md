@@ -278,6 +278,55 @@ kubectl config use-context k3s-ansible
 kubectl get nodes
 ```
 
+## Troubleshooting
+
+### Pod Network Connectivity Issues in K3s with Wireguard
+
+When experiencing pod-to-pod connectivity issues across nodes in K3s clusters using Wireguard for node networking:
+
+**Symptoms:**
+- Pods on different nodes cannot communicate
+- Webhook services fail with connection timeouts
+- Services show "Destination Host Unreachable" errors
+- Flannel VXLAN traffic appears blocked between nodes
+
+**Root Cause:**
+If Wireguard private keys or network configuration changes, K3s's built-in Flannel and CoreDNS components may not reload the new network configuration automatically.
+
+**Solution:**
+Restart K3s services on all nodes to force reload of networking components:
+
+```bash
+# Create a job to restart K3s on each node
+kubectl apply -f - <<EOF
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restart-k3s-<node-name>
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: <node-name>
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Never
+      containers:
+      - name: restart-k3s
+        image: alpine
+        command: ["nsenter", "--target", "1", "--mount", "--uts", "--ipc", "--net", "--pid", "--", "sh", "-c", "systemctl restart k3s || systemctl restart k3s-agent"]
+        securityContext:
+          privileged: true
+EOF
+```
+
+**Verification:**
+After restart, verify connectivity:
+- Check node status: `kubectl get nodes`
+- Test cross-node pod connectivity
+- Verify service endpoints: `kubectl get endpoints -A`
+
 ## Notes
 
 - Do not mention Claude in anywhere
