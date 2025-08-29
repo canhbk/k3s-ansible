@@ -1,5 +1,7 @@
 # Development Cluster (dev)
 
+*Last Updated: 2025-08-29*
+
 ## Overview
 
 The development cluster serves as the primary environment for development, testing, and experimentation with new services and configurations.
@@ -23,6 +25,7 @@ The development cluster serves as the primary environment for development, testi
 | vps17-h2cloud-vn | worker | 163.61.110.120 | Ubuntu 20.04.6 LTS | - |
 | vps18-h2cloud-vn | worker | 163.61.110.117 | Ubuntu 20.04.6 LTS | - |
 | vps5-h2cloud-vn | worker | 160.250.136.247 | Ubuntu 20.04.6 LTS | - |
+| vps12-h2cloud-vn | worker | 103.157.204.15 | Ubuntu 22.04.2 LTS | - |
 
 ## Storage Configuration
 
@@ -51,6 +54,7 @@ The cluster has multiple external IPs available for LoadBalancer services:
 - 163.61.110.120
 - 163.61.110.117
 - 160.250.136.247
+- 103.157.204.15
 
 ### Ingress Domains
 
