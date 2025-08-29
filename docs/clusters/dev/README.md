@@ -1,6 +1,6 @@
 # Development Cluster (dev)
 
-*Last Updated: 2025-08-29*
+*Last Updated: 2025-08-29 (Node vps1 removed)*
 
 ## Overview
 
@@ -19,7 +19,6 @@ The development cluster serves as the primary environment for development, testi
 | Node | Role | IP Address | Resources | Special Labels |
 |------|------|------------|-----------|----------------|
 | vps7 | control-plane, master | 154.26.131.23 | Ubuntu 20.04.5 LTS | - |
-| vps1 | worker | 46.250.232.10 | Ubuntu 20.04.6 LTS | - |
 | vps15 | worker | 5.104.86.195 | Ubuntu 20.04.6 LTS | - |
 | vps16-h2cloud-vn | worker | 160.191.245.234 | Ubuntu 20.04.6 LTS | - |
 | vps17-h2cloud-vn | worker | 163.61.110.120 | Ubuntu 20.04.6 LTS | - |
@@ -48,7 +47,6 @@ The development cluster serves as the primary environment for development, testi
 The cluster has multiple external IPs available for LoadBalancer services:
 
 - 154.26.131.23 (Primary - also control plane)
-- 46.250.232.10
 - 5.104.86.195
 - 160.191.245.234
 - 163.61.110.120
