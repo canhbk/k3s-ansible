@@ -60,6 +60,16 @@ spec:
         bypassrls: false
         passwordSecret:
           name: be-secret
+      - name: vps
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: vps-ha-secret
 
   # Cluster configuration
   instances: 1
@@ -99,5 +109,17 @@ metadata:
 spec:
   name: murror
   owner: be
+  cluster:
+    name: postgresql-ha
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: vps-management-ha
+  namespace: postgres-db
+spec:
+  name: vps-management
+  owner: vps
   cluster:
     name: postgresql-ha
