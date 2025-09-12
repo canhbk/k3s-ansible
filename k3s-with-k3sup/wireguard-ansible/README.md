@@ -176,10 +176,18 @@ ansible-playbook -i inventory/hosts.yaml playbook.yaml --ask-vault-pass
 
 ## How It Works
 
-1. **Key Generation**: Each server generates its own WireGuard private/public key pair
+1. **Key Generation**: Each server generates its own WireGuard private/public key pair (or preserves existing keys if already present)
 2. **Key Exchange**: Ansible collects all public keys and distributes them
 3. **Configuration**: Each server gets a custom config with all peer information
 4. **Interface Setup**: WireGuard interface is brought up on each server
+
+### Key Preservation Feature
+
+The playbook intelligently handles existing keys:
+- Checks if `/etc/wireguard/privatekey` exists before generating new keys
+- Preserves existing keys to maintain stable connections
+- Only generates new keys for nodes that don't have them yet
+- This allows adding new nodes without disrupting the existing mesh network
 
 ## Verification
 
@@ -201,12 +209,17 @@ ip route | grep wg0
 
 ### Add a new VPS
 
-1. Add entry to `inventory/hosts.yaml` with unique `wg_ip`
-2. Run playbook - it will update all nodes
+1. Add entry to `inventory/hosts.local.yaml` with unique `wg_ip`
+2. Run playbook - it will update all nodes while preserving existing keys
+
+**Note**: The playbook has been modified to preserve existing WireGuard keys on nodes that already have them. This ensures that:
+- Existing nodes keep their current private/public key pairs
+- Only new nodes generate fresh keys
+- No disruption to existing WireGuard connections
 
 ### Remove a VPS
 
-1. Remove entry from `inventory/hosts.yaml`
+1. Remove entry from `inventory/hosts.local.yaml`
 2. Run playbook to regenerate configs
 3. Manually remove WireGuard on the removed server
 
