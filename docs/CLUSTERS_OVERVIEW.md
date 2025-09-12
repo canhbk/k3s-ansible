@@ -128,16 +128,24 @@ All clusters use Traefik as the default ingress controller, providing:
 - Load balancing
 - Path-based and host-based routing
 
-## Inventory Files
+## Cluster Management Methods
 
-Each cluster has its corresponding inventory file:
+### Ansible-Managed Clusters
+These clusters use Ansible playbooks with inventory files:
 
 - `inventory.dev.yml` - Development cluster
-- `inventory.prod.yml` - General production template
-- `inventory.us.yml` - US cluster specific
-- `inventory.eu.yml` - EU cluster specific (if exists)
 - `inventory.vn.yml` - Vietnam primary cluster
 - `inventory.vn-2.yml` - Vietnam secondary cluster
+- `inventory.prod.yml` - General production template
+
+### Manually-Managed Clusters
+These clusters use manual K3s installation (see `k3s-with-k3sup/manual.md`):
+
+- **US Cluster** - Manual setup with k3s install script
+- **EU Cluster** - Manual setup with k3s install script
+- **JP Cluster** - Manual setup with k3s install script
+- **SG Cluster** - Manual setup with k3s install script
+- **SG2 Cluster** - Manual setup with k3s install script
 
 ## Common Operations
 

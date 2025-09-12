@@ -16,7 +16,6 @@ inventory.dev.yml
 inventory.prod.yml
 inventory.vn.yml
 inventory.vn-2.yml
-inventory.us.yml
 inventory.db.yml
 
 # Backup files
@@ -33,3 +32,4 @@ longhorn/longhornctl
 longhorn/auth
 longhorn/basic-auth
 **/basic-auth-secret.yaml
+.idea/
