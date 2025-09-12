@@ -112,3 +112,9 @@ all:
       ansible_user: alwyzon
       # ansible_ssh_pass: <defined in hosts.local.yaml>
       wg_ip: 10.10.0.36
+
+    vps40:
+      ansible_host: 74.82.63.155
+      ansible_user: client_3419_3
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.40
