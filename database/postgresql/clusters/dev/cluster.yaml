@@ -74,6 +74,16 @@ spec:
         bypassrls: false
         passwordSecret:
           name: vps-secret
+      - name: tester
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: tester-secret
 
   # Cluster configuration
   instances: 1

@@ -45,7 +45,11 @@ This directory contains the PostgreSQL HA configuration for the development clus
 5. (Optional) Deploy LoadBalancer for external access:
 
    ```bash
+   # For AI team access to murror-ai database
    kubectl apply -f postgres-murror-ai-loadbalancer.yaml
+
+   # For testing access to murror-be database
+   kubectl apply -f postgres-murror-be-loadbalancer.yaml
    ```
 
 ## Users and Databases
@@ -56,6 +60,7 @@ This directory contains the PostgreSQL HA configuration for the development clus
 - **dev**: Development user (owner of default database)
 - **ai**: AI team user
 - **be**: Backend application user
+- **tester**: Read-only testing user (for murror-be database)
 
 ### Databases
 
@@ -65,13 +70,25 @@ This directory contains the PostgreSQL HA configuration for the development clus
 
 ## External Access
 
+### AI Team Access
 The `postgres-murror-ai-loadbalancer.yaml` creates a LoadBalancer service for AI team access:
 
 - **Service**: postgres-murror-ai
 - **Port**: 5432
+- **Database**: murror-ai
+- **User**: ai
 - **Access**: Open to internet (DEVELOPMENT ONLY)
 
-⚠️ **WARNING**: This LoadBalancer is open to the internet. Use only in development environments.
+### Testing Access
+The `postgres-murror-be-loadbalancer.yaml` creates a LoadBalancer service for testing access:
+
+- **Service**: postgres-murror-be
+- **Port**: 5432
+- **Database**: murror-be
+- **User**: tester (read-only)
+- **Access**: Open to internet (DEVELOPMENT ONLY)
+
+⚠️ **WARNING**: These LoadBalancers are open to the internet. Use only in development environments.
 
 ## Monitoring
 
@@ -88,10 +105,14 @@ View pods:
 kubectl get pods -n postgres-db
 ```
 
-Check LoadBalancer IP:
+Check LoadBalancer IPs:
 
 ```bash
+# AI team LoadBalancer
 kubectl get svc postgres-murror-ai -n postgres-db
+
+# Testing LoadBalancer
+kubectl get svc postgres-murror-be -n postgres-db
 ```
 
 ## pgvector Extension
