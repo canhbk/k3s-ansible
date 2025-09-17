@@ -13,6 +13,7 @@
 ### Deployed Resources
 
 #### Redis Cluster (Helm Release: my-redis)
+
 - **Master**: 1 instance with 2Gi storage
 - **Replicas**: 3 instances with 2Gi storage each
 - **Services**:
@@ -21,17 +22,23 @@
   - `my-redis-headless` (Headless service for StatefulSet)
 
 #### RedisInsight (Management UI)
+
 - **Deployment**: `redisinsight` (1/1 replicas)
 - **Service**: `redisinsight-service` (LoadBalancer)
 - **External IPs**: 160.191.245.234, 160.250.136.247, 163.61.110.117, 163.61.110.120
 - **Port**: 80 (NodePort: 32090)
 - **Authentication**: Basic auth via `basic-auth` secret
+- **Preconfigured Connections**:
+  - Redis Master: `my-redis-master.redis.svc.cluster.local:6379`
+  - Redis Replicas: `my-redis-replicas.redis.svc.cluster.local:6379`
 
 ### Secrets
+
 - `redis-password-secret` - Redis authentication password
 - `basic-auth` - HTTP basic auth for RedisInsight
 
 ### Configuration Files
+
 - `values.yaml` - Helm values for Redis deployment
 - `redisinsight.yaml` - RedisInsight deployment manifest
 
@@ -53,11 +60,30 @@ kubectl exec -it my-redis-master-0 -n redis -- redis-cli -a $(kubectl get secret
 
 ## RedisInsight Access
 
-Access the web UI at any of the external IPs on port 80.
+Access the web UI at any of the external IPs on port 80 or via the domain `https://redis.canhnv.com`.
 Authentication is required using the credentials stored in the `basic-auth` secret.
+
+### Preconfigured Database Connections
+
+RedisInsight is automatically configured with the following Redis connections:
+
+1. **Redis Master** (ID: 0)
+   - Host: `my-redis-master.redis.svc.cluster.local`
+   - Port: `6379`
+   - Username: `default`
+   - Password: Automatically retrieved from `redis-password-secret`
+
+2. **Redis Replicas** (ID: 1)
+   - Host: `my-redis-replicas.redis.svc.cluster.local`
+   - Port: `6379`
+   - Username: `default`
+   - Password: Automatically retrieved from `redis-password-secret`
+
+These connections are configured via environment variables and will be available immediately upon accessing RedisInsight.
 
 ## Node Affinity
 
 Both master and replica pods have:
+
 - Toleration for `dedicated=storage:NoSchedule` taint
 - Preference for nodes with `role=storage` label

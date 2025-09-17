@@ -39,10 +39,10 @@ spec:
   issuerRef:
     name: letsencrypt-canhnv-com-staging
     kind: ClusterIssuer
-  commonName: "canhnv.com"
+  commonName: "*.dev.canhnv.com"
   dnsNames:
-    - "canhnv.com"
-    - "*.canhnv.com"
+    - "dev.canhnv.com"
+    - "*.dev.canhnv.com"
 ---
 # Redis Insight Ingress with name 'redisinsight-ingress'
 apiVersion: networking.k8s.io/v1
@@ -54,7 +54,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.middlewares: redis-redis-insight-auth@kubernetescrd
 spec:
   rules:
-    - host: redis.canhnv.com
+    - host: redis.dev.canhnv.com
       http:
         paths:
           - path: /
@@ -66,8 +66,8 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - redis.canhnv.com
-      secretName: letsencrypt-canhnv-com-staging # TLS secret for the Ingress
+        - redis.dev.canhnv.com
+      secretName: canhnv-com-staging-tls # TLS secret for the Ingress
 
 ---
 # Redis Insight deployment with name 'redisinsight'
@@ -93,6 +93,30 @@ spec:
       - name:  redisinsight #Container name (DNS_LABEL, unique)
         image: redis/redisinsight:2.70 #repo/image
         imagePullPolicy: IfNotPresent
+        env:
+        # Preconfigured Redis connections
+        - name: RI_REDIS_HOST0
+          value: "my-redis-master.redis.svc.cluster.local"
+        - name: RI_REDIS_PORT0
+          value: "6379"
+        - name: RI_REDIS_USERNAME0
+          value: "default"
+        - name: RI_REDIS_PASSWORD0
+          valueFrom:
+            secretKeyRef:
+              name: redis-password-secret
+              key: redis-password
+        - name: RI_REDIS_HOST1
+          value: "my-redis-replicas.redis.svc.cluster.local"
+        - name: RI_REDIS_PORT1
+          value: "6379"
+        - name: RI_REDIS_USERNAME1
+          value: "default"
+        - name: RI_REDIS_PASSWORD1
+          valueFrom:
+            secretKeyRef:
+              name: redis-password-secret
+              key: redis-password
         resources:
           requests:
             cpu: "250m"
