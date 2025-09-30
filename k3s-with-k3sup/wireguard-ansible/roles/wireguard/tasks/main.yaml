@@ -15,12 +15,16 @@
     mode: 0600
   become: true
 
-- name: Bring down WireGuard interface if already exists
-  command: wg-quick down {{ wg_interface }}
+- name: Enable WireGuard service to start at boot
+  systemd:
+    name: "wg-quick@{{ wg_interface }}"
+    enabled: yes
   become: true
-  ignore_errors: true
 
-- name: Start WireGuard interface
-  command: wg-quick up {{ wg_interface }}
+- name: Restart WireGuard service
+  systemd:
+    name: "wg-quick@{{ wg_interface }}"
+    state: restarted
+    daemon_reload: yes
   become: true
 
