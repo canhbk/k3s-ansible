@@ -1,0 +1,15 @@
+# Protect sensitive Cloudflare API tokens
+*.local.yaml
+*.local
+secrets/*-secret.local.yaml
+
+# Keep template files
+!secrets/cloudflare-secret.yaml
+
+# Backup files
+*.bak
+*.backup
+
+# Temporary files
+*.tmp
+.DS_Store

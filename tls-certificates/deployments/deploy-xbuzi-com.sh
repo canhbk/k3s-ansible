@@ -6,17 +6,24 @@ set -e
 CLUSTERS=("dev" "eu" "jp" "sg" "sg2" "us" "vn" "vn2")
 FAILED_CLUSTERS=()
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "======================================"
 echo "Deploying xbuzi.com ClusterIssuer to all clusters"
 echo "======================================"
 echo
 
-# Check if cloudflare token is configured
-if grep -q "<YOUR_CLOUDFLARE_API_TOKEN>" "$SCRIPT_DIR/base/cloudflare-secret.yaml"; then
+# Check if secret is configured
+if grep -q "<YOUR_CLOUDFLARE_API_TOKEN>" "$BASE_DIR/secrets/cloudflare-secret.yaml"; then
     echo "ERROR: Cloudflare API token not configured!"
-    echo "Please edit $SCRIPT_DIR/base/cloudflare-secret.yaml and add your Cloudflare API token"
+    echo "Please edit $BASE_DIR/secrets/cloudflare-secret.yaml and add your Cloudflare API token"
     exit 1
+fi
+
+# Use local secret if available, otherwise use template
+SECRET_FILE="$BASE_DIR/secrets/cloudflare-secret.local.yaml"
+if [ ! -f "$SECRET_FILE" ]; then
+    SECRET_FILE="$BASE_DIR/secrets/cloudflare-secret.yaml"
 fi
 
 # Function to check cert-manager installation
@@ -52,15 +59,17 @@ for cluster in "${CLUSTERS[@]}"; do
         continue
     fi
 
-    # Run the cluster-specific install script
-    if [ -f "$SCRIPT_DIR/clusters/$cluster/install-xbuzi.sh" ]; then
-        bash "$SCRIPT_DIR/clusters/$cluster/install-xbuzi.sh"
-        if [ $? -ne 0 ]; then
-            FAILED_CLUSTERS+=("$cluster (deployment failed)")
-        fi
+    # Deploy secret and ClusterIssuer
+    echo "Applying Cloudflare secret..."
+    kubectl apply -f "$SECRET_FILE"
+
+    echo "Applying xbuzi.com ClusterIssuer..."
+    kubectl apply -f "$BASE_DIR/issuers/xbuzi-com-clusterissuer.yaml"
+
+    if [ $? -eq 0 ]; then
+        echo "SUCCESS: xbuzi.com ClusterIssuer deployed to $cluster"
     else
-        echo "ERROR: Install script not found for $cluster"
-        FAILED_CLUSTERS+=("$cluster (script not found)")
+        FAILED_CLUSTERS+=("$cluster (deployment failed)")
     fi
 done
 
@@ -77,9 +86,6 @@ else
     for failed in "${FAILED_CLUSTERS[@]}"; do
         echo "  - $failed"
     done
-    echo
-    echo "To install cert-manager on missing clusters, use:"
-    echo "  ./clusters/<cluster-name>/install.sh"
 fi
 
 echo

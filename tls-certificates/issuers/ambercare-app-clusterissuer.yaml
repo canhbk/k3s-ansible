@@ -1,0 +1,36 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ambercare-app-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: canh@murror.app
+    privateKeySecretRef:
+      name: letsencrypt-ambercare-app-staging
+    solvers:
+      - dns01:
+          cloudflare:
+            email: canh@murror.app
+            apiTokenSecretRef:
+              name: murror-cloudflare-token-secret
+              key: cloudflare-token
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ambercare-app
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: canh@murror.app
+    privateKeySecretRef:
+      name: letsencrypt-ambercare-app
+    solvers:
+      - dns01:
+          cloudflare:
+            email: canh@murror.app
+            apiTokenSecretRef:
+              name: murror-cloudflare-token-secret
+              key: cloudflare-token
