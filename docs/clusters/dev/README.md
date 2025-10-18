@@ -106,8 +106,13 @@ Common development domains:
 #### Rancher (cattle-system namespace)
 
 - Cluster management UI
-- Available at `dev.k3s.canhnv.com`
+- **UI**: `https://dev.k3s.canhnv.com/dashboard/`
+- **API**: `https://dev.k3s.canhnv.com`
 - Multi-cluster management capabilities
+- **Configuration**: Running with 1 replica (scaled down from 3 due to pod instability on some nodes)
+- **Version**: v2.11.2
+- **Helm Values**: [apps/rancher/clusters/dev/values.yaml](../../../apps/rancher/clusters/dev/values.yaml)
+- **Documentation**: [apps/rancher/README.md](../../../apps/rancher/README.md)
 
 #### SigNoz (signoz namespace)
 
