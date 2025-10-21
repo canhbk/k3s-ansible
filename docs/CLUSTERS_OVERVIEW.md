@@ -81,6 +81,11 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 - **Security Level**: Strict
 - **Default Namespace**: `nsp-prod-murror`
 - **Key Services**: Murror production workloads
+- **Cluster Configuration**:
+  - 3 Control Plane Nodes: vps29-bnix, vps30-bnix, vps31-bnix
+  - 1 Agent Node: vps28-bnix (added 2025-10-21)
+- **Network**: Wireguard VPN over wg0 interface
+- **Last Updated**: 2025-10-21
 
 ## Access Management
 
@@ -133,7 +138,7 @@ All clusters use Traefik as the default ingress controller, providing:
 ### Ansible-Managed Clusters
 These clusters use Ansible playbooks with inventory files:
 
-- `inventory.dev.yml` - Development cluster
+- `inventory.dev.local.yml` - Development cluster
 - `inventory.vn.yml` - Vietnam primary cluster
 - `inventory.vn-2.yml` - Vietnam secondary cluster
 - `inventory.prod.yml` - General production template
@@ -153,7 +158,7 @@ These clusters use manual K3s installation (see `k3s-with-k3sup/manual.md`):
 
 ```bash
 # Deploy to dev cluster
-ansible-playbook playbooks/site.yml -i inventory.dev.yml
+ansible-playbook playbooks/site.yml -i inventory.dev.local.yml
 
 # Deploy to production US
 ansible-playbook playbooks/site.yml -i inventory.us.yml
