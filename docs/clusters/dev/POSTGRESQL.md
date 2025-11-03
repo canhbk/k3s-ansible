@@ -299,6 +299,119 @@ ORDER BY mean_exec_time DESC
 LIMIT 10;"
 ```
 
+### Secret/Password Mismatch Issues
+
+If you encounter authentication errors after cluster rebuilds or secret updates, follow these steps:
+
+**Symptom**: Applications fail with "Authentication failed" even though the secret appears correct.
+
+**Root Cause**: The Kubernetes secret and the actual PostgreSQL user password are out of sync. This commonly happens after:
+- Cluster rebuilds (especially using `k3s-uninstall.sh`)
+- Manual secret updates without updating PostgreSQL
+- Applying secrets with placeholder values
+
+**Solution**:
+
+1. **Verify the secret contains the actual password (not a placeholder)**:
+   ```bash
+   kubectl get secret -n postgres-db be-secret -o jsonpath='{.data.password}' | base64 -d
+   ```
+
+   If you see `<CHANGE_ME_BE_PASSWORD>` or similar placeholder, the secret needs updating.
+
+2. **Apply the correct secrets from the secrets.yaml.local file**:
+   ```bash
+   kubectl apply -f database/postgresql/clusters/dev/secrets.yaml.local -n postgres-db
+   ```
+
+3. **Update the PostgreSQL user password to match the secret**:
+   ```bash
+   # Get the correct password from the secret
+   NEW_PASSWORD=$(kubectl get secret -n postgres-db be-secret -o jsonpath='{.data.password}' | base64 -d)
+
+   # Update the user password in PostgreSQL
+   kubectl exec -n postgres-db postgresql-ha-1 -- psql -U postgres -c "ALTER USER be WITH PASSWORD '$NEW_PASSWORD';"
+   ```
+
+4. **Test the connection**:
+   ```bash
+   kubectl run -n nsp-alpha-murror psql-test --rm -i --tty --image=postgres:17 --restart=Never \
+     --env="PGPASSWORD=$NEW_PASSWORD" -- \
+     psql -h postgresql-ha-rw.postgres-db.svc.cluster.local -U be -d murror-be -c "SELECT version();"
+   ```
+
+5. **Restart application pods** to pick up the correct credentials:
+   ```bash
+   kubectl delete pods -n nsp-alpha-murror -l app=murror-migration
+   ```
+
+**Prevention**: After any cluster rebuild:
+1. Always apply secrets before creating the PostgreSQL cluster
+2. Verify all user passwords match their Kubernetes secrets
+3. Test authentication before deploying applications
+
+**Last Incident**: 2025-11-03 - Fixed password mismatch after cluster rebuild on 2025-11-02
+
+### Schema Permission Issues
+
+If migrations fail with "permission denied for schema public", the user needs proper database ownership.
+
+**Symptom**: Migration coordinators or ORM tools fail with:
+```
+ERROR: permission denied for schema public
+LINE 2:   CREATE TABLE IF NOT EXISTS migration_coordination (
+```
+
+**Root Cause**: In PostgreSQL 15+, databases created via SQL commands inherit ownership from the `postgres` superuser. Non-superuser application users (like `ai`, `be`, `vps`) lack CREATE privileges on the `public` schema by default.
+
+**Solution**:
+
+1. **Transfer database ownership to the application user** (Recommended):
+   ```bash
+   # For AI database
+   kubectl exec -n postgres-db postgresql-ha-1 -- psql -U postgres -c "ALTER DATABASE \"murror-ai\" OWNER TO ai;"
+
+   # For BE database
+   kubectl exec -n postgres-db postgresql-ha-1 -- psql -U postgres -c "ALTER DATABASE \"murror-be\" OWNER TO be;"
+
+   # For VPS database
+   kubectl exec -n postgres-db postgresql-ha-1 -- psql -U postgres -c "ALTER DATABASE \"vps-management\" OWNER TO vps;"
+   ```
+
+2. **Verify database ownership**:
+   ```bash
+   kubectl exec -n postgres-db postgresql-ha-1 -- psql -U postgres -c "\l+"
+   ```
+
+3. **Test permissions**:
+   ```bash
+   # Test AI user
+   kubectl run -n nsp-alpha-murror-ai psql-ai-test --rm -i --tty --image=postgres:17 --restart=Never \
+     --env="PGPASSWORD=$(kubectl get secret -n postgres-db ai-secret -o jsonpath='{.data.password}' | base64 -d)" -- \
+     psql -h postgresql-ha-rw.postgres-db.svc.cluster.local -U ai -d murror-ai \
+     -c "CREATE TABLE _test (id serial); DROP TABLE _test; SELECT 'Success';"
+
+   # Test BE user
+   kubectl run -n nsp-alpha-murror psql-test --rm -i --tty --image=postgres:17 --restart=Never \
+     --env="PGPASSWORD=$(kubectl get secret -n postgres-db be-secret -o jsonpath='{.data.password}' | base64 -d)" -- \
+     psql -h postgresql-ha-rw.postgres-db.svc.cluster.local -U be -d murror-be \
+     -c "CREATE TABLE _test (id serial); DROP TABLE _test; SELECT 'Success';"
+   ```
+
+4. **Restart migration pods** to trigger migrations:
+   ```bash
+   # Delete failed migration jobs
+   kubectl delete job -n nsp-alpha-murror-ai murror-ai-migration-coordinator
+   kubectl delete job -n nsp-alpha-murror murror-migration-coordinator
+   ```
+
+**Prevention**: The cluster configuration (`database/postgresql/clusters/dev/cluster.yaml`) has been updated to automatically assign database ownership during cluster creation. This fix will apply automatically on future cluster rebuilds.
+
+**Incident History**:
+- **2025-11-03 (Latest)**: Fixed database ownership for `ai` user in `murror-ai` database after AI migration coordinator failures
+- **2025-11-03**: Fixed schema ownership for `be` user in `murror-be` database
+- **Root Issue**: Databases created after cluster rebuild on 2025-11-02 had incorrect ownership
+
 ## Current External Access
 
 ### AI Team Access (Active)

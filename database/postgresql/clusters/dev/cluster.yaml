@@ -97,9 +97,19 @@ spec:
       database: default
       owner: dev
       encoding: UTF8
-      locale: en_US.UTF-8
+      localeCollate: en_US.UTF-8
+      localeCType: en_US.UTF-8
       secret:
         name: dev-secret
+      postInitApplicationSQL:
+        - CREATE DATABASE "murror-ai";
+        - CREATE DATABASE "murror-be";
+        - CREATE DATABASE "vps-management";
+        # Grant schema permissions to prevent "permission denied for schema public"
+        # PostgreSQL 15+ requires explicit grants for non-superuser roles
+        - ALTER DATABASE "murror-ai" OWNER TO ai;
+        - ALTER DATABASE "murror-be" OWNER TO be;
+        - ALTER DATABASE "vps-management" OWNER TO vps;
 
   # Image configuration
   imageCatalogRef:
@@ -110,42 +120,5 @@ spec:
 
   # Storage configuration
   storage:
-    storageClass: local-path
+    storageClass: longhorn
     size: 10Gi
-
----
-# Database definitions
-apiVersion: postgresql.cnpg.io/v1
-kind: Database
-metadata:
-  name: murror-ai
-  namespace: postgres-db
-spec:
-  name: murror-ai
-  owner: ai
-  cluster:
-    name: postgresql-ha
-
----
-apiVersion: postgresql.cnpg.io/v1
-kind: Database
-metadata:
-  name: murror-be
-  namespace: postgres-db
-spec:
-  name: murror-be
-  owner: be
-  cluster:
-    name: postgresql-ha
-
----
-apiVersion: postgresql.cnpg.io/v1
-kind: Database
-metadata:
-  name: vps-management
-  namespace: postgres-db
-spec:
-  name: vps-management
-  owner: vps
-  cluster:
-    name: postgresql-ha
