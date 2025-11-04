@@ -1,0 +1,12 @@
+# ClusterRole for listing namespaces
+# This allows developers to discover which namespaces exist in the cluster
+# Note: This only grants permission to LIST namespaces, not to access resources within them
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: namespace-lister
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs: ["get", "list", "watch"]

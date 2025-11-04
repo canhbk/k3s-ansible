@@ -18,7 +18,8 @@
   - Replaced ClusterRoleBinding with namespace-specific RoleBindings
   - Updated for post-vps7 removal (node removal does not affect RBAC)
   - Added explicit access control for namespaces: mu-43, mu-66, mu-69, mu-70, mu-81, nsp-alpha-murror, nsp-alpha-murror-ai
-  - Enhanced generate-mur-kubeconfig.sh with access verification
+  - Added namespace listing permission for discoverability (`kubectl get ns` now works)
+  - Enhanced generate-mur-kubeconfig.sh with access verification and namespace listing test
   - Updated README with comprehensive setup, troubleshooting, and maintenance guides
 
 ## 1.0.0

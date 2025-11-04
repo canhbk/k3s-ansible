@@ -18,8 +18,10 @@ This configuration uses **namespace-scoped Roles** instead of ClusterRoles to im
 
 This setup uses **namespace-specific RBAC** for enhanced security:
 - One ServiceAccount in `dev-access` namespace
-- One Role per target namespace (not ClusterRole)
-- One RoleBinding per target namespace (not ClusterRoleBinding)
+- One Role per target namespace (not ClusterRole) for resource access
+- One RoleBinding per target namespace (not ClusterRoleBinding) for resource access
+- One ClusterRole for namespace listing (discoverability)
+- One ClusterRoleBinding for namespace listing
 - Access is explicitly granted only to listed namespaces
 
 ## Components
@@ -28,6 +30,8 @@ This setup uses **namespace-specific RBAC** for enhanced security:
 - **mur-developers-secret.yaml**: ServiceAccount and token secret in the `dev-access` namespace
 - **dev-namespaces-reader-role.yaml**: Namespace-scoped Role defining read-only permissions
 - **dev-namespaces-reader-rolebindings.yaml**: RoleBindings for each target namespace
+- **namespace-lister-clusterrole.yaml**: ClusterRole for listing namespaces (discoverability)
+- **namespace-lister-clusterrolebinding.yaml**: ClusterRoleBinding for namespace listing
 - **generate-mur-kubeconfig.sh**: Script to generate the kubeconfig file
 
 ### Archived Files (Old Cluster-Wide Approach)
@@ -52,6 +56,10 @@ The following read-only permissions are granted:
 
 ### Networking
 - Ingresses, NetworkPolicies
+
+### Cluster-Level Permissions
+- **Namespaces**: List and get namespace information (for discoverability)
+  - Note: This allows seeing ALL namespaces in the cluster, but does NOT grant access to resources within them
 
 ## Setup Instructions
 
@@ -84,13 +92,19 @@ done
 kubectl apply -f dev-namespaces-reader-rolebindings.yaml
 ```
 
-6. Generate the kubeconfig:
+6. Apply namespace listing permissions (for discoverability):
+```bash
+kubectl apply -f namespace-lister-clusterrole.yaml
+kubectl apply -f namespace-lister-clusterrolebinding.yaml
+```
+
+7. Generate the kubeconfig:
 ```bash
 chmod +x generate-mur-kubeconfig.sh
 ./generate-mur-kubeconfig.sh
 ```
 
-7. Distribute the generated `mur-developers.kubeconfig.yaml` to developers.
+8. Distribute the generated `mur-developers.kubeconfig.yaml` to developers.
 
 ### Adding New Namespaces
 
@@ -153,6 +167,10 @@ kubectl config use-context mur-developers-context
 ## Example Commands
 
 ```bash
+# List all namespaces (discover which ones exist)
+kubectl --kubeconfig=mur-developers.kubeconfig.yaml get ns
+# Note: Shows ALL namespaces, but you can only access resources in: mu-*, nsp-alpha-murror*
+
 # List all pods in mu-43 namespace
 kubectl --kubeconfig=mur-developers.kubeconfig.yaml get pods -n mu-43
 
@@ -164,6 +182,9 @@ kubectl --kubeconfig=mur-developers.kubeconfig.yaml describe deployment -n mu-66
 
 # List all services in nsp-alpha-murror-ai
 kubectl --kubeconfig=mur-developers.kubeconfig.yaml get svc -n nsp-alpha-murror-ai
+
+# Find accessible namespaces
+kubectl --kubeconfig=mur-developers.kubeconfig.yaml get ns -o name | grep -E '(mu-|nsp-alpha-murror)'
 
 # Test access (should work for permitted namespaces)
 kubectl --kubeconfig=mur-developers.kubeconfig.yaml get pods -n mu-43
