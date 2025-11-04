@@ -12,7 +12,6 @@ secrets.yaml.local
 
 # Inventory files with sensitive data
 inventory.*.local.yml
-inventory.dev.yml
 inventory.prod.yml
 inventory.vn.yml
 inventory.vn-2.yml
@@ -33,3 +32,13 @@ longhorn/auth
 longhorn/basic-auth
 **/basic-auth-secret.yaml
 .idea/
+
+# Kubernetes kubeconfig files with tokens
+*.kubeconfig.yaml
+**/kubeconfig.yaml
+**/kubeconfig
+**/*.kubeconfig
+
+# Kubernetes secrets and tokens
+**/secrets/
+**/*-token.yaml
