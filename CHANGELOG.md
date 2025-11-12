@@ -1,5 +1,21 @@
 # `k3s-ansible` changelog (`k3s.orchestration`)
 
+## 2025-11-12
+
+### Fixed
+
+- **rabbitmq/VN cluster**: Fixed SSL certificate error (Cloudflare Error 526) for rabbitmq.ambercare.app
+  - Root cause: RabbitMQ was using Let's Encrypt staging certificates which are not trusted by browsers or Cloudflare
+  - Initial Helm upgrade to chart 16.0.14 caused ImagePullBackOff (image not available in public registry)
+  - Solution: Rolled back to revision 1 (chart 16.0.11, app 4.1.2) which uses available image
+  - Updated ingress annotation from `ambercare-app-staging` to `ambercare-app` (production)
+  - Deleted old staging certificate and secret, forcing regeneration with production issuer
+  - New production certificate successfully issued by Let's Encrypt R12
+  - Certificate valid from Nov 12 2025 to Feb 10 2026
+  - Current deployment: Chart 16.0.11, App Version 4.1.2, Revision 3 (rolled back)
+  - Created comprehensive documentation at `docs/clusters/vn/RABBITMQ.md`
+  - Created VN-specific configuration directory structure at `rabbitmq/clusters/vn/`
+
 ## 2025-11-04
 
 ### Changed
