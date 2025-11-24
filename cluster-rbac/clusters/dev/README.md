@@ -55,9 +55,9 @@ To add a new RBAC configuration:
 
 ## Cluster Information
 
-- **Master Node**: vps5-h2cloud-vn (163.61.110.117)
-- **API Endpoint**: https://163.61.110.117:6443
+- **Master Node**: vps5-h2cloud-vn (180.93.96.54)
+- **API Endpoint**: https://180.93.96.54:6443
 - **Context Name**: dev
 - **Worker Nodes**: 5 nodes (vps12, vps13, vps16, vps17, vps18)
 
-Last updated: 2025-11-04
+Last updated: 2025-11-24 (IP changes from VPS provider)

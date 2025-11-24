@@ -25,7 +25,8 @@
 
 - **Deployment**: `redisinsight` (1/1 replicas)
 - **Service**: `redisinsight-service` (LoadBalancer)
-- **External IPs**: 160.191.245.234, 160.250.136.247, 163.61.110.117, 163.61.110.120
+- **External IPs**: Will be reassigned after cluster redeployment (updated 2025-11-24)
+  - Expected new IPs: 180.93.96.54, 180.93.96.10, 180.93.96.15, 180.93.96.101, 160.191.245.234, 160.191.245.244
 - **Port**: 80 (NodePort: 32090)
 - **Authentication**: Basic auth via `basic-auth` secret
 - **Preconfigured Connections**:

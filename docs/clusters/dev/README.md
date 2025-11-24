@@ -1,6 +1,6 @@
 # Development Cluster (dev)
 
-*Last Updated: 2025-10-18 (Node vps15 removed from cluster)*
+*Last Updated: 2025-11-24 (VPS provider changed IPs for 4 nodes)*
 
 ## Overview
 
@@ -9,22 +9,43 @@ The development cluster serves as the primary environment for development, testi
 ## Cluster Information
 
 - **Context Name**: `dev`
-- **API Endpoint**: <https://154.26.131.23:6443>
+- **API Endpoint**: <https://180.93.96.54:6443>
 - **Environment**: Development
 - **Security Level**: Relaxed (see [Security Guidelines](../../SECURITY_GUIDELINES.md#-development-environment))
-- **Primary Region**: US
+- **Primary Region**: Vietnam
 
 ## Node Configuration
 
-| Node | Role | IP Address | Resources | Special Labels |
-|------|------|------------|-----------|----------------|
-| vps7 | control-plane, master | 154.26.131.23 | Ubuntu 20.04.5 LTS | - |
-| vps16-h2cloud-vn | worker | 160.191.245.234 | Ubuntu 24.04 LTS | - |
-| vps17-h2cloud-vn | worker | 163.61.110.120 | Ubuntu 22.04.2 LTS | - |
-| vps5-h2cloud-vn | worker | 163.61.110.117 | Ubuntu 22.04.2 LTS | - |
-| vps18-h2cloud-vn | worker | 160.250.136.247 | Ubuntu 22.04.2 LTS | - |
-| vps12-h2cloud-vn | worker | 103.157.204.15 | Ubuntu 22.04.2 LTS | - |
-| vps13-h2cloud-vn | worker | 160.191.245.244 | Ubuntu 24.04 LTS | - |
+| Node | Role | IP Address | OS Version | Resources |
+|------|------|------------|------------|-----------|
+| vps5-h2cloud-vn | control-plane, master | 180.93.96.54 | Ubuntu 22.04.2 LTS | 4 CPU, 8GB RAM |
+| vps12-h2cloud-vn | worker | 180.93.96.10 | Ubuntu 22.04.2 LTS | 4 CPU, 8GB RAM |
+| vps13-h2cloud-vn | worker | 160.191.245.244 | Ubuntu 24.04 LTS | 4 CPU, 8GB RAM |
+| vps16-h2cloud-vn | worker | 160.191.245.234 | Ubuntu 24.04 LTS | 4 CPU, 8GB RAM |
+| vps17-h2cloud-vn | worker | 180.93.96.15 | Ubuntu 22.04.2 LTS | 4 CPU, 8GB RAM |
+| vps18-h2cloud-vn | worker | 180.93.96.101 | Ubuntu 22.04.2 LTS | 4 CPU, 8GB RAM |
+
+## Recent Changes
+
+### 2025-11-24: VPS Provider IP Changes
+- **IP Changes**: VPS provider changed IPs for 4 nodes (vps5, vps12, vps17, vps18)
+  - vps5-h2cloud-vn: 163.61.110.117 → **180.93.96.54** (Master)
+  - vps12-h2cloud-vn: 103.157.204.15 → **180.93.96.10**
+  - vps17-h2cloud-vn: 163.61.110.120 → **180.93.96.15**
+  - vps18-h2cloud-vn: 160.250.136.247 → **180.93.96.101**
+- **API endpoint** changed from `163.61.110.117:6443` to `180.93.96.54:6443`
+- **LoadBalancer IPs** updated for all affected services
+- **Status**: Configuration updated, pending cluster redeployment when new IPs are accessible
+
+### 2025-11-02: Master Node Migration & Cluster Optimization
+- **Master node** transferred from `vps7` (154.26.131.23) to `vps5-h2cloud-vn` (163.61.110.117)
+- **vps7 removed** from cluster (old Ubuntu 20.04.5 node retired)
+- Cluster completely rebuilt with clean K3s installation
+- API endpoint changed from `154.26.131.23:6443` to `163.61.110.117:6443`
+- **vps16 and vps13** automatically rejoined after network issue resolved
+- All core services restored: PostgreSQL, InfluxDB, Redis (standalone), RabbitMQ, Prometheus, Grafana, Rancher
+- **Data loss**: All previous data in local-path volumes was lost during rebuild
+- **Final cluster**: 6 nodes (1 master + 5 workers) - all Ubuntu 22.04 or 24.04
 
 ## Storage Configuration
 
@@ -46,13 +67,12 @@ The development cluster serves as the primary environment for development, testi
 
 The cluster has multiple external IPs available for LoadBalancer services:
 
-- 154.26.131.23 (Primary - also control plane)
-- 160.191.245.234
-- 163.61.110.120
-- 163.61.110.117
-- 160.250.136.247
-- 103.157.204.15
-- 160.191.245.244
+- 180.93.96.54 (Primary - control plane node)
+- 180.93.96.10 (Worker - vps12)
+- 160.191.245.234 (Worker - vps16)
+- 160.191.245.244 (Worker - vps13)
+- 180.93.96.15 (Worker - vps17)
+- 180.93.96.101 (Worker - vps18)
 
 ### Ingress Domains
 
@@ -66,6 +86,7 @@ Common development domains:
 - `influxdb.dev.k3s.canhnv.com` - InfluxDB time-series database
 - `grafana.dev.k3s.canhnv.com` - Grafana dashboards
 - `prometheus.dev.k3s.canhnv.com` - Prometheus metrics
+- `dev.rabbitmq.ambercare.app` - RabbitMQ Management UI
 
 ## Key Services
 
@@ -90,7 +111,11 @@ Common development domains:
 #### RabbitMQ (rabbitmq namespace)
 
 - Message broker for async communication
-- Management UI at `dev.rabbitmq.ambercare.app`
+- **Version**: RabbitMQ 3.13 with Management plugin
+- **Management UI**: `https://dev.rabbitmq.ambercare.app` (HTTPS enabled)
+- **Internal AMQP**: `amqp://admin:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/`
+- **Storage**: 2Gi local-path
+- **Documentation**: [RabbitMQ Details](./RABBITMQ.md)
 
 #### InfluxDB (influxdb namespace)
 
@@ -308,6 +333,34 @@ See [PostgreSQL Documentation](./POSTGRESQL.md) for detailed database access ins
    kubectl describe pvc -n namespace pvc-name
    ```
 
+4. **Metrics API not available** (error: Metrics API not available)
+
+   **Symptom**: `kubectl top node` or `kubectl top pod` returns "error: Metrics API not available"
+
+   **Cause**: Metrics Server pod failing to reach kubelet due to TLS certificate verification issues
+
+   **Solution**: Add `--kubelet-insecure-tls` flag to metrics-server deployment
+
+   ```bash
+   # Patch the metrics-server deployment
+   kubectl patch deployment metrics-server -n kube-system --type='json' \
+     -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+
+   # Force delete any stuck pods
+   kubectl delete pod -n kube-system -l k8s-app=metrics-server --force --grace-period=0
+
+   # Verify the fix
+   kubectl get pods -n kube-system -l k8s-app=metrics-server
+   kubectl top node
+   ```
+
+   **Verification**:
+   - Metrics Server pod should be Running and Ready (1/1)
+   - APIService should show as Available: `kubectl get apiservice v1beta1.metrics.k8s.io`
+   - `kubectl top node` and `kubectl top pod` commands should work
+
+   *Note: This is safe in development environments where kubelet uses self-signed certificates*
+
 ### Useful Commands
 
 ```bash
@@ -335,6 +388,7 @@ kubectl cp namespace/pod-name:/path/to/file ./local-file
 ## Related Documentation
 
 - [PostgreSQL Setup](./POSTGRESQL.md)
+- [RabbitMQ Setup](./RABBITMQ.md)
 - [Service Configurations](./SERVICES.md)
 - [Security Guidelines for Dev](../../SECURITY_GUIDELINES.md#-development-environment)
 - [Infrastructure Overview](../../INFRASTRUCTURE.md)

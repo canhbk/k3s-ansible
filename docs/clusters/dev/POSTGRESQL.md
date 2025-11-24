@@ -21,7 +21,7 @@ The development cluster runs a PostgreSQL HA instance using CloudNative PG opera
 | postgresql-ha-rw | ClusterIP | Read-Write (Primary) | postgresql-ha-rw.postgres-db.svc.cluster.local:5432 |
 | postgresql-ha-ro | ClusterIP | Read-Only | postgresql-ha-ro.postgres-db.svc.cluster.local:5432 |
 | postgresql-ha-r | ClusterIP | Read Replicas | postgresql-ha-r.postgres-db.svc.cluster.local:5432 |
-| postgres-murror-ai | LoadBalancer | AI Team External Access | 154.26.131.23:5432 (and 6 other IPs) |
+| postgres-murror-ai | LoadBalancer | AI Team External Access | Will be assigned after cluster redeployment |
 | postgres-murror-be-nodeport | NodePort | BE Team External Access | Any node IP:30543 |
 
 ### Databases and Users
@@ -421,8 +421,9 @@ LINE 2:   CREATE TABLE IF NOT EXISTS migration_coordination (
 - **Created**: 2025-07-31
 - **Database**: murror-ai only
 - **User**: ai
-- **External IPs**: 154.26.131.23, 154.38.172.89, 209.126.10.183, 46.250.232.10, 5.104.86.195
+- **External IPs**: Will be reassigned after cluster redeployment (previous: 154.26.131.23, 154.38.172.89, 209.126.10.183, 46.250.232.10, 5.104.86.195)
 - **Purpose**: AI team development with pgvector
+- **Note**: Service will get new IPs from updated node pool: 180.93.96.54, 180.93.96.10, 180.93.96.15, 180.93.96.101, 160.191.245.234, 160.191.245.244
 
 To remove this access:
 
@@ -438,19 +439,18 @@ kubectl delete svc -n postgres-db postgres-murror-ai
 - **Database**: murror-be
 - **User**: be
 - **NodePort**: 30543
-- **External Access**: Available on all node IPs at port 30543
-  - 154.26.131.23:30543
-  - 46.250.232.10:30543
-  - 5.104.86.195:30543
-  - 160.191.245.234:30543
-  - 163.61.110.120:30543
-  - 160.250.136.247:30543
-  - 163.61.110.117:30543
+- **External Access**: Available on all node IPs at port 30543 (updated 2025-11-24)
+  - 180.93.96.54:30543 (vps5 - master)
+  - 180.93.96.10:30543 (vps12)
+  - 180.93.96.15:30543 (vps17)
+  - 180.93.96.101:30543 (vps18)
+  - 160.191.245.234:30543 (vps16)
+  - 160.191.245.244:30543 (vps13)
 - **Purpose**: Backend team development access
 
-Connection string example:
+Connection string example (use any available node IP):
 ```
-postgresql://be:__REDACTED__@154.26.131.23:30543/murror-be?schema=public
+postgresql://be:__REDACTED__@180.93.96.54:30543/murror-be?schema=public
 ```
 
 To remove this access:
