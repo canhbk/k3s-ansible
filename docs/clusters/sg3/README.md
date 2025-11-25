@@ -412,3 +412,84 @@ open https://rancher.sg3.canhnv.com
 **First login**: Username `admin`, Password `admin` (will be prompted to change)
 
 See [Rancher SG3 Documentation](../../../apps/rancher/clusters/sg3/README.md) for details.
+
+## Monitoring Stack
+
+### Prometheus and Grafana
+
+**Deployed**: November 25, 2025
+**Namespace**: monitoring
+**Helm Chart**: kube-prometheus-stack
+
+#### Components
+
+- **Prometheus**: Metrics collection and time-series storage
+- **Grafana**: Visualization and dashboards
+- **Alertmanager**: Alert routing and management
+- **Node Exporter**: System metrics from all 8 nodes
+- **kube-state-metrics**: Kubernetes object metrics
+- **Prometheus Operator**: CRD management
+
+#### Storage Configuration
+
+All monitoring data uses **Longhorn distributed storage** with 3 replicas for high availability:
+
+| Component | Storage | Storage Class | Retention |
+|-----------|---------|---------------|-----------|
+| Prometheus | 25Gi | longhorn | 15 days |
+| Grafana | 25Gi | longhorn | Persistent |
+| Alertmanager | 25Gi | longhorn | Persistent |
+
+**Total**: 75Gi logical (225Gi raw with replication)
+
+#### Access Information
+
+**Grafana**:
+- URL: https://grafana.sg3.k3s.canhnv.com
+- Username: `admin`
+- Get password:
+  ```bash
+  kubectl get secret -n monitoring kube-prometheus-stack-grafana \
+    -o jsonpath="{.data.admin-password}" | base64 -d && echo
+  ```
+
+**Prometheus**:
+- External URL: https://prometheus.sg3.k3s.canhnv.com
+- Port forward:
+  ```bash
+  kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
+  ```
+
+**Alertmanager**:
+- Port forward:
+  ```bash
+  kubectl port-forward -n monitoring svc/kube-prometheus-stack-alertmanager 9093:9093
+  ```
+
+#### Monitored Services
+
+The monitoring stack automatically collects metrics from:
+- All 8 cluster nodes (CPU, memory, disk, network)
+- Kubernetes components (API server, kubelet, CoreDNS)
+- Longhorn storage system (volume health, performance)
+- Rancher management plane
+- All deployed applications with ServiceMonitor labels
+
+#### Operations
+
+```bash
+# Check monitoring stack status
+kubectl get pods -n monitoring
+
+# Verify PVCs
+kubectl get pvc -n monitoring
+
+# Check Longhorn volumes
+kubectl get volumes -n longhorn-system | grep monitoring
+
+# View logs
+kubectl logs -n monitoring -l app.kubernetes.io/name=prometheus
+kubectl logs -n monitoring -l app.kubernetes.io/name=grafana
+```
+
+See [Monitoring SG3 Documentation](../../../monitoring/clusters/sg3/README.md) for detailed information.

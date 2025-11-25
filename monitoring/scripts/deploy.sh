@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 if [ -z "$1" ]; then
     echo -e "${RED}Error: Cluster name is required${NC}"
     echo "Usage: $0 <cluster-name>"
-    echo "Available clusters: dev, eu, jp, sg, sg2, us, vn, vn2"
+    echo "Available clusters: dev, eu, jp, sg, sg2, sg3, us, vn, vn2"
     exit 1
 fi
 

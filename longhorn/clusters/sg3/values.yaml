@@ -40,8 +40,9 @@ ingress:
 
 metrics:
   serviceMonitor:
-    enabled: false
+    enabled: true
     additionalLabels:
       cluster: sg3
       environment: production
       region: singapore
+      prometheus: kube-prometheus-stack

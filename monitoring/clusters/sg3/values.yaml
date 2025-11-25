@@ -1,0 +1,153 @@
+# SG3 cluster values for kube-prometheus-stack
+# Custom sizing with Longhorn distributed storage
+
+# Global labels to identify this cluster
+global:
+  additionalLabels:
+    cluster: sg3
+    environment: production
+    region: singapore
+    provider: ovh
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # External labels for federation/remote write
+    externalLabels:
+      cluster: sg3
+      environment: production
+      region: singapore
+      provider: ovh
+
+    # Production resource limits (custom sizing)
+    resources:
+      requests:
+        cpu: 1
+        memory: 2Gi
+      limits:
+        cpu: 2
+        memory: 4Gi
+
+    # Longhorn distributed storage - 25Gi per replica
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 25Gi
+
+    # Retention settings optimized for 25Gi storage
+    retention: 15d
+    retentionSize: 20GB
+
+    # Single replica (Longhorn provides data durability)
+    replicas: 1
+
+    # Enable Longhorn ServiceMonitor discovery
+    serviceMonitorSelector:
+      matchLabels:
+        prometheus: kube-prometheus-stack
+    serviceMonitorNamespaceSelector: {}
+
+# Grafana configuration
+grafana:
+  # Set the external URL
+  grafana.ini:
+    server:
+      domain: grafana.sg3.k3s.canhnv.com
+      root_url: "https://grafana.sg3.k3s.canhnv.com/"
+
+  # Production resources (custom sizing)
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  # Longhorn persistence - 25Gi
+  persistence:
+    enabled: true
+    storageClassName: longhorn
+    size: 25Gi
+
+  # Single replica for now
+  replicas: 1
+
+# Alertmanager configuration
+alertmanager:
+  alertmanagerSpec:
+    # Longhorn storage - 25Gi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 25Gi
+
+    # Production resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+    # Single replica
+    replicas: 1
+
+  # Production alerting config
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'production-alerts'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'critical-alerts'
+      - match:
+          alertname: Watchdog
+        receiver: 'null'
+    receivers:
+    - name: 'null'
+    - name: 'production-alerts'
+      # TODO: Configure notification channels (Slack, email, etc.)
+    - name: 'critical-alerts'
+      # TODO: Configure critical alert channels
+
+# Node exporter for production
+nodeExporter:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# kube-state-metrics
+kubeStateMetrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# Additional ServiceMonitors (Longhorn will be auto-discovered)
+additionalServiceMonitors: []
+
+# Cluster-specific labels
+commonLabels:
+  cluster: sg3
+  monitoring: kube-prometheus
