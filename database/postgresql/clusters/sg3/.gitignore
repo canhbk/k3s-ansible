@@ -1,0 +1,4 @@
+# Exclude sensitive files
+secrets-sg3.yaml
+*-secret.yaml
+*.secret.yaml

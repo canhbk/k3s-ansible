@@ -1,0 +1,25 @@
+# Prometheus ScrapeConfig for PostgreSQL sg3 cluster
+# This configures Prometheus to scrape metrics from CNPG PostgreSQL pods
+#
+# Apply: kubectl apply -f prometheus-scrapeconfig.yaml
+
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: postgresql-sg3-pgvector
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+spec:
+  staticConfigs:
+  - targets:
+    - postgresql-sg3-pgvector-1.postgres-db.svc.cluster.local:9187
+    - postgresql-sg3-pgvector-2.postgres-db.svc.cluster.local:9187
+    - postgresql-sg3-pgvector-3.postgres-db.svc.cluster.local:9187
+    labels:
+      cluster: postgresql-sg3-pgvector
+      namespace: postgres-db
+
+  metricsPath: /metrics
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
