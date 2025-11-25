@@ -1,6 +1,6 @@
 # Makefile for Longhorn multi-cluster deployment
 
-.PHONY: help deploy-dev deploy-vn deploy-us deploy-eu deploy-all dry-run-dev dry-run-vn dry-run-us dry-run-eu status-dev status-vn status-us status-eu uninstall-dev uninstall-vn uninstall-us uninstall-eu
+.PHONY: help deploy-dev deploy-vn deploy-us deploy-eu deploy-sg3 deploy-all dry-run-dev dry-run-vn dry-run-us dry-run-eu dry-run-sg3 status-dev status-vn status-us status-eu status-sg3 uninstall-dev uninstall-vn uninstall-us uninstall-eu uninstall-sg3
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  make deploy-vn       - Deploy Longhorn to vn cluster"
 	@echo "  make deploy-us       - Deploy Longhorn to us cluster"
 	@echo "  make deploy-eu       - Deploy Longhorn to eu cluster"
+	@echo "  make deploy-sg3      - Deploy Longhorn to sg3 cluster"
 	@echo "  make deploy-all      - Deploy to all configured clusters"
 	@echo ""
 	@echo "Dry run targets:"
@@ -19,18 +20,21 @@ help:
 	@echo "  make dry-run-vn      - Dry run deployment for vn cluster"
 	@echo "  make dry-run-us      - Dry run deployment for us cluster"
 	@echo "  make dry-run-eu      - Dry run deployment for eu cluster"
+	@echo "  make dry-run-sg3     - Dry run deployment for sg3 cluster"
 	@echo ""
 	@echo "Status targets:"
 	@echo "  make status-dev      - Check Longhorn status in dev cluster"
 	@echo "  make status-vn       - Check Longhorn status in vn cluster"
 	@echo "  make status-us       - Check Longhorn status in us cluster"
 	@echo "  make status-eu       - Check Longhorn status in eu cluster"
+	@echo "  make status-sg3      - Check Longhorn status in sg3 cluster"
 	@echo ""
 	@echo "Uninstall targets:"
 	@echo "  make uninstall-dev   - Uninstall Longhorn from dev cluster"
 	@echo "  make uninstall-vn    - Uninstall Longhorn from vn cluster"
 	@echo "  make uninstall-us    - Uninstall Longhorn from us cluster"
 	@echo "  make uninstall-eu    - Uninstall Longhorn from eu cluster"
+	@echo "  make uninstall-sg3   - Uninstall Longhorn from sg3 cluster"
 	@echo ""
 	@echo "Maintenance targets:"
 	@echo "  make update-repo     - Update Helm repository"
@@ -80,8 +84,13 @@ deploy-eu: update-repo
 	@echo "Deploying Longhorn to eu cluster..."
 	@./scripts/deploy.sh -c eu -v $(CHART_VERSION)
 
+# Deploy to sg3 cluster
+deploy-sg3: update-repo
+	@echo "Deploying Longhorn to sg3 cluster..."
+	@./scripts/deploy.sh -c sg3 -v $(CHART_VERSION)
+
 # Deploy to all clusters
-deploy-all: deploy-dev deploy-vn deploy-us deploy-eu
+deploy-all: deploy-dev deploy-vn deploy-us deploy-eu deploy-sg3
 	@echo "Deployment to all clusters completed"
 
 # Dry run for dev cluster
@@ -103,6 +112,11 @@ dry-run-us:
 dry-run-eu:
 	@echo "Running dry-run for eu cluster..."
 	@./scripts/deploy.sh -c eu -v $(CHART_VERSION) -d
+
+# Dry run for sg3 cluster
+dry-run-sg3:
+	@echo "Running dry-run for sg3 cluster..."
+	@./scripts/deploy.sh -c sg3 -v $(CHART_VERSION) -d
 
 # Check status for dev cluster
 status-dev:
@@ -156,6 +170,19 @@ status-eu:
 	@echo "\n=== Ingress ==="
 	@kubectl -n $(NAMESPACE) get ingress
 
+# Check status for sg3 cluster
+status-sg3:
+	@echo "Checking Longhorn status in sg3 cluster..."
+	@kubectl config use-context sg3
+	@echo "\n=== Longhorn Pods ==="
+	@kubectl -n $(NAMESPACE) get pods
+	@echo "\n=== Storage Classes ==="
+	@kubectl get storageclass | grep longhorn || echo "No Longhorn storage classes found"
+	@echo "\n=== Persistent Volumes ==="
+	@kubectl get pv | grep longhorn || echo "No Longhorn volumes found"
+	@echo "\n=== Ingress ==="
+	@kubectl -n $(NAMESPACE) get ingress
+
 # Uninstall from dev cluster
 uninstall-dev:
 	@echo "WARNING: This will uninstall Longhorn from dev cluster!"
@@ -199,6 +226,17 @@ uninstall-eu:
 	@kubectl delete -f clusters/eu/storageclass.yaml || true
 	@kubectl delete -f clusters/eu/ingress.yaml || true
 	@echo "Longhorn uninstalled from eu cluster"
+
+# Uninstall from sg3 cluster
+uninstall-sg3:
+	@echo "WARNING: This will uninstall Longhorn from sg3 cluster!"
+	@echo "Press Ctrl+C to cancel, or Enter to continue..."
+	@read confirm
+	@kubectl config use-context sg3
+	@helm uninstall $(HELM_RELEASE) -n $(NAMESPACE)
+	@kubectl delete -f clusters/sg3/storageclass.yaml || true
+	@kubectl delete -f clusters/sg3/ingress.yaml || true
+	@echo "Longhorn uninstalled from sg3 cluster"
 
 # Install prerequisites
 install-prereq:

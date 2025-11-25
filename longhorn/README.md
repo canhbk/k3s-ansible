@@ -179,9 +179,11 @@ kubectl apply -f clusters/dev/ingress.yaml
 
 After deployment, access the Longhorn UI:
 
-- **Dev**: https://dev.longhorn.canhnv.com
-- **VN**: https://vn.longhorn.canhnv.com
-- **[Other clusters]**: https://[cluster].longhorn.canhnv.com
+- **Dev**: https://dev.longhorn.canhnv.com (7 nodes)
+- **VN**: https://vn.longhorn.canhnv.com (1 node)
+- **US**: https://us.longhorn.canhnv.com (2 nodes)
+- **EU**: https://eu.longhorn.canhnv.com (2 nodes)
+- **SG3**: https://sg3.longhorn.canhnv.com (8 nodes)
 
 Default credentials (basic auth):
 - Username: `admin`

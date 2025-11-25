@@ -31,7 +31,7 @@ Usage: $0 -c CLUSTER [-n NAMESPACE] [-d] [-v VERSION]
 Deploy Longhorn to a specific Kubernetes cluster
 
 Options:
-    -c CLUSTER      Cluster name (required: dev, vn, eu, jp, sg, sg2, us, vn2)
+    -c CLUSTER      Cluster name (required: dev, vn, eu, jp, sg, sg2, sg3, us, vn2)
     -n NAMESPACE    Namespace to deploy to (default: longhorn-system)
     -d              Dry run mode
     -v VERSION      Chart version (default: 1.9.1)
@@ -65,7 +65,7 @@ if [ -z "$CLUSTER" ]; then
 fi
 
 # Check if cluster is valid
-VALID_CLUSTERS=("dev" "vn" "eu" "jp" "sg" "sg2" "us" "vn2")
+VALID_CLUSTERS=("dev" "vn" "eu" "jp" "sg" "sg2" "sg3" "us" "vn2")
 if [[ ! " ${VALID_CLUSTERS[@]} " =~ " ${CLUSTER} " ]]; then
     print_error "Invalid cluster: $CLUSTER"
     print_error "Valid clusters: ${VALID_CLUSTERS[*]}"

@@ -17,6 +17,13 @@ Rancher is a complete container management platform for Kubernetes, providing cl
 - **Replicas**: 1 (scaled down due to pod stability issues)
 - **Configuration**: [clusters/dev/values.yaml](./clusters/dev/values.yaml)
 
+### SG3 Cluster
+
+- **Context**: `sg3`
+- **Hostname**: `rancher.sg3.canhnv.com`
+- **Replicas**: 3 (HA configuration)
+- **Configuration**: [clusters/sg3/values.yaml](./clusters/sg3/values.yaml)
+
 ## Installation
 
 ### Prerequisites

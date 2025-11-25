@@ -11,6 +11,7 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 | jp | Production | `jp` | <https://84.247.152.54:6443> | Japan Production Services | Asia-Pacific |
 | sg | Production | `sg` | <https://46.250.232.0:6443> | Singapore Production Services | Asia-Pacific |
 | sg2 | Production | `sg2` | <https://46.250.231.255:6443> | Singapore Secondary Services | Asia-Pacific |
+| sg3 | Production | `sg3` | <https://15.235.211.39:6443> | Singapore OVH Production Services | Asia-Pacific |
 | us | Production | `us` | <https://65.49.60.35:6443> | US Production Services | North America |
 | vn | Production | `vn` | <https://vps22.canhnv.com:6443> | Vietnam Production Services | Asia-Pacific |
 | vn2 | Production | `vn2` | <https://163.61.73.78:6443> | Vietnam Secondary Services | Asia-Pacific |
@@ -60,6 +61,27 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 - **Security Level**: Strict
 - **Default Namespace**: `nsp-p-ambercare`
 - **Key Services**: Ambercare production workloads
+
+#### SG3 Cluster (Singapore OVH)
+
+- **Purpose**: OVH Singapore production services
+- **Security Level**: Strict
+- **Provider**: OVH Cloud
+- **Cluster Configuration**:
+  - 3 Control Plane Nodes: vps51 (10.10.0.51), vps52 (10.10.0.52), vps54 (10.10.0.54)
+  - 5 Agent Nodes: vps50 (10.10.0.50), vps53 (10.10.0.53), vps55 (10.10.0.55), vps56 (10.10.0.56), vps57 (10.10.0.57)
+- **Network Configuration**:
+  - Pod CIDR: 10.54.0.0/16
+  - Service CIDR: 10.55.0.0/16
+  - Cluster DNS: 10.55.0.10
+  - Wireguard mesh network over wg0 interface
+  - Wireguard IPs: 10.10.0.50-57
+- **K3s Version**: v1.32.5+k3s1
+- **OS**: Ubuntu 24.04.3 LTS
+- **Setup Method**: k3sup
+- **API Endpoint**: <https://15.235.211.39:6443>
+- **Region Label**: `region=sg3`
+- **Created**: 2025-11-24
 
 #### US Cluster
 

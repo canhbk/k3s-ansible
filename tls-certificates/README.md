@@ -39,9 +39,13 @@ tls-certificates/
     │   ├── install-cert-manager.sh          # Install cert-manager
     │   └── install-issuers.sh               # Install all issuers
     ├── eu/
+    ├── jp/
+    ├── sg/
+    ├── sg2/
+    ├── sg3/
     ├── us/
     ├── vn/
-    └── [other clusters...]
+    └── vn2/
 ```
 
 ## Supported Domains
@@ -93,6 +97,16 @@ For US cluster:
 
 # Install all ClusterIssuers
 ./clusters/us/install-issuers.sh
+```
+
+For SG3 cluster:
+
+```bash
+# Install cert-manager (if not already installed)
+./clusters/sg3/install-cert-manager.sh
+
+# Install all ClusterIssuers
+./clusters/sg3/install-issuers.sh
 ```
 
 ## Usage in Kubernetes
@@ -202,6 +216,16 @@ kubectl describe certificate <cert-name> -n <namespace>
 ```bash
 kubectl get secret -n cert-manager
 kubectl get secret <tls-secret-name> -n <namespace>
+```
+
+### Check All Clusters
+
+```bash
+# Check all clusters
+for cluster in dev eu jp sg sg2 sg3 us vn vn2; do
+  kubectl config use-context $cluster
+  kubectl get clusterissuer
+done
 ```
 
 ## Troubleshooting

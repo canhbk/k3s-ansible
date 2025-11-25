@@ -3,7 +3,7 @@
 # Deploy canhnv.com ClusterIssuer to all K3s clusters
 set -e
 
-CLUSTERS=("dev" "eu" "jp" "sg" "sg2" "us" "vn" "vn2")
+CLUSTERS=("dev" "eu" "jp" "sg" "sg2" "sg3" "us" "vn" "vn2")
 FAILED_CLUSTERS=()
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
