@@ -1,0 +1,28 @@
+# RabbitMQ Management UI Ingress for SG3 Cluster
+# Access via: https://rabbitmq.sg3.canhnv.com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rabbitmq-management
+  namespace: rabbitmq
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - rabbitmq.sg3.canhnv.com
+      secretName: rabbitmq.sg3.canhnv.com-tls
+  rules:
+    - host: rabbitmq.sg3.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq
+                port:
+                  number: 15672
