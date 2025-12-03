@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: influxdb
+  namespace: influxdb
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - influxdb.sg3.k3s.canhnv.com
+    secretName: influxdb-sg3-tls
+  rules:
+  - host: influxdb.sg3.k3s.canhnv.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: influxdb-influxdb2
+            port:
+              number: 8086

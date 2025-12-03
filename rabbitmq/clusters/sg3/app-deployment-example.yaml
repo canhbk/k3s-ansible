@@ -1,0 +1,63 @@
+---
+# Example: How to use RabbitMQ connection in your application deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: your-app
+  namespace: default  # Change to your namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: your-app
+  template:
+    metadata:
+      labels:
+        app: your-app
+    spec:
+      containers:
+      - name: app
+        image: your-app-image:latest
+        ports:
+        - containerPort: 8000
+
+        # Method 1: Load all environment variables from secret
+        envFrom:
+        - secretRef:
+            name: rabbitmq-connection
+
+        # Method 2: Load specific variables (uncomment to use)
+        # env:
+        # - name: RABBITMQ_URL
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: rabbitmq-connection
+        #       key: RABBITMQ_URL
+        # - name: RABBITMQ_HOST
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: rabbitmq-connection
+        #       key: RABBITMQ_HOST
+        # - name: RABBITMQ_PORT
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: rabbitmq-connection
+        #       key: RABBITMQ_PORT
+        # - name: RABBITMQ_USERNAME
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: rabbitmq-connection
+        #       key: RABBITMQ_USERNAME
+        # - name: RABBITMQ_PASSWORD
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: rabbitmq-connection
+        #       key: RABBITMQ_PASSWORD
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi

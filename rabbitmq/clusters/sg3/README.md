@@ -8,7 +8,16 @@ High-availability RabbitMQ deployment on the SG3 cluster using the **official Ra
 - **Storage**: 15Gi total (5Gi per replica, Longhorn)
 - **Domain**: https://rabbitmq.sg3.canhnv.com
 - **Deployment Date**: 2025-11-26
+- **Last Updated**: 2025-12-03 (upgraded to RabbitMQ 4.0.9)
 - **Deployment Method**: RabbitMQ Cluster Operator (official)
+
+## Quick Start for Applications
+
+**Need to connect your app to RabbitMQ?** See [CONNECTION_INFO.md](./CONNECTION_INFO.md) for:
+- Complete connection URLs and credentials
+- Kubernetes secret templates ready to use
+- Language-specific examples (Python, Node.js, Go, Java)
+- Testing and troubleshooting guides
 
 ## High Availability Features
 
