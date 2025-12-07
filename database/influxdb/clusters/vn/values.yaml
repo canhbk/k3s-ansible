@@ -1,0 +1,78 @@
+# VN cluster specific values for InfluxDB
+# This file overrides the base values
+
+# VN-specific admin configuration
+adminUser:
+  organization: "murror"
+  bucket: "production"
+  retention_policy: "60d"  # 2 months retention
+
+# Storage configuration for VN cluster
+persistence:
+  size: 20Gi  # Reduced from 30Gi due to storage constraints
+  storageClass: longhorn-vn  # Use Longhorn storage on vps33
+
+# Production resources
+resources:
+  requests:
+    memory: 1Gi
+    cpu: 500m
+  limits:
+    memory: 4Gi
+    cpu: 2000m
+
+# Production labels
+podLabels:
+  environment: production
+  cluster: vn
+
+# Production environment variables
+env:
+  - name: INFLUXDB_LOG_LEVEL
+    value: "warn"
+  - name: INFLUXDB_HTTP_LOG_ENABLED
+    value: "false"
+
+# Metrics for production monitoring
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    labels:
+      prometheus: kube-prometheus-stack
+      environment: production
+      cluster: vn
+
+# Node affinity and tolerations for vps33 storage node
+tolerations:
+- key: dedicated
+  operator: Equal
+  value: storage
+  effect: NoSchedule
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: longhorn
+          operator: In
+          values:
+          - "true"
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - influxdb2
+        topologyKey: kubernetes.io/hostname
+
+# Production backup configuration
+backup:
+  enabled: false  # Configure S3 backup if needed
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: 30  # Keep 30 days of backups
