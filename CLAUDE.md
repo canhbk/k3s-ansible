@@ -171,7 +171,7 @@ ansible-playbook playbooks/site.yml -i inventory.yml
 
 # Deploy with specific inventory
 ansible-playbook playbooks/site.yml -i inventory.prod.yml
-ansible-playbook playbooks/site.yml -i inventory.dev.yml
+ansible-playbook playbooks/site.yml -i inventory.dev.local.yml
 ansible-playbook playbooks/site.yml -i inventory.vn.yml
 ```
 
@@ -224,7 +224,7 @@ ansible-playbook playbooks/site.yml -i inventory.yml --limit server
 
 - **Inventory Files**: Multiple environment configurations
   - `inventory.yml`: Main inventory (copy from inventory-sample.yml)
-  - `inventory.prod.yml`, `inventory.dev.yml`: Environment-specific inventories
+  - `inventory.prod.yml`, `inventory.dev.local.yml`: Environment-specific inventories
   - `inventory.vn.yml`, `inventory.us.yml`: Region-specific deployments
 
 ### Key Configuration Patterns

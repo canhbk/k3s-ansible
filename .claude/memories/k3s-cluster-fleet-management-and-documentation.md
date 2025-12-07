@@ -20,7 +20,7 @@ The project manages **8 K3s clusters** across different environments and regions
 Each cluster has a corresponding inventory file:
 
 ```
-inventory.dev.yml
+inventory.dev.local.yml
 inventory.eu.yml
 inventory.jp.yml
 inventory.sg.yml

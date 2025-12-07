@@ -1,6 +1,7 @@
 # Code Style and Conventions
 
 ## Git Commit Rules
+
 - Follow conventional commit format (Angular team style)
 - Examples:
   - `feat(cluster): add new node configuration`
@@ -13,12 +14,14 @@
 - Do NOT use `git add .` - stage only relevant files
 
 ## File Organization
-- **Inventory Files**: Environment-specific (inventory.dev.yml, inventory.prod.yml, etc.)
+
+- **Inventory Files**: Environment-specific (inventory.dev.local.yml, inventory.prod.yml, etc.)
 - **Playbooks**: Located in `playbooks/` directory
 - **Roles**: Modular components in `roles/` directory
 - **Documentation**: Comprehensive docs in `docs/` directory
 
 ## Ansible Configuration
+
 - Uses `ansible.cfg` with specific settings
 - Default inventory: `./inventory.yml`
 - Roles path: `./roles`
@@ -26,18 +29,21 @@
 - Host key checking disabled for automation
 
 ## YAML Style
+
 - Standard YAML formatting for Ansible playbooks and Kubernetes manifests
 - Consistent indentation (2 spaces)
 - Use meaningful variable names
 - Comment complex configurations
 
 ## Security Practices
+
 - Inventory files with passwords are git-ignored
 - Use example files for sharing configurations
 - Separate development and production environments
 - Certificate-based authentication for clusters
 
 ## Documentation Standards
+
 - Always update documentation when making changes
 - Include actual kubectl commands used
 - Update timestamps in docs

@@ -35,7 +35,7 @@ kubectl top pods -A
 ### Cluster Deployment
 ```bash
 # Deploy new K3s cluster
-ansible-playbook playbooks/site.yml -i inventory.dev.yml
+ansible-playbook playbooks/site.yml -i inventory.dev.local.yml
 ansible-playbook playbooks/site.yml -i inventory.prod.yml
 ansible-playbook playbooks/site.yml -i inventory.vn.yml
 
