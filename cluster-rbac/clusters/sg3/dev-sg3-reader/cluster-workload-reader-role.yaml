@@ -1,0 +1,46 @@
+# cluster-workload-reader-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-workload-reader
+  labels:
+    app: dev-sg3-reader
+    cluster: sg3
+    purpose: read-only-workload-access
+rules:
+  # Core API - Pods (with logs and exec)
+  - apiGroups: ['']
+    resources:
+      - pods
+      - pods/log
+      - pods/status
+    verbs: ['get', 'list', 'watch']
+
+  # Pod exec for debugging (uses 'create' verb)
+  - apiGroups: ['']
+    resources:
+      - pods/exec
+    verbs: ['create']
+
+  # Core API - Additional resources for context
+  - apiGroups: ['']
+    resources:
+      - namespaces
+      - events
+    verbs: ['get', 'list', 'watch']
+
+  # Apps resources - Workloads
+  - apiGroups: ['apps']
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+    verbs: ['get', 'list', 'watch']
+
+  # Batch resources - Jobs
+  - apiGroups: ['batch']
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ['get', 'list', 'watch']
