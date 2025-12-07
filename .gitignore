@@ -38,7 +38,25 @@ longhorn/basic-auth
 **/kubeconfig.yaml
 **/kubeconfig
 **/*.kubeconfig
+kubeconfig*
+*kubeconfig*
+*.kubeconfig
+dev-logger.kubeconfig.yaml
+kubeconfig-sg3*
 
 # Kubernetes secrets and tokens
 **/secrets/
 **/*-token.yaml
+
+# Local files with actual credentials (never commit these)
+*.local.yaml
+**/secrets.local.yaml
+**/admin-secret.local.yaml
+**/backend-influxdb-config.local.yaml
+**/app-rabbitmq-secret.local.yaml
+**/murror-secret.local.yaml
+**/murror-ai-secret.local.yaml
+**/secrets-*.local.yaml
+
+# OAuth and API credentials (actual values)
+redis/clusters/dev/oauth2-proxy/values.yaml

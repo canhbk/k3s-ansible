@@ -19,9 +19,9 @@ config:
   # Add config annotations
   annotations: {}
   # OAuth client ID
-  clientID: "92706849577-0a098j8e3mspc1tp0fmtjhn8qfqnc0sc.apps.googleusercontent.com"
+  clientID: "<GOOGLE_OAUTH_CLIENT_ID>"
   # OAuth client secret
-  clientSecret: "__REDACTED__"
+  clientSecret: "<GOOGLE_OAUTH_CLIENT_SECRET>"
   # Create a new secret with the following command
   # openssl rand -base64 32 | head -c 32 | base64
   # Use an existing secret for OAuth2 credentials (see secret.yaml for required fields)

@@ -10,29 +10,29 @@ This RabbitMQ cluster is configured with multiple virtual hosts for different en
 
 **For murror_dev vhost:**
 ```
-amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev
+amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev
 ```
 
 **For murror-preview vhost:**
 ```
-amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview
+amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview
 ```
 
 **For murror_test vhost:**
 ```
-amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_test
+amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_test
 ```
 
 **For default vhost (/):**
 ```
-amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/
+amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/
 ```
 
 ### Standard User (rabbitmq)
 
 **For default vhost:**
 ```
-amqp://rabbitmq:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/
+amqp://rabbitmq:***@rabbitmq.rabbitmq.svc.cluster.local:5672/
 ```
 
 ### Application-Specific Users
@@ -41,11 +41,11 @@ amqp://rabbitmq:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/
 
 **For murror_dev vhost:**
 ```
-amqp://murror-dev:HEozjwdtdExJLRKVukv2sNCFqQAniYd@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev
+amqp://murror-dev:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev
 ```
 
 - **Username**: `murror-dev`
-- **Password**: `HEozjwdtdExJLRKVukv2sNCFqQAniYd`
+- **Password**: `***`
 - **Virtual Host**: `murror_dev`
 - **Permissions**: Full access (configure/write/read: .*)
 - **Tags**: monitoring
@@ -59,11 +59,11 @@ amqp://murror-dev:HEozjwdtdExJLRKVukv2sNCFqQAniYd@rabbitmq.rabbitmq.svc.cluster.
 | **Host** | `rabbitmq.rabbitmq.svc.cluster.local` |
 | **Port** | `5672` (AMQP) |
 | **Admin Username** | `admin` |
-| **Admin Password** | `MurrorAdmin2024!SecurePass` |
+| **Admin Password** | `***` |
 | **Standard Username** | `rabbitmq` |
-| **Standard Password** | `__REDACTED__` |
+| **Standard Password** | `***` |
 | **murror-dev Username** | `murror-dev` (for murror-ai app) |
-| **murror-dev Password** | `HEozjwdtdExJLRKVukv2sNCFqQAniYd` |
+| **murror-dev Password** | `***` |
 
 ## Virtual Hosts
 
@@ -189,14 +189,14 @@ For **murror_dev** environment:
 ```yaml
 env:
 - name: RABBITMQ_URL
-  value: "amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev"
+  value: "amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev"
 ```
 
 For **murror-preview** environment:
 ```yaml
 env:
 - name: RABBITMQ_URL
-  value: "amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview"
+  value: "amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview"
 ```
 
 ## Language-Specific Examples
@@ -209,11 +209,11 @@ import os
 
 # Using URL
 connection = pika.BlockingConnection(
-    pika.URLParameters('amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev')
+    pika.URLParameters('amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev')
 )
 
 # Or using connection parameters
-credentials = pika.PlainCredentials('admin', 'MurrorAdmin2024!SecurePass')
+credentials = pika.PlainCredentials('admin', '***')
 parameters = pika.ConnectionParameters(
     host='rabbitmq.rabbitmq.svc.cluster.local',
     port=5672,
@@ -238,7 +238,7 @@ const amqp = require('amqplib');
 
 // Using URL
 const connection = await amqp.connect(
-  'amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev'
+  'amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev'
 );
 
 // Create channel
@@ -257,7 +257,7 @@ await channel.publish(
 ```go
 import "github.com/rabbitmq/amqp091-go"
 
-conn, err := amqp091.Dial("amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev")
+conn, err := amqp091.Dial("amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev")
 if err != nil {
     log.Fatalf("Failed to connect: %v", err)
 }
@@ -294,12 +294,12 @@ apk add --no-cache rabbitmq-c-utils
 
 # Test connection to murror_dev vhost
 amqp-declare-queue \
-  --url="amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev" \
+  --url="amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev" \
   --queue=test-queue
 
 # Publish a test message
 amqp-publish \
-  --url="amqp://admin:MurrorAdmin2024!SecurePass@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev" \
+  --url="amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev" \
   --exchange=murror.main.direct \
   --routing-key=murror.main.queue \
   --body="Test message"
@@ -324,7 +324,7 @@ kubectl exec -n rabbitmq rabbitmq-server-0 -- rabbitmqctl list_exchanges -p murr
 
 ```bash
 # Username is: admin
-# Password is: MurrorAdmin2024!SecurePass
+# Password is: ***
 
 # Or retrieve from secret (if stored)
 kubectl get secret rabbitmq-admin-credentials -n rabbitmq \
@@ -420,7 +420,7 @@ kubectl exec -n rabbitmq rabbitmq-server-0 -- rabbitmqctl list_users
 
 # Test authentication
 kubectl exec -n rabbitmq rabbitmq-server-0 -- \
-  rabbitmqctl authenticate_user admin 'MurrorAdmin2024!SecurePass'
+  rabbitmqctl authenticate_user admin '***'
 ```
 
 ### Vhost Not Found

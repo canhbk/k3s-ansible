@@ -9,7 +9,7 @@ PostgreSQL is deployed on the VN cluster using CloudNativePG operator with high 
 The PostgreSQL service is available internally at:
 - **Service**: `postgresql-ha-rw.postgres-db`
 - **Port**: 5432
-- **Connection String**: `postgresql://be:__REDACTED__@postgresql-ha-rw.postgres-db:5432/murror`
+- **Connection String**: `postgresql://be:***@postgresql-ha-rw.postgres-db:5432/murror`
 
 ## External Access
 
@@ -29,7 +29,7 @@ PostgreSQL is exposed to the internet via NodePort service.
 ### External Connection String
 
 ```
-postgresql://be:__REDACTED__@14.225.210.108:30432/murror
+postgresql://be:***@14.225.210.108:30432/murror
 ```
 
 You can use any of the external IPs listed above. The primary instance is currently running on node `vps33-vnix-nvme-dedicated-cpu` (14.225.210.189).
@@ -77,7 +77,7 @@ To verify external connectivity:
 
 ```bash
 # Test connection from outside the cluster
-psql "postgresql://be:__REDACTED__@14.225.210.108:30432/murror" -c "SELECT version();"
+psql "postgresql://be:***@14.225.210.108:30432/murror" -c "SELECT version();"
 
 # Check service status
 kubectl get svc -n postgres-db postgresql-ha-external

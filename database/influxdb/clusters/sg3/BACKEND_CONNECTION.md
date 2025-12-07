@@ -30,9 +30,14 @@ envFrom:
 | Variable | Value |
 |----------|-------|
 | INFLUXDB_URL | `http://influxdb-influxdb2.influxdb.svc.cluster.local:8086` |
-| INFLUXDB_TOKEN | `__REDACTED__` |
+| INFLUXDB_TOKEN | `***` (retrieve using command below) |
 | INFLUXDB_ORG | `murror` |
 | INFLUXDB_BUCKET | `murror_api_metrics` |
+
+**Retrieve token:**
+```bash
+kubectl get secret backend-influxdb-config -n default -o jsonpath='{.data.INFLUXDB_TOKEN}' | base64 -d
+```
 
 ## Testing Connection
 
@@ -53,7 +58,8 @@ curl -i http://influxdb-influxdb2.influxdb.svc.cluster.local:8086/health
 kubectl port-forward -n influxdb svc/influxdb-influxdb2 8086:8086
 
 # In another terminal, check buckets
-curl -H "Authorization: Token __REDACTED__" \
+# Replace <TOKEN> with actual token from secret
+curl -H "Authorization: Token <TOKEN>" \
   http://localhost:8086/api/v2/buckets?org=murror
 ```
 
@@ -66,8 +72,9 @@ If the `murror_api_metrics` bucket doesn't exist, create it:
 kubectl port-forward -n influxdb svc/influxdb-influxdb2 8086:8086
 
 # Create bucket
+# Replace <TOKEN> with actual token from secret
 curl -X POST http://localhost:8086/api/v2/buckets \
-  -H "Authorization: Token __REDACTED__" \
+  -H "Authorization: Token <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
     "orgID": "get-from-org-list",

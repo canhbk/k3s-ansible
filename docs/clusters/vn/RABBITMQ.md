@@ -21,7 +21,7 @@ RabbitMQ is deployed on the VN cluster to provide message broker capabilities fo
 
 **AMQP Connection** (for applications):
 ```
-amqp://rabbitmq:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/
+amqp://rabbitmq:***@rabbitmq.rabbitmq.svc.cluster.local:5672/
 ```
 
 **Connection Details**:
@@ -29,7 +29,7 @@ amqp://rabbitmq:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/
 - AMQP Port: `5672`
 - Management Port: `15672`
 - Username: `rabbitmq`
-- Password: `__REDACTED__`
+- Password: `***`
 
 ### External Access
 
@@ -40,7 +40,7 @@ amqp://rabbitmq:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/
 **Management Dashboard**:
 - URL: `https://rabbitmq.ambercare.app`
 - Username: `rabbitmq`
-- Password: `__REDACTED__`
+- Password: `***`
 - TLS: Enabled via cert-manager with Let's Encrypt (Production)
 
 ## Configuration
@@ -105,7 +105,7 @@ Key configurations:
 const amqp = require('amqplib');
 
 const connection = await amqp.connect(
-  'amqp://rabbitmq:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/'
+  'amqp://rabbitmq:***@rabbitmq.rabbitmq.svc.cluster.local:5672/'
 );
 const channel = await connection.createChannel();
 ```
@@ -114,7 +114,7 @@ const channel = await connection.createChannel();
 ```python
 import pika
 
-credentials = pika.PlainCredentials('rabbitmq', '__REDACTED__')
+credentials = pika.PlainCredentials('rabbitmq', '***')
 parameters = pika.ConnectionParameters(
     'rabbitmq.rabbitmq.svc.cluster.local',
     5672,
@@ -127,11 +127,11 @@ channel = connection.channel()
 
 **Environment Variables**:
 ```bash
-export RABBITMQ_URL="amqp://rabbitmq:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/"
+export RABBITMQ_URL="amqp://rabbitmq:***@rabbitmq.rabbitmq.svc.cluster.local:5672/"
 export RABBITMQ_HOST=rabbitmq.rabbitmq.svc.cluster.local
 export RABBITMQ_PORT=5672
 export RABBITMQ_USERNAME=rabbitmq
-export RABBITMQ_PASSWORD=__REDACTED__
+export RABBITMQ_PASSWORD=***
 export RABBITMQ_VHOST=/
 ```
 

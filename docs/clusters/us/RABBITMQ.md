@@ -30,13 +30,13 @@ RabbitMQ has been deployed to the US cluster as a message broker for asynchronou
 #### Management UI (via Ingress)
 - **URL**: https://us.rabbitmq.canhnv.com
 - **Username**: `rabbitmq`
-- **Password**: `US_RabbitMQ_Secure_Pass_2024`
+- **Password**: `***`
 
 ## Service Endpoints
 
 ```bash
 # AMQP Connection String
-amqp://rabbitmq:US_RabbitMQ_Secure_Pass_2024@64.71.161.44:5672/
+amqp://rabbitmq:***@64.71.161.44:5672/
 
 # Management UI
 https://us.rabbitmq.canhnv.com

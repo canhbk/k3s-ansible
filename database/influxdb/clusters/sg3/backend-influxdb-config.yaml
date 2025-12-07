@@ -7,6 +7,6 @@ metadata:
 type: Opaque
 stringData:
   INFLUXDB_URL: "http://influxdb-influxdb2.influxdb.svc.cluster.local:8086"
-  INFLUXDB_TOKEN: "__REDACTED__"
+  INFLUXDB_TOKEN: "<CHANGE_ME_INFLUXDB_TOKEN>"
   INFLUXDB_ORG: "murror"
   INFLUXDB_BUCKET: "murror_api_metrics"

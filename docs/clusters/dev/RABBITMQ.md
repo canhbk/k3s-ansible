@@ -21,17 +21,17 @@ RabbitMQ is deployed on the dev cluster to provide message broker capabilities f
 
 **Default Admin User**:
 ```
-amqp://admin:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/
+amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/
 ```
 
 **Murror Dev User (murror_dev vhost)**:
 ```
-amqp://murror-dev:6bmxpVvxewXHhP7wMLrd@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev
+amqp://murror-dev:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev
 ```
 
 **Murror Preview User (murror-preview vhost)**:
 ```
-amqp://murror-preview:6yw6bAeNjLDHwNa6KyP7@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview
+amqp://murror-preview:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview
 ```
 
 **Connection Details**:
@@ -42,9 +42,9 @@ amqp://murror-preview:6yw6bAeNjLDHwNa6KyP7@rabbitmq.rabbitmq.svc.cluster.local:5
 **Available Users**:
 | Username | Password | Tags | Virtual Hosts |
 |----------|----------|------|---------------|
-| `admin` | `__REDACTED__` | administrator | All (default: `/`) |
-| `murror-dev` | `6bmxpVvxewXHhP7wMLrd` | administrator | `murror_dev` |
-| `murror-preview` | `6yw6bAeNjLDHwNa6KyP7` | (none) | `murror-preview` |
+| `admin` | `***` | administrator | All (default: `/`) |
+| `murror-dev` | `***` | administrator | `murror_dev` |
+| `murror-preview` | `***` | (none) | `murror-preview` |
 
 **Available Virtual Hosts**:
 - `/` (default)
@@ -57,7 +57,7 @@ amqp://murror-preview:6yw6bAeNjLDHwNa6KyP7@rabbitmq.rabbitmq.svc.cluster.local:5
 **Management Dashboard**:
 - URL: `https://dev.rabbitmq.ambercare.app`
 - Username: `admin`
-- Password: `__REDACTED__`
+- Password: `***`
 - TLS: Enabled via cert-manager with Let's Encrypt
 
 ## Configuration
@@ -95,7 +95,7 @@ The RabbitMQ Management UI is exposed via Traefik Ingress:
 const amqp = require('amqplib');
 
 const connection = await amqp.connect(
-  'amqp://admin:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/'
+  'amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/'
 );
 const channel = await connection.createChannel();
 ```
@@ -105,7 +105,7 @@ const channel = await connection.createChannel();
 const amqp = require('amqplib');
 
 const connection = await amqp.connect(
-  'amqp://murror-dev:6bmxpVvxewXHhP7wMLrd@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev'
+  'amqp://murror-dev:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev'
 );
 const channel = await connection.createChannel();
 ```
@@ -115,7 +115,7 @@ const channel = await connection.createChannel();
 const amqp = require('amqplib');
 
 const connection = await amqp.connect(
-  'amqp://murror-preview:6yw6bAeNjLDHwNa6KyP7@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview'
+  'amqp://murror-preview:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview'
 );
 const channel = await connection.createChannel();
 ```
@@ -126,7 +126,7 @@ const channel = await connection.createChannel();
 ```python
 import pika
 
-credentials = pika.PlainCredentials('admin', '__REDACTED__')
+credentials = pika.PlainCredentials('admin', '***')
 parameters = pika.ConnectionParameters(
     'rabbitmq.rabbitmq.svc.cluster.local',
     5672,
@@ -141,7 +141,7 @@ channel = connection.channel()
 ```python
 import pika
 
-credentials = pika.PlainCredentials('murror-dev', '6bmxpVvxewXHhP7wMLrd')
+credentials = pika.PlainCredentials('murror-dev', '***')
 parameters = pika.ConnectionParameters(
     'rabbitmq.rabbitmq.svc.cluster.local',
     5672,
@@ -156,7 +156,7 @@ channel = connection.channel()
 ```python
 import pika
 
-credentials = pika.PlainCredentials('murror-preview', '6yw6bAeNjLDHwNa6KyP7')
+credentials = pika.PlainCredentials('murror-preview', '***')
 parameters = pika.ConnectionParameters(
     'rabbitmq.rabbitmq.svc.cluster.local',
     5672,
@@ -171,31 +171,31 @@ channel = connection.channel()
 
 *For admin user (default vhost)*:
 ```bash
-export RABBITMQ_URL="amqp://admin:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/"
+export RABBITMQ_URL="amqp://admin:***@rabbitmq.rabbitmq.svc.cluster.local:5672/"
 export RABBITMQ_HOST=rabbitmq.rabbitmq.svc.cluster.local
 export RABBITMQ_PORT=5672
 export RABBITMQ_USERNAME=admin
-export RABBITMQ_PASSWORD=__REDACTED__
+export RABBITMQ_PASSWORD=***
 export RABBITMQ_VHOST=/
 ```
 
 *For murror-dev user (murror_dev vhost)*:
 ```bash
-export RABBITMQ_URL="amqp://murror-dev:6bmxpVvxewXHhP7wMLrd@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev"
+export RABBITMQ_URL="amqp://murror-dev:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror_dev"
 export RABBITMQ_HOST=rabbitmq.rabbitmq.svc.cluster.local
 export RABBITMQ_PORT=5672
 export RABBITMQ_USERNAME=murror-dev
-export RABBITMQ_PASSWORD=6bmxpVvxewXHhP7wMLrd
+export RABBITMQ_PASSWORD=***
 export RABBITMQ_VHOST=murror_dev
 ```
 
 *For murror-preview user (murror-preview vhost)*:
 ```bash
-export RABBITMQ_URL="amqp://murror-preview:6yw6bAeNjLDHwNa6KyP7@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview"
+export RABBITMQ_URL="amqp://murror-preview:***@rabbitmq.rabbitmq.svc.cluster.local:5672/murror-preview"
 export RABBITMQ_HOST=rabbitmq.rabbitmq.svc.cluster.local
 export RABBITMQ_PORT=5672
 export RABBITMQ_USERNAME=murror-preview
-export RABBITMQ_PASSWORD=6yw6bAeNjLDHwNa6KyP7
+export RABBITMQ_PASSWORD=***
 export RABBITMQ_VHOST=murror-preview
 ```
 
