@@ -9,8 +9,23 @@
 
 ## Access
 
+### Via Rancher (Recommended for Internal Use)
+
+Access Longhorn through Rancher's service proxy:
+
+1. Login to Rancher: https://rancher.sg3.canhnv.com
+2. Navigate to: Cluster → More Resources → Services
+3. Find `longhorn-frontend` service → Click the proxy icon (external link)
+4. Longhorn UI loads without additional authentication
+
+**Authentication**: Uses Rancher's user authentication and Kubernetes RBAC.
+**Note**: Internal cluster traffic (Pod CIDR: 10.54.0.0/16, Service CIDR: 10.55.0.0/16) is whitelisted.
+
+### Direct External Access
+
 - **UI**: https://sg3.longhorn.canhnv.com
 - **Default Credentials**: admin/admin (CHANGE IMMEDIATELY!)
+- **Authentication**: Traefik basicAuth middleware
 
 To change password:
 ```bash

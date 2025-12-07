@@ -9,6 +9,28 @@ spec:
     secret: basic-auth
     realm: "Authentication Required"
 ---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: longhorn-internal-allow
+  namespace: longhorn-system
+spec:
+  ipAllowList:
+    sourceRange:
+      - "10.54.0.0/16"  # Pod CIDR - all pods including Rancher
+      - "10.55.0.0/16"  # Service CIDR - service-to-service traffic
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: longhorn-auth-chain
+  namespace: longhorn-system
+spec:
+  chain:
+    middlewares:
+      - name: longhorn-internal-allow
+      - name: longhorn-auth
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -29,7 +51,7 @@ metadata:
   name: longhorn-ingress
   namespace: longhorn-system
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: longhorn-system-longhorn-auth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: longhorn-system-longhorn-auth-chain@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:

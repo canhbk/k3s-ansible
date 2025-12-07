@@ -185,6 +185,81 @@ spec:
   - "DEVELOPER.HOME.IP/32"
 ```
 
+## Database Administration Tools
+
+### pgAdmin Security
+
+pgAdmin provides browser-based PostgreSQL administration. Security considerations:
+
+#### Production Deployment (SG3, VN, US, etc.)
+
+**Required Security Measures**:
+- HTTPS-only access with TLS certificates (cert-manager)
+- Built-in authentication (email/password)
+- Admin password stored in Kubernetes secret (never in Git)
+- **CRITICAL**: Change default admin password immediately after first login
+- Network isolation (ClusterIP service, no external LoadBalancer)
+- Session cookies: Secure, HttpOnly, SameSite=Lax
+- CSRF protection enabled
+
+**Access Pattern**:
+```yaml
+# pgAdmin ingress with TLS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pgadmin
+  namespace: postgres-db
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - pgadmin.sg3.k3s.canhnv.com
+    secretName: pgadmin-sg3-tls
+```
+
+**Password Management**:
+```bash
+# Generate secure admin password
+PGADMIN_PASSWORD=$(openssl rand -base64 32)
+
+# Store in secret (never commit to Git)
+kubectl create secret generic pgadmin-admin \
+  --from-literal=password="$PGADMIN_PASSWORD" \
+  -n postgres-db
+
+# Retrieve password for login
+kubectl get secret pgadmin-admin -n postgres-db \
+  -o jsonpath='{.data.password}' | base64 -d
+```
+
+**Security Checklist for pgAdmin**:
+- [ ] Admin password changed from default
+- [ ] HTTPS-only access enforced
+- [ ] TLS certificate valid (Let's Encrypt)
+- [ ] No database passwords stored in pgAdmin (prompted on connection)
+- [ ] Session timeout configured appropriately
+- [ ] Access logs monitored
+- [ ] Only necessary users have access
+
+#### Development Deployment
+
+- Basic security acceptable
+- Can use simpler passwords
+- HTTP acceptable if on isolated network
+- Still recommended to use HTTPS with self-signed certs
+
+### Other Database Admin Tools
+
+Similar security principles apply to:
+- **phpMyAdmin** (MySQL/MariaDB)
+- **Adminer** (multiple databases)
+- **RedisInsight** (Redis)
+
 ## Secrets Management
 
 ### Development
