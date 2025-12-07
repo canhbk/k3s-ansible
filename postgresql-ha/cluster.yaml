@@ -14,7 +14,7 @@ spec:
 apiVersion: v1
 stringData:
   username: postgres
-  password: __REDACTED__
+  password: <CHANGE_ME_POSTGRES_PASSWORD>
 kind: Secret
 metadata:
   name: superuser-secret
@@ -23,7 +23,7 @@ type: kubernetes.io/basic-auth
 apiVersion: v1
 stringData:
   username: dev
-  password: 3*xy3P_WwkPy.KYD9Gxf
+  password: <CHANGE_ME_DEV_PASSWORD>
 kind: Secret
 metadata:
   name: dev-secret
@@ -32,7 +32,7 @@ type: kubernetes.io/basic-auth
 apiVersion: v1
 stringData:
   username: be
-  password: __REDACTED__
+  password: <CHANGE_ME_BACKEND_PASSWORD>
 kind: Secret
 metadata:
   name: be-secret
