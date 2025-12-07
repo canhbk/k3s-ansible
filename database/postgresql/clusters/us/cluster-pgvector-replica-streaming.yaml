@@ -1,0 +1,104 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-pgvector-replica
+  namespace: postgres-db
+spec:
+  instances: 1
+
+  # Image configuration matching VN primary
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    major: 17
+    name: postgresql-pgvector
+
+  # Bootstrap from VN primary
+  bootstrap:
+    pg_basebackup:
+      source: postgresql-pgvector-primary-vn
+
+  # CRITICAL: Enable continuous streaming replication
+  replica:
+    enabled: true
+    source: postgresql-pgvector-primary-vn
+
+  # External cluster configuration for VN primary
+  externalClusters:
+    - name: postgresql-pgvector-primary-vn
+      connectionParameters:
+        host: "14.225.210.108"
+        port: "5433"
+        user: "replication_user"
+        dbname: "postgres"
+        sslmode: "disable"  # Using non-SSL as per previous configuration
+      password:
+        name: replication-user-secret
+        key: password
+
+  # PostgreSQL configuration for standby
+  postgresql:
+    parameters:
+      # Memory settings
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      work_mem: "4MB"
+      # Standby settings
+      hot_standby_feedback: "on"
+      wal_receiver_status_interval: "10s"
+      wal_receiver_timeout: "30s"
+      # Logging
+      log_destination: csvlog
+      log_directory: /controller/log
+      log_filename: postgres
+      logging_collector: "on"
+      # Worker settings
+      max_parallel_workers: "32"
+      max_worker_processes: "32"
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "100m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  # Storage configuration
+  storage:
+    size: 4Gi
+    storageClass: longhorn-replicated
+    resizeInUseVolumes: true
+
+  # Monitoring
+  monitoring:
+    disableDefaultQueries: false
+    customQueriesConfigMap:
+      - name: cnpg-default-monitoring
+        key: queries
+
+  # Security settings
+  enableSuperuserAccess: false
+  postgresUID: 999
+  postgresGID: 999
+
+  # Node affinity
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: longhorn
+                operator: In
+                values:
+                  - "true"
+
+  # Update strategy
+  primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: restart
+
+  # Log level for debugging
+  logLevel: info

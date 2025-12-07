@@ -1,0 +1,182 @@
+# PostgreSQL Master Cluster Configuration for US
+# Using CloudNative-PG Operator with barman-cloud backup support
+#
+# This creates a standalone PostgreSQL master cluster for the US region
+# with WAL archiving to MinIO (pgvector can be added later if needed)
+#
+# Features:
+# - PostgreSQL 17.2 with barman-cloud support
+# - WAL archiving to MinIO (http://minio-internal.minio.svc.cluster.local:9000)
+# - Single instance (no HA) for cost optimization
+# - Internal ClusterIP services only
+# - Backend application user (be)
+#
+# Prerequisites:
+# 1. CloudNative-PG operator v1.26.0 installed
+# 2. Namespace created: kubectl create namespace postgres-db
+# 3. Secrets applied: kubectl apply -f secrets-us-master.yaml
+# 4. MinIO credentials exist: postgresql-minio-credentials
+# 5. MinIO service running in minio namespace
+#
+# Deploy:
+# kubectl config use-context us
+# kubectl apply -f cluster-us-master-pgvector.yaml
+#
+# Verify:
+# kubectl get cluster -n postgres-db
+# kubectl cnpg status postgresql-us-master -n postgres-db
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ClusterImageCatalog
+metadata:
+  name: postgresql-us-master-cnpg
+  namespace: postgres-db
+spec:
+  images:
+    - major: 17
+      # Use CloudNativePG's PostgreSQL image with barman-cloud support
+      image: ghcr.io/cloudnative-pg/postgresql:17.2
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-us-master
+  namespace: postgres-db
+  labels:
+    cluster-region: us
+    cluster-type: master
+    backup-enabled: "true"
+spec:
+  # Affinity and tolerations for Longhorn storage nodes
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: longhorn
+                operator: In
+                values:
+                  - "true"
+
+  # PostgreSQL configuration optimized for single instance
+  postgresql:
+    parameters:
+      # WAL and replication settings (prepared for future replication)
+      max_wal_senders: "5"
+      wal_keep_size: "512MB"
+      max_replication_slots: "5"
+      archive_timeout: "5min"
+
+      # Performance settings optimized for single instance
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      work_mem: "4MB"
+
+      # Connection settings
+      max_connections: "100"
+
+      # Logging (only configurable parameters)
+      log_min_duration_statement: "1000"
+      log_checkpoints: "on"
+      log_connections: "on"
+      log_disconnections: "on"
+      log_line_prefix: "%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h "
+
+  # WAL archiving configuration using barmanObjectStore
+  backup:
+    retentionPolicy: "7d"  # Keep backups for 7 days
+    target: "primary"      # Backup from primary (only one instance)
+    barmanObjectStore:
+      destinationPath: "s3://postgres-wal/us-master"
+      s3Credentials:
+        accessKeyId:
+          name: postgresql-minio-credentials
+          key: MINIO_ACCESS_KEY
+        secretAccessKey:
+          name: postgresql-minio-credentials
+          key: MINIO_SECRET_KEY
+      # Use internal MinIO service endpoint
+      endpointURL: http://minio-internal.minio.svc.cluster.local:9000
+      wal:
+        compression: gzip
+        maxParallel: 2
+      data:
+        compression: gzip
+        immediateCheckpoint: false
+        jobs: 2
+      serverName: "postgresql-us-master"
+
+  # Managed roles - only backend user for now
+  managed:
+    roles:
+      - name: be
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: true
+        bypassrls: false
+        passwordSecret:
+          name: be-us-master-secret
+
+  # Cluster configuration - single instance
+  instances: 1
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: superuser-us-master-secret
+
+  # Bootstrap configuration
+  bootstrap:
+    initdb:
+      database: postgres
+      owner: postgres
+      encoding: UTF8
+      locale: en_US.UTF-8
+      localeCType: en_US.UTF-8
+      localeCollate: en_US.UTF-8
+
+  # Image configuration - Use CloudNativePG PostgreSQL image
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    name: postgresql-us-master-cnpg
+    major: 17
+
+  # Storage configuration using Longhorn replicated storage
+  storage:
+    storageClass: longhorn-replicated
+    size: 5Gi
+
+  # Resource limits optimized for single instance
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "100m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  # Monitoring configuration
+  monitoring:
+    enablePodMonitor: true
+
+---
+# Database definition for Backend application
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: murror-be-us-master
+  namespace: postgres-db
+  labels:
+    cluster-region: us
+    app: murror-backend
+spec:
+  name: murror-be
+  owner: be
+  cluster:
+    name: postgresql-us-master

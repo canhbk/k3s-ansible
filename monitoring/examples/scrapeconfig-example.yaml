@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: example-http-scrape
+  namespace: default  # This can be in any namespace
+  labels:
+    prometheus: kube-prometheus-stack  # This label is required for Prometheus to pick it up
+spec:
+  staticConfigs:
+  - targets:
+    - 'example-app.default.svc.cluster.local:8080'
+    labels:
+      environment: 'dev'
+      team: 'platform'
+  metricsPath: '/metrics'
+  scrapeInterval: '30s'
+  honorLabels: true
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: external-service-scrape
+  namespace: production  # Different namespace example
+  labels:
+    prometheus: kube-prometheus-stack  # Required label
+spec:
+  staticConfigs:
+  - targets:
+    - 'external-service.example.com:9090'
+    labels:
+      service: 'external'
+      datacenter: 'us-east-1'
+  scheme: 'https'
+  tlsConfig:
+    insecureSkipVerify: true
+  relabelConfigs:
+  - sourceLabels: [__address__]
+    targetLabel: instance
+    regex: '([^:]+)(?::\d+)?'
+    replacement: '${1}'

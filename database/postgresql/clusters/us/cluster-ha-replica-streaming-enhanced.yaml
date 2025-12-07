@@ -1,0 +1,146 @@
+# PostgreSQL HA Replica Cluster - Enhanced with Streaming + WAL Recovery
+# This creates a read-only replica in US cluster that:
+# 1. Streams from VN primary for real-time replication
+# 2. Can recover from MinIO WAL archives if streaming fails
+#
+# Prerequisites:
+# 1. CloudNative-PG operator installed in US cluster
+# 2. Namespace: kubectl create namespace postgres-db
+# 3. Replication secret: kubectl get secret -n postgres-db replication-user-ha-secret
+# 4. MinIO credentials: kubectl get secret -n postgres-db postgresql-minio-credentials
+# 5. VN Primary accessible at LoadBalancer IPs:5434
+#
+# Deploy:
+# kubectl apply -f cluster-ha-replica-streaming-enhanced.yaml
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-ha-replica
+  namespace: postgres-db
+spec:
+  instances: 1
+
+  # Image configuration matching VN primary
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    major: 17
+    name: postgresql
+
+  # Bootstrap from VN primary with recovery capability
+  bootstrap:
+    recovery:
+      source: postgresql-ha-primary-vn
+      database: default
+      owner: dev
+      secret:
+        name: dev-secret
+
+  # CRITICAL: Enable continuous streaming replication
+  replica:
+    enabled: true
+    source: postgresql-ha-primary-vn
+
+  # External cluster configuration for VN primary
+  externalClusters:
+    - name: postgresql-ha-primary-vn
+      connectionParameters:
+        host: "14.225.210.108"  # VN cluster external IP
+        port: "5434"
+        user: "replication_user_ha"
+        dbname: "postgres"
+        sslmode: "disable"
+      password:
+        name: replication-user-ha-secret
+        key: password
+      # WAL recovery configuration from MinIO
+      barmanObjectStore:
+        destinationPath: "s3://postgres-wal/postgresql-ha-vn"
+        s3Credentials:
+          accessKeyId:
+            name: minio-credentials
+            key: MINIO_ROOT_USER
+          secretAccessKey:
+            name: minio-credentials
+            key: MINIO_ROOT_PASSWORD
+        endpointURL: "http://minio-internal.minio.svc.cluster.local:9000"  # Internal MinIO endpoint
+        serverName: "postgresql-ha-vn"
+        wal:
+          compression: gzip
+          maxParallel: 2
+
+  # PostgreSQL configuration for standby
+  postgresql:
+    parameters:
+      # Memory settings matching primary
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      work_mem: "4MB"
+      # Standby settings
+      hot_standby_feedback: "on"
+      wal_receiver_status_interval: "10s"
+      wal_receiver_timeout: "30s"
+      # Logging matching primary
+      log_destination: csvlog
+      log_directory: /controller/log
+      log_filename: postgres
+      logging_collector: "on"
+      # Worker settings
+      max_parallel_workers: "32"
+      max_worker_processes: "32"
+      # Additional settings from primary
+      dynamic_shared_memory_type: posix
+      shared_memory_type: mmap
+      ssl_max_protocol_version: TLSv1.3
+      ssl_min_protocol_version: TLSv1.3
+      wal_level: logical
+      wal_log_hints: "on"
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "100m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  # Storage configuration
+  storage:
+    size: 5Gi
+    storageClass: longhorn-replicated
+    resizeInUseVolumes: true
+
+  # Monitoring
+  monitoring:
+    disableDefaultQueries: false
+    customQueriesConfigMap:
+      - name: cnpg-default-monitoring
+        key: queries
+
+  # Security settings matching primary
+  enableSuperuserAccess: false
+  postgresUID: 26
+  postgresGID: 26
+
+  # Node affinity
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: longhorn
+                operator: In
+                values:
+                  - "true"
+
+  # Update strategy
+  primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: restart
+
+  # Log level for debugging
+  logLevel: info

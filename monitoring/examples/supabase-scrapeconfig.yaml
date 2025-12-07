@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: supabase-metrics-auth
+  namespace: monitoring
+type: Opaque
+stringData:
+  service-role-jwt: "<your_service_role_jwt>"  # Replace with your JWT
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMScrapeConfig
+metadata:
+  name: supabase-metrics
+  namespace: monitoring
+spec:
+  staticConfigs:
+    - targets:
+        - "<your-project-id>.supabase.co:443"  # Replace with your project ID
+      labels:
+        environment: production
+        service: supabase
+  scheme: https
+  metricsPath: /customer/v1/privileged/metrics
+  basicAuth:
+    username:
+      name: service_role
+    password:
+      name: supabase-metrics-auth
+      key: service-role-jwt
+  scrapeInterval: 30s
+  scrapeTimeout: 10s

@@ -1,0 +1,123 @@
+# US cluster values for kube-prometheus-stack
+
+# Global labels to identify this cluster
+global:
+  additionalLabels:
+    cluster: us
+    environment: production
+    region: us-east
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # External labels for federation/remote write
+    externalLabels:
+      cluster: us
+      environment: production
+      region: us-east
+
+    # Production resource limits
+    resources:
+      requests:
+        cpu: 1
+        memory: 4Gi
+      limits:
+        memory: 8Gi
+
+    # Production storage
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          resources:
+            requests:
+              storage: 100Gi
+
+    # High availability - 1 replica for now
+    replicas: 1
+
+# Grafana configuration
+grafana:
+  # Set the external URL
+  grafana.ini:
+    server:
+      domain: grafana.us.k3s.canhnv.com
+      root_url: "https://grafana.us.k3s.canhnv.com/"
+
+  # Production resources
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+  # Production persistence
+  persistence:
+    size: 20Gi
+
+  # Single replica for now
+  replicas: 1
+
+# Alertmanager configuration
+alertmanager:
+  alertmanagerSpec:
+    # Production storage
+    storage:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 20Gi
+
+    # Production resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+
+    # Single replica for now
+    replicas: 1
+
+  # Production alerting config
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'production-alerts'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'critical-alerts'
+      - match:
+          alertname: Watchdog
+        receiver: 'null'
+    receivers:
+    - name: 'null'
+    - name: 'production-alerts'
+      # TODO: Configure your notification channels here
+    - name: 'critical-alerts'
+      # TODO: Configure critical alert channels here
+
+# Node exporter for production
+nodeExporter:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# Additional ServiceMonitors for production services
+additionalServiceMonitors: []
+
+# Cluster-specific labels
+commonLabels:
+  cluster: us
+  monitoring: kube-prometheus
