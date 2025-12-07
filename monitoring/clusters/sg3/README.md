@@ -12,12 +12,21 @@ Monitoring stack for the sg3 production cluster (Singapore OVH).
 
 ## Components
 
+### Metrics Collection
 - **Prometheus**: Metrics collection and storage
 - **Grafana**: Visualization and dashboards
 - **Alertmanager**: Alert routing and management
 - **Node Exporter**: Node-level metrics (DaemonSet on all 8 nodes)
 - **kube-state-metrics**: Kubernetes object metrics
 - **Prometheus Operator**: CRD management
+
+### Log Aggregation
+- **Loki**: Log aggregation and querying (Simple Scalable Deployment)
+  - Write Path: 3 replicas (log ingestion)
+  - Read Path: 2 replicas (log queries)
+  - Backend: 1 replica (compaction)
+  - Gateway: 2 replicas (NGINX load balancer)
+- **Promtail**: Log collection agent (DaemonSet on all 8 nodes)
 
 ## Storage Configuration
 
@@ -28,8 +37,13 @@ All persistent volumes use **Longhorn distributed storage** with 3 replicas:
 | Prometheus | 25Gi | longhorn | 3 |
 | Grafana | 25Gi | longhorn | 3 |
 | Alertmanager | 25Gi | longhorn | 3 |
+| Loki Write | 50Gi | longhorn | 3 |
+| Loki Read | 50Gi | longhorn | 3 |
+| Loki Backend | 50Gi | longhorn | 3 |
 
-**Total**: 75Gi (225Gi raw with replication)
+**Metrics Stack**: 75Gi (225Gi raw with replication)
+**Logging Stack**: 150Gi (450Gi raw with replication)
+**Total**: 225Gi logical (675Gi raw with replication)
 
 ## Access Information
 
@@ -57,32 +71,54 @@ All persistent volumes use **Longhorn distributed storage** with 3 replicas:
   kubectl port-forward -n monitoring svc/kube-prometheus-stack-alertmanager 9093:9093
   ```
 
+### Loki
+- **External URL**: https://loki.sg3.k3s.canhnv.com
+- **Internal**: http://loki-gateway.monitoring.svc.cluster.local
+- **Grafana Datasource**: Auto-configured (name: "Loki")
+- **Log Retention**: 15 days
+- **Access via Grafana**:
+  1. Open https://grafana.sg3.k3s.canhnv.com
+  2. Go to Explore
+  3. Select "Loki" datasource
+  4. Query logs: `{namespace="monitoring"}` or `{pod=~"postgres.*"}`
+
 ## Resource Usage
 
-- **CPU**: ~2 cores total
-- **Memory**: ~3.5Gi total
+### Metrics Stack
+- **CPU**: ~2 cores
+- **Memory**: ~3.5Gi
 - **Storage**: 75Gi persistent (225Gi raw)
+
+### Logging Stack
+- **CPU**: ~3.25 cores (Write: 1.5, Read: 1, Backend: 0.25, Gateway: 0.2, Promtail: 0.8)
+- **Memory**: ~6.3Gi (Write: 3Gi, Read: 2Gi, Backend: 512Mi, Gateway: 256Mi, Promtail: 1Gi)
+- **Storage**: 150Gi persistent (450Gi raw)
+
+### Total Monitoring + Logging
+- **CPU**: ~5.25 cores
+- **Memory**: ~9.8Gi
+- **Storage**: 225Gi persistent (675Gi raw)
 
 ## Deployment Commands
 
-### Initial Deployment
+### Metrics Stack (Prometheus/Grafana)
 
 ```bash
 cd /Users/canhnv/development/canhnv/k3s-ansible/monitoring
 ./scripts/deploy.sh sg3
 ```
 
-### Upgrade
+### Logging Stack (Loki)
 
 ```bash
 cd /Users/canhnv/development/canhnv/k3s-ansible/monitoring
-./scripts/deploy.sh sg3
+./scripts/deploy-loki.sh sg3
 ```
 
 ### Verify Deployment
 
 ```bash
-# Check pods
+# Check all monitoring pods (metrics + logs)
 kubectl get pods -n monitoring
 
 # Check PVCs (should be Bound with longhorn storage)
@@ -93,6 +129,16 @@ kubectl get ingress,certificate -n monitoring
 
 # Check Longhorn volumes
 kubectl get volumes -n longhorn-system | grep monitoring
+
+# Test Loki specifically
+kubectl run -it --rm debug --image=curlimages/curl --restart=Never -- \
+  curl http://loki-gateway.monitoring.svc.cluster.local/ready
+
+# Query logs from Loki
+kubectl run -it --rm debug --image=curlimages/curl --restart=Never -- \
+  curl -G http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/query \
+  --data-urlencode 'query={namespace="monitoring"}' \
+  --data-urlencode 'limit=10'
 ```
 
 ## Monitoring Longhorn

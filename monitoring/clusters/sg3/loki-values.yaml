@@ -1,0 +1,90 @@
+# SG3 Cluster-Specific Loki Configuration
+# Overrides for monitoring/base/loki/values-base.yaml
+# Monolithic deployment mode for simplicity
+
+# Single Binary configuration (all-in-one Loki)
+singleBinary:
+  replicas: 1
+
+  persistence:
+    enabled: true
+    storageClass: local-path  # Use local-path due to Longhorn storage constraints
+    size: 20Gi
+
+  resources:
+    requests:
+      cpu: 1
+      memory: 2Gi
+    limits:
+      cpu: 4
+      memory: 8Gi
+
+  # Node affinity to schedule only on nodes with available Longhorn storage
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - vps54
+            - vps56
+            - vps57
+
+# Disable scalable mode components (not used in SingleBinary mode)
+backend:
+  replicas: 0
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+gateway:
+  enabled: false
+
+# Promtail configuration for log collection
+promtail:
+  enabled: true
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Tolerations to run on all nodes including control plane
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+# Loki configuration overrides
+loki:
+  # No replication in single binary mode
+  commonConfig:
+    replication_factor: 1
+
+  # Server configuration
+  server:
+    log_level: info
+
+  # Storage configuration - use Longhorn filesystem
+  storage:
+    type: filesystem
+
+  # Log retention
+  limits_config:
+    retention_period: 360h  # 15 days
+
+# Resource allocations summary for SG3 Monolithic Mode:
+# - Loki single binary: 1 CPU request / 4 CPU limit / 2Gi RAM request / 8Gi RAM limit / 20Gi local-path storage
+# - Promtail: 100m CPU / 128Mi RAM × 8 nodes (DaemonSet) = 800m CPU / 1Gi RAM
+# TOTAL: ~1.8 CPU / ~3Gi RAM / 20Gi storage (local-path, no replication - data lost if node fails)
