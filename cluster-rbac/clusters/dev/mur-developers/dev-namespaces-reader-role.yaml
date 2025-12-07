@@ -21,6 +21,11 @@ rules:
       - services
       - services/status
     verbs: ["get", "list", "watch"]
+  # Pod exec for reading data inside containers
+  - apiGroups: [""]
+    resources:
+      - pods/exec
+    verbs: ["create"]
   # Apps resources
   - apiGroups: ["apps"]
     resources:

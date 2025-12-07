@@ -46,6 +46,7 @@ The following read-only permissions are granted:
 ### Core Resources
 - ConfigMaps, Endpoints, Events
 - Pods (including logs and status)
+- **Pod Exec**: Execute commands inside containers for debugging and data inspection
 - Services, PersistentVolumeClaims
 - ReplicationControllers, ResourceQuotas
 
@@ -177,6 +178,14 @@ kubectl --kubeconfig=mur-developers.kubeconfig.yaml get pods -n mu-43
 # View logs for a specific pod
 kubectl --kubeconfig=mur-developers.kubeconfig.yaml logs -n nsp-alpha-murror pod-name
 
+# Execute commands inside a pod (for debugging or data inspection)
+kubectl --kubeconfig=mur-developers.kubeconfig.yaml exec pod-name -n mu-81 -- cat /app/config.json
+kubectl --kubeconfig=mur-developers.kubeconfig.yaml exec pod-name -n mu-81 -- env
+kubectl --kubeconfig=mur-developers.kubeconfig.yaml exec -it pod-name -n mu-81 -- /bin/sh
+
+# Access PostgreSQL database inside a pod
+kubectl --kubeconfig=mur-developers.kubeconfig.yaml exec postgres-pod-name -n mu-81 -- psql -U postgres -c "SELECT version();"
+
 # Get detailed information about a deployment
 kubectl --kubeconfig=mur-developers.kubeconfig.yaml describe deployment -n mu-66 deployment-name
 
@@ -211,11 +220,17 @@ kubectl --kubeconfig=mur-developers.kubeconfig.yaml get pods -n default
 ### Verification
 Verify access restrictions:
 ```bash
-# Should succeed
+# Should succeed - read pods
 kubectl auth can-i get pods --as=system:serviceaccount:dev-access:mur-developers -n mu-43
 
-# Should fail
+# Should succeed - execute commands in pods
+kubectl auth can-i create pods/exec --subresource=exec --as=system:serviceaccount:dev-access:mur-developers -n mu-43
+
+# Should fail - no access to other namespaces
 kubectl auth can-i get pods --as=system:serviceaccount:dev-access:mur-developers -n default
+
+# Should fail - no write permissions
+kubectl auth can-i delete pods --as=system:serviceaccount:dev-access:mur-developers -n mu-43
 ```
 
 ## Troubleshooting
@@ -310,7 +325,14 @@ kubectl delete -f mur-developers-secret.yaml
 
 ## Change Log
 
-### 2025-11-04
+### 2025-11-04 (Update 2)
+- **Enhancement**: Added `pods/exec` permission to enable command execution inside containers
+- Developers can now run debugging commands and access data inside pods (e.g., `kubectl exec`, interactive shells)
+- Updated documentation with pod exec examples (database access, file inspection, environment variables)
+- Added verification commands for testing pod exec permissions
+- All existing kubeconfigs automatically gain new permissions (no regeneration required)
+
+### 2025-11-04 (Update 1)
 - **Breaking Change**: Migrated from cluster-wide ClusterRole to namespace-scoped Roles
 - Updated after vps7 node removal from dev cluster
 - Added namespace-specific RoleBindings for: mu-43, mu-66, mu-69, mu-70, mu-81, nsp-alpha-murror, nsp-alpha-murror-ai
