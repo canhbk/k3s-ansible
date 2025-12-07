@@ -42,6 +42,28 @@ spec:
         connectionLimit: 100
         passwordSecret:
           name: app-sg3-secret
+      - name: murror
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        connectionLimit: 100
+        passwordSecret:
+          name: murror-sg3-secret
+      - name: murror-ai
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        connectionLimit: 100
+        passwordSecret:
+          name: murror-ai-sg3-secret
 
   # Bootstrap with initial database
   bootstrap:
