@@ -1,0 +1,34 @@
+# pgAdmin Ingress for SG3 Cluster
+# Access via: https://pgadmin.sg3.k3s.canhnv.com
+# Uses Traefik ingress controller with cert-manager for TLS
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pgadmin
+  namespace: postgres-db
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  labels:
+    app: pgadmin
+    cluster: sg3
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - pgadmin.sg3.k3s.canhnv.com
+      secretName: pgadmin-sg3-tls
+  rules:
+    - host: pgadmin.sg3.k3s.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pgadmin-pgadmin4
+                port:
+                  number: 80

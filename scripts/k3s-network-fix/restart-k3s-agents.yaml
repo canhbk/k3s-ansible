@@ -1,0 +1,189 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restart-k3s-vps12
+  namespace: kube-system
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: vps12-h2cloud-vn
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Never
+      containers:
+      - name: restart-k3s
+        image: alpine:3.19
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - sh
+        - -c
+        - |
+          echo "Restarting K3s agent on vps12-h2cloud-vn..."
+          systemctl restart k3s-agent
+          echo "K3s agent restart initiated"
+          sleep 5
+          systemctl status k3s-agent --no-pager
+        securityContext:
+          privileged: true
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restart-k3s-vps13
+  namespace: kube-system
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: vps13-h2cloud-vn
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Never
+      containers:
+      - name: restart-k3s
+        image: alpine:3.19
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - sh
+        - -c
+        - |
+          echo "Restarting K3s agent on vps13-h2cloud-vn..."
+          systemctl restart k3s-agent
+          echo "K3s agent restart initiated"
+          sleep 5
+          systemctl status k3s-agent --no-pager
+        securityContext:
+          privileged: true
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restart-k3s-vps16
+  namespace: kube-system
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: vps16-h2cloud-vn
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Never
+      containers:
+      - name: restart-k3s
+        image: alpine:3.19
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - sh
+        - -c
+        - |
+          echo "Restarting K3s agent on vps16-h2cloud-vn..."
+          systemctl restart k3s-agent
+          echo "K3s agent restart initiated"
+          sleep 5
+          systemctl status k3s-agent --no-pager
+        securityContext:
+          privileged: true
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restart-k3s-vps17
+  namespace: kube-system
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: vps17-h2cloud-vn
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Never
+      containers:
+      - name: restart-k3s
+        image: alpine:3.19
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - sh
+        - -c
+        - |
+          echo "Restarting K3s agent on vps17-h2cloud-vn..."
+          systemctl restart k3s-agent
+          echo "K3s agent restart initiated"
+          sleep 5
+          systemctl status k3s-agent --no-pager
+        securityContext:
+          privileged: true
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restart-k3s-vps18
+  namespace: kube-system
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: vps18-h2cloud-vn
+      hostNetwork: true
+      hostPID: true
+      restartPolicy: Never
+      containers:
+      - name: restart-k3s
+        image: alpine:3.19
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - sh
+        - -c
+        - |
+          echo "Restarting K3s agent on vps18-h2cloud-vn..."
+          systemctl restart k3s-agent
+          echo "K3s agent restart initiated"
+          sleep 5
+          systemctl status k3s-agent --no-pager
+        securityContext:
+          privileged: true

@@ -1,0 +1,57 @@
+- name: Full Karmada HA Setup on dedicated cluster
+  hosts: karmada-host
+  gather_facts: true
+  vars:
+    karmada_name: karmada-ha
+    kubeconfig_path: /root/.kube/config
+    components_namespace: karmada-system
+    kubeconfig_dir: /root/karmada-kubeconfigs
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - curl
+          - unzip
+        update_cache: yes
+
+    - name: Install karmadactl using official script
+      shell: |
+        curl -s https://raw.githubusercontent.com/karmada-io/karmada/master/hack/install-cli.sh | sudo INSTALL_CLI_VERSION=1.14.1 bash
+      args:
+        executable: /bin/bash
+
+    - name: Initialize Karmada in HA mode on dedicated cluster
+      shell: |
+        karmadactl init \
+          --kubeconfig {{ kubeconfig_path }} \
+          --namespace {{ components_namespace }} \
+          --etcd-storage-mode PVC \
+          --etcd-replicas=3 \
+          --karmada-apiserver-replicas=3 \
+          --karmada-controller-manager-replicas=3 \
+          --karmada-scheduler-replicas=3 \
+          --karmada-webhook-replicas=3
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Create kubeconfig directory
+      file:
+        path: "{{ kubeconfig_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Copy kubeconfig files to Karmada host
+      copy:
+        src: "split-configs/{{ hostvars[item].kubeconfig }}"
+        dest: "{{ kubeconfig_dir }}/{{ hostvars[item].kubeconfig }}"
+        mode: '0600'
+      with_items: "{{ groups['clusters'] }}"
+
+    - name: Join member clusters to Karmada
+      shell: |
+        kubectl karmada join {{ item }} \
+          --cluster-kubeconfig={{ kubeconfig_dir }}/{{ hostvars[item].kubeconfig }} \
+          --cluster-context={{ hostvars[item].context }} \
+          --force
+      with_items: "{{ groups['clusters'] }}"

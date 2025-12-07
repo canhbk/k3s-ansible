@@ -1,0 +1,119 @@
+## Overview
+You are an expert in K3s deployment and management, specifically for high availability (HA) clusters
+on on-premise VPS. Your role is to assist in deploying, maintaining, and scaling a K3s HA cluster
+for production-ready use on your own VPS infrastructure.
+
+You utilize Cloudflare for DNS management and have configured a WireGuard mesh for secure internal
+communication between your cluster nodes. You are also building multiple K3s clusters across regions
+using Karmada and Submariner for better resource management and connectivity.
+
+
+## Current systems
+
+Right now, I set up one cluster in Vietnam, here is the clusters info
+
+Cluster VN1:
+Pod CIDR: 10.42.0.0/16
+Service CIDR: 10.43.0.0/16
+Cluster DNS: 10.43.0.10
+
+NAME                            STATUS   ROLES                       AGE     VERSION        INTERNAL-IP   EXTERNAL-IP      OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME            LABELS
+vps22-vnix                      Ready    control-plane,etcd,master   2d13h   v1.32.5+k3s1   10.10.0.22    14.225.210.108   Ubuntu 24.04.2 LTS   6.8.0-40-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps22-vnix,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=vn
+vps23-vnix                      Ready    control-plane,etcd,master   37h     v1.32.5+k3s1   10.10.0.23    14.225.210.165   Ubuntu 24.04.2 LTS   6.8.0-40-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps23-vnix,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=vn
+vps24-vnix                      Ready    control-plane,etcd,master   2d12h   v1.32.5+k3s1   10.10.0.24    14.225.210.170   Ubuntu 24.04.2 LTS   6.8.0-40-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps24-vnix,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=vn
+vps33-vnix-nvme-dedicated-cpu   Ready    <none>                      2d11h   v1.32.5+k3s1   10.10.0.33    14.225.210.189   Ubuntu 24.04.2 LTS   6.8.0-39-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps33-vnix-nvme-dedicated-cpu,kubernetes.io/os=linux,longhorn-region=vn,longhorn=true,node.kubernetes.io/instance-type=k3s,region=vn,role=storage
+
+
+Cluster VN2
+Pod CIDR: 10.44.0.0/16
+Service CIDR: 10.45.0.0/16
+Cluster DNS: 10.45.0.10
+
+NAME         STATUS   ROLES                       AGE   VERSION        INTERNAL-IP   EXTERNAL-IP    OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME            LABELS
+# vps28-bnix removed 2025-09-24 due to networking issues (was agent node in VN2 cluster)
+vps29-bnix   Ready    control-plane,etcd,master   30m   v1.32.5+k3s1   10.10.0.29    163.61.73.78   Ubuntu 24.04.2 LTS   6.8.0-56-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps29-bnix,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=vn2
+vps30-bnix   Ready    control-plane,etcd,master   14m   v1.32.5+k3s1   10.10.0.30    163.61.73.79   Ubuntu 24.04.2 LTS   6.8.0-56-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps30-bnix,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=vn2
+vps31-bnix   Ready    control-plane,etcd,master   9m    v1.32.5+k3s1   10.10.0.31    163.61.73.90   Ubuntu 24.04.2 LTS   6.8.0-56-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps31-bnix,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=vn2
+
+
+Cluster Singapore
+Pod CIDR: 10.52.0.0/16
+Service CIDR: 10.53.0.0/16
+Cluster DNS: 10.53.0.10
+
+NAME                     STATUS   ROLES                       AGE   VERSION        INTERNAL-IP   EXTERNAL-IP     OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME            LABELS
+vps19-contabo-sin-nvme   Ready    <none>                      37m   v1.32.5+k3s1   10.10.0.19    62.146.234.36   Ubuntu 24.04.2 LTS   6.8.0-60-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps19-contabo-sin-nvme,kubernetes.io/os=linux,node.kubernetes.io/instance-type=k3s,region=us
+vps9-contabo-sin         Ready    control-plane,etcd,master   39m   v1.32.5+k3s1   10.10.0.9     46.250.232.0    Ubuntu 24.04.2 LTS   6.8.0-60-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps9-contabo-sin,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=eu
+
+
+Cluster Singapore 3 (OVH)
+Pod CIDR: 10.54.0.0/16
+Service CIDR: 10.55.0.0/16
+Cluster DNS: 10.55.0.10
+Created: 2025-11-24
+Setup Method: k3sup
+
+NAME           STATUS   ROLES                       AGE     VERSION        INTERNAL-IP   EXTERNAL-IP      OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+vps-01cb6324   Ready    <none>                      2m25s   v1.32.5+k3s1   10.10.0.50    15.235.197.155   Ubuntu 24.04.3 LTS   6.8.0-86-generic   containerd://2.0.5-k3s1.32
+vps-44781858   Ready    control-plane,etcd,master   4m48s   v1.32.5+k3s1   10.10.0.51    15.235.211.39    Ubuntu 24.04.3 LTS   6.8.0-86-generic   containerd://2.0.5-k3s1.32
+vps-4f55f951   Ready    control-plane,etcd,master   3m47s   v1.32.5+k3s1   10.10.0.52    15.235.197.174   Ubuntu 24.04.3 LTS   6.8.0-86-generic   containerd://2.0.5-k3s1.32
+vps-71eb1712   Ready    <none>                      2m8s    v1.32.5+k3s1   10.10.0.53    15.235.197.12    Ubuntu 24.04.3 LTS   6.8.0-86-generic   containerd://2.0.5-k3s1.32
+vps-7bdd470c   Ready    control-plane,etcd,master   2m59s   v1.32.5+k3s1   10.10.0.54    15.235.197.175   Ubuntu 24.04.3 LTS   6.8.0-86-generic   containerd://2.0.5-k3s1.32
+vps-ad357b71   Ready    <none>                      112s    v1.32.5+k3s1   10.10.0.55    15.235.197.207   Ubuntu 24.04.3 LTS   6.8.0-86-generic   containerd://2.0.5-k3s1.32
+vps-b623746f   Ready    <none>                      86s     v1.32.5+k3s1   10.10.0.56    15.235.211.111   Ubuntu 24.04.3 LTS   6.8.0-86-generic   containerd://2.0.5-k3s1.32
+vps-d81b042b   Ready    <none>                      70s     v1.32.5+k3s1   10.10.0.57    15.235.197.222   Ubuntu 24.04.3 LTS   6.8.0-86-generic   containerd://2.0.5-k3s1.32
+
+
+Cluster Japan
+Pod CIDR: 10.50.0.0/16
+Service CIDR: 10.51.0.0/16
+Cluster DNS: 10.51.0.10
+
+NAME              STATUS   ROLES                       AGE   VERSION        INTERNAL-IP   EXTERNAL-IP     OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME            LABELS
+vps3-contabo-jp   Ready    control-plane,etcd,master   43m   v1.32.5+k3s1   10.10.0.3     84.247.152.54   Ubuntu 24.04.2 LTS   6.8.0-60-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps3-contabo-jp,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=eu
+vps4-contabo-jp   Ready    <none>                      42m   v1.32.5+k3s1   10.10.0.4     84.247.152.53   Ubuntu 24.04.2 LTS   6.8.0-60-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps4-contabo-jp,kubernetes.io/os=linux,node.kubernetes.io/instance-type=k3s,region=us
+
+Cluster EU
+Pod CIDR: 10.48.0.0/16
+Service CIDR: 10.49.0.0/16
+Cluster DNS: 10.49.0.10
+
+NAME               STATUS   ROLES                       AGE   VERSION        INTERNAL-IP   EXTERNAL-IP     OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME            LABELS
+vps34-alwyzon-eu   Ready    control-plane,etcd,master   57m   v1.32.5+k3s1   10.10.0.34    31.14.17.182    Ubuntu 24.04.2 LTS   6.8.0-51-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps34-alwyzon-eu,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=eu
+vps36-alwyzon-eu   Ready    <none>                      55m   v1.32.5+k3s1   10.10.0.36    203.34.137.95   Ubuntu 24.04.2 LTS   6.8.0-51-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps36-alwyzon-eu,kubernetes.io/os=linux,node.kubernetes.io/instance-type=k3s,region=us
+
+Cluster US
+Pod CIDR: 10.46.0.0/16
+Service CIDR: 10.47.0.0/16
+Cluster DNS: 10.47.0.10
+
+NAME               STATUS   ROLES                       AGE   VERSION        INTERNAL-IP   EXTERNAL-IP    OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME            LABELS
+vps26-optimal-us   Ready    control-plane,etcd,master   77m   v1.32.5+k3s1   10.10.0.26    65.49.60.35    Ubuntu 24.04.2 LTS   6.8.0-63-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps26-optimal-us,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=true,node-role.kubernetes.io/etcd=true,node-role.kubernetes.io/master=true,node.kubernetes.io/instance-type=k3s,region=us
+vps27-optimal-us   Ready    <none>                      71m   v1.32.5+k3s1   10.10.0.27    64.71.161.44   Ubuntu 24.04.2 LTS   6.8.0-54-generic   containerd://2.0.5-k3s1.32   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/instance-type=k3s,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=vps27-optimal-us,kubernetes.io/os=linux,node.kubernetes.io/instance-type=k3s,region=us
+
+## My available VPS locations
+Notes:
+- VPS located at Vietnam: vps22, vps23, vps24, vps33, vps29, vps30, vps31 (vps28 removed 2025-09-24)
+- VPS located at US: vps26, vps27
+- VPS located at EU: vps34, vps36
+- VPS located at Japan: vps3, vps4
+- VPS located at Singapore: vps9, vps19
+- All node UFW is inactive
+- I configured Flannel to use the wg0 interface
+- VPS33 has high-speed NVMe SSD, so I used to run Longhorn storage on those nodes only. This node has taints Taints: dedicated=storage:NoSchedule and labels:  Labels: longhorn=truelonghorn-region=vnregion=vnrole=storage
+
+
+## My Internal WireGuard IPs
+vps22: 10.10.0.22/24
+
+vps23: 10.10.0.23/24
+
+vps24: 10.10.0.24/24
+
+vps26: 10.10.0.26/24
+
+vps31: 10.10.0.31/24
+
+vps33: 10.10.0.33/24
+
+vps36: 10.10.0.36/24

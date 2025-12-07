@@ -1,0 +1,155 @@
+# pgAdmin Deployment for SG3 Cluster
+# Web-based PostgreSQL administration interface
+# Deployment Date: 2025-12-01
+# URL: https://pgadmin.sg3.k3s.canhnv.com
+
+# Deployment strategy
+strategy:
+  type: RollingUpdate
+
+# Number of replicas for high availability
+replicaCount: 2
+
+# Image configuration
+image:
+  registry: docker.io
+  repository: dpage/pgadmin4
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Environment variables for pgAdmin configuration
+env:
+  # Email and password are provided via existingSecret
+  email: admin@canhnv.com
+
+# Admin credentials from existing secret
+# Create secret with: kubectl create secret generic pgadmin-admin \
+#   --from-literal=password=<PASSWORD> -n postgres-db
+existingSecret: pgadmin-admin
+secretKeys:
+  pgadminPasswordKey: password
+
+# Persistent storage configuration
+persistentVolume:
+  enabled: true
+  storageClass: longhorn
+  size: 20Gi
+  accessModes:
+    - ReadWriteOnce
+
+# Resource allocation
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+  portName: http
+
+# Ingress configuration (disabled - using separate ingress.yaml)
+ingress:
+  enabled: false
+# We use a separate ingress.yaml file for better control over cert-manager
+
+# Pod anti-affinity for high availability
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - pgadmin4
+          topologyKey: kubernetes.io/hostname
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 5050
+  runAsGroup: 5050
+  fsGroup: 5050
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# Server definitions - mount ConfigMap with pre-configured PostgreSQL server
+serverDefinitions:
+  enabled: true
+  servers: |-
+    {
+      "Servers": {
+        "1": {
+          "Name": "postgresql-sg3-pgvector",
+          "Group": "SG3 Cluster",
+          "Host": "postgresql-sg3-pgvector-rw.postgres-db.svc.cluster.local",
+          "Port": 5432,
+          "MaintenanceDB": "postgres",
+          "Username": "postgres",
+          "SSLMode": "prefer",
+          "Comment": "PostgreSQL 17.2 HA cluster with pgvector extension"
+        }
+      }
+    }
+
+# Network policy (optional)
+networkPolicy:
+  enabled: false
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /misc/ping
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 15
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /misc/ping
+    port: 80
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Additional init containers (if needed for custom setup)
+init:
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+# Extra environment variables for pgAdmin configuration
+extraEnv:
+  - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+    value: "True"
+  - name: PGADMIN_CONFIG_SESSION_COOKIE_NAME
+    value: "PGADMIN_SESSION"
+  - name: PGADMIN_CONFIG_CONSOLE_LOG_LEVEL
+    value: "10"
+  - name: PGADMIN_CONFIG_COOKIE_DEFAULT_SECURE
+    value: "True"
+  - name: PGADMIN_CONFIG_COOKIE_DEFAULT_SAMESITE
+    value: "Lax"
+  - name: PGADMIN_CONFIG_WTF_CSRF_ENABLED
+    value: "True"
+  - name: PGADMIN_CONFIG_WTF_CSRF_TIME_LIMIT
+    value: "None"
+  - name: PGADMIN_LISTEN_PORT
+    value: "80"

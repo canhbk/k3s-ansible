@@ -1,0 +1,36 @@
+---
+- name: Upgrade K3s control-plane node to v1.32.5+k3s1
+  hosts: k3s_control
+  become: true
+  tasks:
+    - name: Display current K3s version
+      command: k3s --version
+      register: current_version
+      ignore_errors: true
+
+    - name: Show current version
+      debug:
+        msg: "Current K3s version: {{ current_version.stdout | default('unknown') }}"
+
+    - name: Backup etcd snapshot (if using embedded etcd)
+      command: k3s etcd-snapshot save
+      register: snapshot_result
+      ignore_errors: true
+
+    - name: Show etcd snapshot result
+      debug:
+        msg: "{{ snapshot_result.stdout | default('Skipped etcd snapshot') }}"
+
+    - name: Download and install K3s v1.32.5+k3s1
+      shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.5+k3s1" sh -s - server {{ k3s_server_args | default('') }}
+      environment:
+        INSTALL_K3S_SKIP_START: "false"
+
+    - name: Verify K3s version after upgrade
+      command: k3s --version
+      register: new_version
+
+    - name: Show new version
+      debug:
+        msg: "Upgraded K3s version: {{ new_version.stdout }}"
