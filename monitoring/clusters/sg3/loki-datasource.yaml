@@ -17,12 +17,16 @@ data:
       url: http://loki.monitoring.svc.cluster.local:3100
       jsonData:
         maxLines: 1000
+        # HTTP header for Loki multi-tenancy (required by Loki API)
+        httpHeaderName1: "X-Scope-OrgID"
         # Derived fields to link logs with traces
         derivedFields:
           - datasourceUid: prometheus
             matcherRegex: "trace_id=(\\w+)"
             name: TraceID
             url: "$${__value.raw}"
+      secureJsonData:
+        httpHeaderValue1: "1"
       isDefault: false
-      editable: true
+      editable: false
       version: 1
