@@ -54,7 +54,9 @@
       "Bash(jq:*)",
       "Bash(while read key)",
       "Bash(do echo \"=== $key ===\")",
-      "Bash(do echo '=== $key ===')"
+      "Bash(do echo '=== $key ===')",
+      "Bash(git commit:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
