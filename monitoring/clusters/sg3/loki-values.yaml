@@ -2,6 +2,9 @@
 # Overrides for monitoring/base/loki/values-base.yaml
 # Monolithic deployment mode for simplicity
 
+# Deployment mode: SingleBinary (all components in one pod)
+deploymentMode: SingleBinary
+
 # Single Binary configuration (all-in-one Loki)
 singleBinary:
   replicas: 1
@@ -76,15 +79,40 @@ loki:
   server:
     log_level: info
 
-  # Storage configuration - use Longhorn filesystem
+  # Storage configuration - filesystem (backed by local-path or Longhorn PVC)
   storage:
     type: filesystem
+    filesystem:
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
+
+  # Schema configuration (required by Loki chart)
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        index:
+          period: 24h
+          prefix: index_
+        object_store: filesystem
+        schema: v13
+        store: tsdb
 
   # Log retention
   limits_config:
     retention_period: 360h  # 15 days
 
+# Disable external caches for SingleBinary mode
+# SingleBinary has internal caching, external memcached not required
+# This fixes the issue where loki-chunks-cache-0 was stuck pending due to
+# requesting 9830Mi (9.6 GiB) memory which exceeded node capacity
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false
+
 # Resource allocations summary for SG3 Monolithic Mode:
 # - Loki single binary: 1 CPU request / 4 CPU limit / 2Gi RAM request / 8Gi RAM limit / 20Gi local-path storage
 # - Promtail: 100m CPU / 128Mi RAM × 8 nodes (DaemonSet) = 800m CPU / 1Gi RAM
+# - External caches: DISABLED (saves ~11 GiB memory, 1 CPU core)
 # TOTAL: ~1.8 CPU / ~3Gi RAM / 20Gi storage (local-path, no replication - data lost if node fails)
