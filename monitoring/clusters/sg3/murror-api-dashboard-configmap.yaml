@@ -16,6 +16,64 @@ data:
       "graphTooltip": 1,
       "id": null,
       "links": [],
+      "templating": {
+        "list": [
+          {
+            "current": {
+              "selected": false,
+              "text": "nsp-alpha-murror",
+              "value": "nsp-alpha-murror"
+            },
+            "description": "Select namespace for murror-api logs",
+            "hide": 0,
+            "includeAll": false,
+            "label": "Namespace",
+            "multi": false,
+            "name": "namespace",
+            "options": [
+              {
+                "selected": true,
+                "text": "nsp-alpha-murror",
+                "value": "nsp-alpha-murror"
+              },
+              {
+                "selected": false,
+                "text": "fix-dynamic-ins",
+                "value": "fix-dynamic-ins"
+              },
+              {
+                "selected": false,
+                "text": "mu-69",
+                "value": "mu-69"
+              },
+              {
+                "selected": false,
+                "text": "mu-88",
+                "value": "mu-88"
+              },
+              {
+                "selected": false,
+                "text": "mu-113",
+                "value": "mu-113"
+              },
+              {
+                "selected": false,
+                "text": "mu-117",
+                "value": "mu-117"
+              },
+              {
+                "selected": false,
+                "text": "mu-119",
+                "value": "mu-119"
+              }
+            ],
+            "query": "nsp-alpha-murror,fix-dynamic-ins,mu-69,mu-88,mu-113,mu-117,mu-119",
+            "queryValue": "",
+            "skipUrlSync": false,
+            "type": "custom"
+          }
+        ]
+      },
       "panels": [
         {
           "datasource": "Loki",
@@ -42,7 +100,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "{namespace=\"fix-dynamic-ins\", app=\"murror-api\"}",
+              "expr": "{namespace=\"$namespace\", app=\"murror-api\"}",
               "refId": "A"
             }
           ],
@@ -74,7 +132,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "{namespace=\"fix-dynamic-ins\", app=\"murror-api\"} | json | severity=\"ERROR\"",
+              "expr": "{namespace=\"$namespace\", app=\"murror-api\"} | json | severity=\"ERROR\"",
               "refId": "A"
             }
           ],
@@ -160,7 +218,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "sum(rate({namespace=\"fix-dynamic-ins\", app=\"murror-api\"} | json | severity=\"ERROR\" [5m]))",
+              "expr": "sum(rate({namespace=\"$namespace\", app=\"murror-api\"} | json | severity=\"ERROR\" [5m]))",
               "refId": "A"
             }
           ],
@@ -246,7 +304,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "sum(rate({namespace=\"fix-dynamic-ins\", app=\"murror-api\"} | json | method!=\"\" [1m]))",
+              "expr": "sum(rate({namespace=\"$namespace\", app=\"murror-api\"} | json | method!=\"\" [1m]))",
               "refId": "A"
             }
           ],
@@ -312,7 +370,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "(sum(rate({namespace=\"fix-dynamic-ins\", app=\"murror-api\"} | json | url=\"/api/health/ready\" | statusCode=\"200\" [5m])) / sum(rate({namespace=\"fix-dynamic-ins\", app=\"murror-api\"} | json | url=\"/api/health/ready\" [5m]))) * 100",
+              "expr": "(sum(rate({namespace=\"$namespace\", app=\"murror-api\"} | json | url=\"/api/health/ready\" | statusCode=\"200\" [5m])) / sum(rate({namespace=\"$namespace\", app=\"murror-api\"} | json | url=\"/api/health/ready\" [5m]))) * 100",
               "refId": "A"
             }
           ],
@@ -400,7 +458,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "container_memory_working_set_bytes{namespace=\"fix-dynamic-ins\",pod=~\"murror-api.*\"}",
+              "expr": "container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"murror-api.*\"}",
               "legendFormat": "{{pod}}",
               "refId": "A"
             }
@@ -411,9 +469,6 @@ data:
       ],
       "schemaVersion": 39,
       "tags": ["murror", "logs", "api"],
-      "templating": {
-        "list": []
-      },
       "time": {
         "from": "now-1h",
         "to": "now"
