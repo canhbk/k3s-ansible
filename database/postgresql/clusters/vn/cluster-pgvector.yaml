@@ -100,16 +100,6 @@ spec:
   superuserSecret:
     name: superuser-pgvector-secret
 
-  # Bootstrap configuration
-  bootstrap:
-    initdb:
-      database: default
-      owner: dev
-      encoding: UTF8
-      locale: en_US.UTF-8
-      secret:
-        name: dev-pgvector-secret
-
   # Image configuration
   imageCatalogRef:
     apiGroup: postgresql.cnpg.io

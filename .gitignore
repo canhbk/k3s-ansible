@@ -60,3 +60,4 @@ kubeconfig-sg3*
 
 # OAuth and API credentials (actual values)
 redis/clusters/dev/oauth2-proxy/values.yaml
+database/postgresql/clusters/vn/secrets-r2-backup.yaml

@@ -1,0 +1,14 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: postgresql-ha-hourly-backup
+  namespace: postgres-db
+spec:
+  # Hourly backup (at minute 0 of every hour)
+  schedule: "0 * * * *"
+  backupOwnerReference: self
+  cluster:
+    name: postgresql-ha
+  immediate: true  # Take first backup immediately
+  method: barmanObjectStore
+  target: prefer-standby

@@ -99,6 +99,29 @@ spec:
     storageClass: longhorn-vn
     size: 5Gi
 
+  # Backup configuration for Cloudflare R2
+  backup:
+    retentionPolicy: "30d"
+    target: "prefer-standby"
+    barmanObjectStore:
+      destinationPath: "s3://murror-api-prod-postgres-backup/postgresql-ha-vn"
+      s3Credentials:
+        accessKeyId:
+          name: cloudflare-r2-backup-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: cloudflare-r2-backup-credentials
+          key: SECRET_ACCESS_KEY
+      endpointURL: "https://9f2e7944fe1f73ce50daab511d91e477.r2.cloudflarestorage.com"
+      wal:
+        compression: gzip
+        maxParallel: 2
+      data:
+        compression: gzip
+        immediateCheckpoint: false
+        jobs: 2
+      serverName: "postgresql-ha-vn"
+
 ---
 # Database definitions
 apiVersion: postgresql.cnpg.io/v1
