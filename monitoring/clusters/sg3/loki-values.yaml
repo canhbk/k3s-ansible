@@ -52,6 +52,13 @@ gateway:
 promtail:
   enabled: true
 
+  # Client configuration for SingleBinary Loki (override base config)
+  config:
+    clients:
+      - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+        # Required for Loki multi-tenancy (adds X-Scope-OrgID header)
+        tenant_id: "1"
+
   resources:
     requests:
       cpu: 100m
