@@ -1,0 +1,69 @@
+# PostgreSQL Storage Alert Rules for VN cluster
+# Uses CNPG database size metrics to monitor storage usage
+#
+# Apply: kubectl apply -f prometheus-alerts-storage.yaml
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: postgresql-vn-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+  - name: postgresql-vn-storage
+    interval: 30s
+    rules:
+    # Alert: postgresql-ha total DB size > 4GB (80% of 5Gi PVC)
+    - alert: PostgreSQLHAStorageWarning
+      expr: |
+        (sum(cnpg_pg_database_size_bytes{namespace="postgres-db", job="postgres-db/postgresql-ha"}) / 1024 / 1024 / 1024) > 4
+      for: 5m
+      labels:
+        severity: warning
+        cluster: vn
+        service: postgresql-ha
+      annotations:
+        summary: "PostgreSQL HA storage usage above 80%"
+        description: "Database size: {{ $value | printf \"%.2f\" }}GB / 5GB available (80% threshold reached)"
+
+    # Critical: postgresql-ha total DB size > 4.5GB (90% of 5Gi PVC)
+    - alert: PostgreSQLHAStorageCritical
+      expr: |
+        (sum(cnpg_pg_database_size_bytes{namespace="postgres-db", job="postgres-db/postgresql-ha"}) / 1024 / 1024 / 1024) > 4.5
+      for: 2m
+      labels:
+        severity: critical
+        cluster: vn
+        service: postgresql-ha
+      annotations:
+        summary: "PostgreSQL HA storage CRITICAL - above 90%"
+        description: "Database size: {{ $value | printf \"%.2f\" }}GB / 5GB available (90% threshold) - IMMEDIATE ACTION REQUIRED"
+
+    # Test Alert for postgresql-ha (REMOVE after verification)
+    - alert: PostgreSQLHAStorageTest
+      expr: |
+        (sum(cnpg_pg_database_size_bytes{namespace="postgres-db", job="postgres-db/postgresql-ha"}) / 1024 / 1024) > 1
+      for: 1m
+      labels:
+        severity: warning
+        cluster: vn
+        service: postgresql-ha
+      annotations:
+        summary: "TEST: PostgreSQL HA storage test"
+        description: "Database size: {{ $value | printf \"%.2f\" }}MB / 5120MB (5GB PVC)"
+
+    # Test Alert for postgresql-pgvector-cnpg (REMOVE after verification)
+    - alert: PostgreSQLPgVectorStorageTest
+      expr: |
+        (sum(cnpg_pg_database_size_bytes{namespace="postgres-db", job="postgres-db/postgresql-pgvector-cnpg"}) / 1024 / 1024) > 1
+      for: 1m
+      labels:
+        severity: warning
+        cluster: vn
+        service: postgresql-pgvector-cnpg
+      annotations:
+        summary: "TEST: PostgreSQL pgvector storage test"
+        description: "Database size: {{ $value | printf \"%.2f\" }}MB / 20480MB (20GB PVC)"
