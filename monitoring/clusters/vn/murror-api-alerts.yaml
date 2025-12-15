@@ -1,0 +1,122 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: murror-api-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    cluster: vn
+spec:
+  groups:
+    - name: murror-api.rules
+      interval: 30s
+      rules:
+        - alert: MurrorAPIPodNotReady
+          expr: |
+            kube_pod_status_ready{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", condition="false"} == 1
+          for: 1m
+          labels:
+            severity: warning
+            service: murror-api
+            cluster: vn
+          annotations:
+            summary: "Murror API pod is not ready"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is not in ready state for more than 1 minute."
+            runbook_url: "https://wiki.company.com/runbooks/murror-api-pod-not-ready"
+
+        - alert: MurrorAPIPodRestarts
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn"}[15m]) > 3
+          for: 2m
+          labels:
+            severity: warning
+            service: murror-api
+            cluster: vn
+          annotations:
+            summary: "Murror API pod has restarted multiple times"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last 15 minutes."
+            runbook_url: "https://wiki.company.com/runbooks/murror-api-pod-restarts"
+
+        - alert: MurrorAPIContainerCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn"}[15m]) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            service: murror-api
+            cluster: vn
+          annotations:
+            summary: "Murror API container is crash looping"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} (namespace: {{ $labels.namespace }}) is crash looping. Restart rate: {{ $value | humanize }} restarts/sec"
+            runbook_url: "https://wiki.company.com/runbooks/murror-api-crash-loop"
+
+        - alert: MurrorAPIDeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", deployment=~"murror.*"}
+            !=
+            kube_deployment_status_replicas_available{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", deployment=~"murror.*"}
+          for: 2m
+          labels:
+            severity: warning
+            service: murror-api
+            cluster: vn
+          annotations:
+            summary: "Murror API deployment replicas mismatch"
+            description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has {{ $value }} available replicas, but {{ $labels.spec_replicas }} are expected."
+            runbook_url: "https://wiki.company.com/runbooks/murror-api-replicas-mismatch"
+
+        - alert: MurrorAPIHighErrorLogRate
+          expr: |
+            sum(rate(logfmt_error_total{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", app=~"murror.*"}[5m])) by (namespace, app) > 10
+          for: 5m
+          labels:
+            severity: critical
+            service: murror-api
+            cluster: vn
+          annotations:
+            summary: "Murror API high error log rate"
+            description: "Murror API in namespace {{ $labels.namespace }} is producing {{ $value | humanize }} error logs per second over the last 5 minutes."
+            runbook_url: "https://wiki.company.com/runbooks/murror-api-high-error-rate"
+
+        - alert: MurrorAPIHighMemoryUsage
+          expr: |
+            (container_memory_working_set_bytes{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", pod=~"murror.*"}
+            /
+            container_spec_memory_limit_bytes{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", pod=~"murror.*"}) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            service: murror-api
+            cluster: vn
+          annotations:
+            summary: "Murror API high memory usage"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its memory limit."
+            runbook_url: "https://wiki.company.com/runbooks/murror-api-high-memory"
+
+        - alert: MurrorAPIHighCPUUsage
+          expr: |
+            (rate(container_cpu_usage_seconds_total{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", pod=~"murror.*"}[5m])
+            /
+            container_spec_cpu_quota{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", pod=~"murror.*"} * container_spec_cpu_period{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", pod=~"murror.*"}) > 0.8
+          for: 5m
+          labels:
+            severity: warning
+            service: murror-api
+            cluster: vn
+          annotations:
+            summary: "Murror API high CPU usage"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its CPU limit."
+            runbook_url: "https://wiki.company.com/runbooks/murror-api-high-cpu"
+
+        - alert: MurrorAPINoPodsRunning
+          expr: |
+            count(kube_pod_status_phase{namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", phase="Running", pod=~"murror.*"}) == 0
+          for: 1m
+          labels:
+            severity: critical
+            service: murror-api
+            cluster: vn
+          annotations:
+            summary: "No Murror API pods are running"
+            description: "No Murror API pods are in Running state in namespaces matching nsp-prod-murror or murror-kol-prod-vn. This indicates a critical service disruption."
+            runbook_url: "https://wiki.company.com/runbooks/murror-api-no-pods-running"

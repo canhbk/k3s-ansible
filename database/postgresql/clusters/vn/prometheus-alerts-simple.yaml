@@ -1,0 +1,41 @@
+# Simplified PostgreSQL Alert Rules for VN cluster
+# Uses PostgreSQL pod disk usage instead of PVC metrics
+#
+# Apply: kubectl apply -f prometheus-alerts-simple.yaml
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: postgresql-vn-health-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+  - name: postgresql-vn-health
+    interval: 30s
+    rules:
+    # Alert if PostgreSQL pod is down
+    - alert: PostgreSQLPodDown
+      expr: up{job="postgres-db/postgresql-ha", namespace="postgres-db"} == 0
+      for: 2m
+      labels:
+        severity: critical
+        cluster: vn
+        service: postgresql-ha
+      annotations:
+        summary: "PostgreSQL HA pod is down"
+        description: "PostgreSQL HA pod has been down for more than 2 minutes"
+
+    # Alert if any PostgreSQL pod is not ready
+    - alert: PostgreSQLNotReady
+      expr: kube_pod_status_ready{namespace="postgres-db", condition="true"} == 0
+      for: 5m
+      labels:
+        severity: warning
+        cluster: vn
+        service: postgresql
+      annotations:
+        summary: "PostgreSQL pod not ready"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is not ready"

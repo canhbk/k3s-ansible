@@ -125,11 +125,64 @@ kubectl logs postgresql-ha-1 -n postgres-db -c postgres | grep "Archived WAL fil
 
 Point-in-time recovery and restore procedures are documented in [POSTGRESQL_BACKUP_RESTORE.md](./POSTGRESQL_BACKUP_RESTORE.md).
 
+### Cross-Cluster Restore Verification
+
+On 2025-12-08, the VN cluster backup was successfully restored to the EU cluster, verifying that the Cloudflare R2 backup system works for disaster recovery scenarios. See [EU Cluster PostgreSQL](../eu/POSTGRESQL.md) for details.
+
 ---
+
+## Storage Configuration
+
+### postgresql-ha
+
+- **PVC**: `postgresql-ha-1`
+- **Size**: 5Gi
+- **Storage Class**: `longhorn-vn`
+- **Status**: Healthy
+
+### postgresql-pgvector
+
+- **PVC**: `postgresql-pgvector-1`
+- **Size**: 20Gi (expanded from 4Gi on 2025-12-11)
+- **Storage Class**: `longhorn-vn`
+- **Status**: Healthy
+- **Node**: vps22-vnix (migrated from vps33)
+
+## Monitoring & Alerting
+
+PostgreSQL is monitored via Prometheus with alerts sent to Slack.
+
+### Slack Channel
+
+- **Channel**: `#alert-production-database`
+
+### Active Alerts
+
+| Alert | Threshold | Severity | Duration |
+|-------|-----------|----------|----------|
+| PostgreSQLStorageWarning | PVC >80% | warning | 1m |
+| PostgreSQLPgVectorStorageWarning | PVC >80% | warning | 1m |
+| PostgreSQLStorageCritical | PVC >90% | critical | 2m |
+| PostgreSQLHAStorageWarning | DB >4GB (80% of 5GB) | warning | 5m |
+| PostgreSQLHAStorageCritical | DB >4.5GB (90% of 5GB) | critical | 2m |
+| PostgreSQLPodDown | Pod down | critical | 2m |
+| PostgreSQLNotReady | Pod not ready | warning | 5m |
+
+### Alert Files
+
+- `database/postgresql/clusters/vn/prometheus-alerts.yaml` - PVC-based storage alerts
+- `database/postgresql/clusters/vn/prometheus-alerts-simple.yaml` - Health alerts
+- `database/postgresql/clusters/vn/prometheus-alerts-storage.yaml` - CNPG database size alerts
+
+### Grafana Dashboard
+
+Access via: `https://grafana.vn.k3s.canhnv.com`
 
 ## Last Updated
 
-- Date: 2025-12-08
+- Date: 2025-12-15
 - Service Type: NodePort
 - NodePort: 30432
 - Backup: Cloudflare R2 (Hourly, 30-day retention)
+- Storage: postgresql-pgvector PVC expanded to 20Gi
+- Monitoring: Prometheus alerts with Slack notifications

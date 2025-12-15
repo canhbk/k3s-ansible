@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: loki
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+    cluster: vn
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  endpoints:
+  - port: http-metrics
+    interval: 30s
+    path: /metrics
+    relabelings:
+    - replacement: vn
+      targetLabel: cluster
+    - replacement: production
+      targetLabel: environment

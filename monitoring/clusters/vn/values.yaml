@@ -104,6 +104,9 @@ alertmanager:
           service: postgresql-pgvector
         receiver: 'database-alerts'
       - match:
+          service: murror-api
+        receiver: 'murror-api-alerts'
+      - match:
           alertname: Watchdog
         receiver: 'null'
     receivers:
@@ -144,12 +147,35 @@ alertmanager:
           *Severity:* {{ .Labels.severity }}
           *Details:* {{ .Annotations.description }}
           {{ end }}
+    - name: 'murror-api-alerts'
+      slack_configs:
+      - channel: '#alert-production-murror-api'
+        send_resolved: true
+        title: ':warning: [{{ .Status | toUpper }}] Murror API - {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* VN
+          *Service:* {{ .Labels.service }}
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
 
 # Kubelet metrics (enable cadvisor for volume metrics)
 kubelet:
   enabled: true
   serviceMonitor:
     cAdvisor: true
+    additionalLabels:
+      prometheus: kube-prometheus-stack
+
+# Kube API Server metrics
+kubeApiServer:
+  enabled: true
+  serviceMonitor:
+    additionalLabels:
+      prometheus: kube-prometheus-stack
 
 # Node exporter for production
 nodeExporter:

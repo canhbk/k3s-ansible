@@ -6,7 +6,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: postgresql-vn-alerts
+  name: postgresql-vn-storage-alerts
   namespace: monitoring
   labels:
     prometheus: kube-prometheus-stack
@@ -41,29 +41,3 @@ spec:
       annotations:
         summary: "PostgreSQL HA storage CRITICAL - above 90%"
         description: "Database size: {{ $value | printf \"%.2f\" }}GB / 5GB available (90% threshold) - IMMEDIATE ACTION REQUIRED"
-
-    # Test Alert for postgresql-ha (REMOVE after verification)
-    - alert: PostgreSQLHAStorageTest
-      expr: |
-        (sum(cnpg_pg_database_size_bytes{namespace="postgres-db", job="postgres-db/postgresql-ha"}) / 1024 / 1024) > 1
-      for: 1m
-      labels:
-        severity: warning
-        cluster: vn
-        service: postgresql-ha
-      annotations:
-        summary: "TEST: PostgreSQL HA storage test"
-        description: "Database size: {{ $value | printf \"%.2f\" }}MB / 5120MB (5GB PVC)"
-
-    # Test Alert for postgresql-pgvector-cnpg (REMOVE after verification)
-    - alert: PostgreSQLPgVectorStorageTest
-      expr: |
-        (sum(cnpg_pg_database_size_bytes{namespace="postgres-db", job="postgres-db/postgresql-pgvector-cnpg"}) / 1024 / 1024) > 1
-      for: 1m
-      labels:
-        severity: warning
-        cluster: vn
-        service: postgresql-pgvector-cnpg
-      annotations:
-        summary: "TEST: PostgreSQL pgvector storage test"
-        description: "Database size: {{ $value | printf \"%.2f\" }}MB / 20480MB (20GB PVC)"
