@@ -1,0 +1,152 @@
+# PostgreSQL HA Cluster Configuration for EU
+# Using CloudNativePG Operator with Recovery Bootstrap from VN Cluster
+#
+# This cluster restores from VN cluster's Cloudflare R2 backup (latest backup)
+# All user passwords come from the restored VN backup data, not from secrets
+#
+# Prerequisites:
+# 1. CloudNative-PG operator installed
+# 2. Namespace created: kubectl create namespace postgres-db
+# 3. Secrets applied: kubectl apply -f secrets-r2-backup.yaml secrets.yaml secrets-vps-ha.yaml
+#
+# Deploy:
+# kubectl apply -f cluster.yaml
+#
+# Recovery Source: s3://murror-api-prod-postgres-backup/postgresql-ha-vn (VN cluster backup)
+# Recovery Mode: Latest available backup (targetImmediate: true)
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ClusterImageCatalog
+metadata:
+  name: postgresql
+  namespace: postgres-db
+spec:
+  images:
+    - major: 15
+      image: ghcr.io/cloudnative-pg/postgresql:15.6
+    - major: 16
+      image: ghcr.io/cloudnative-pg/postgresql:16.8
+    - major: 17
+      image: ghcr.io/cloudnative-pg/postgresql:17.5
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-ha
+  namespace: postgres-db
+spec:
+  # Managed roles (secrets required but passwords come from restored backup)
+  managed:
+    roles:
+      - name: be
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: be-secret
+      - name: vps
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: vps-ha-secret
+      - name: notifications
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: notifications-secret
+
+  # Cluster configuration
+  instances: 1
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: superuser-secret
+
+  # Bootstrap configuration - RESTORE FROM VN BACKUP
+  bootstrap:
+    recovery:
+      source: postgresql-ha-vn-backup
+      # No recoveryTarget specified = restore latest backup and replay all available WAL files
+
+  # Image configuration
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    name: postgresql
+    major: 17
+
+  # Storage configuration - EU uses longhorn-replicated (2 replicas)
+  storage:
+    storageClass: longhorn-replicated
+    size: 5Gi
+
+  # External cluster configuration for VN backup source
+  externalClusters:
+    - name: postgresql-ha-vn-backup
+      barmanObjectStore:
+        destinationPath: "s3://murror-api-prod-postgres-backup/postgresql-ha-vn"
+        s3Credentials:
+          accessKeyId:
+            name: cloudflare-r2-backup-credentials
+            key: ACCESS_KEY_ID
+          secretAccessKey:
+            name: cloudflare-r2-backup-credentials
+            key: SECRET_ACCESS_KEY
+        endpointURL: "https://9f2e7944fe1f73ce50daab511d91e477.r2.cloudflarestorage.com"
+        wal:
+          compression: gzip
+          maxParallel: 2
+        serverName: "postgresql-ha-vn"
+
+---
+# Database definitions
+# These will be created if they don't exist after restore
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: murror
+  namespace: postgres-db
+spec:
+  name: murror
+  owner: be
+  cluster:
+    name: postgresql-ha
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: vps-management-ha
+  namespace: postgres-db
+spec:
+  name: vps-management
+  owner: vps
+  cluster:
+    name: postgresql-ha
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: notifications
+  namespace: postgres-db
+spec:
+  name: notifications
+  owner: notifications
+  cluster:
+    name: postgresql-ha
