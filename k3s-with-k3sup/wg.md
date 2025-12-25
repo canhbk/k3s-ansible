@@ -25,6 +25,8 @@ vps31: 10.10.0.31/24
 
 vps33: 10.10.0.33/24
 
+vps35: 10.10.0.35/24
+
 vps36: 10.10.0.36/24
 
 ## Create config file on each node
@@ -103,6 +105,13 @@ PersistentKeepalive = 25
 PublicKey = qhfkGPkRWKrV75jg3TDBejtx46bFW7VeksMYJYKWa3A=
 AllowedIPs = 10.10.0.34/32
 Endpoint = 31.14.17.182:51820
+PersistentKeepalive = 25
+
+# Peer: vps35 (VN Agent)
+[Peer]
+PublicKey = 4FmkgrF7HH3cwiZqjZjurhkojXS8tCfaFM89155exWk=
+AllowedIPs = 10.10.0.35/32
+Endpoint = 103.200.23.223:51820
 PersistentKeepalive = 25
 
 # Peer: vps36

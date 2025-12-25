@@ -39,6 +39,12 @@ curl -sfL https://get.k3s.io | K3S_URL=https://10.10.0.22:6443 K3S_TOKEN=K107f5d
 curl -sfL https://get.k3s.io | K3S_URL=https://10.10.0.22:6443 K3S_TOKEN=K107f5d43f397f27d278dbe030f4921e6859c59bc2b3d122355e0492fa31efd84e3::server:c5ab4cde6f13b1712de818957296bd01 INSTALL_K3S_VERSION=v1.32.5+k3s1 INSTALL_K3S_EXEC="--node-label=region=vn --node-label=longhorn=true --node-label=longhorn-region=vn --node-label=role=storage --node-ip=10.10.0.33 --node-external-ip=14.225.210.189 --node-external-dns=vps33.canhnv.com --node-taint=dedicated=storage:NoSchedule" sh -
 ```
 
+- vps35 (general workload)
+
+```bash
+curl -sfL https://get.k3s.io | K3S_URL=https://10.10.0.22:6443 K3S_TOKEN=K107f5d43f397f27d278dbe030f4921e6859c59bc2b3d122355e0492fa31efd84e3::server:c5ab4cde6f13b1712de818957296bd01 INSTALL_K3S_VERSION=v1.32.5+k3s1 INSTALL_K3S_EXEC="--flannel-iface=wg0 --node-label=region=vn --node-label=longhorn=true --node-label=longhorn-region=vn --node-label=role=storage --node-ip=10.10.0.35 --node-external-ip=103.200.23.223" sh -
+```
+
 ## Cluster 2 (VN)
 
 ### Init Control node
