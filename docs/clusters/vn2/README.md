@@ -70,6 +70,60 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.32.5+k3s1 \
 - **Primary Use**: Murror production workloads
 - **Service Mesh**: Traefik ingress controller (default)
 - **Load Balancing**: svclb (K3s Service Load Balancer)
+- **CI/CD**: Actions Runner Controller (ARC) - GitHub self-hosted runners
+
+## Actions Runner Controller (ARC)
+
+The VN2 cluster runs GitHub self-hosted runners using Actions Runner Controller v2.
+
+### Components
+
+| Component | Namespace | Description |
+|-----------|-----------|-------------|
+| ARC Controller | `arc-systems` | Manages runner lifecycle and scaling |
+| Runner Scale Set | `arc-runners` | Auto-scaling runner pods (0-10) |
+| Listener | `arc-runners` | Listens for GitHub workflow events |
+
+### Configuration
+
+- **GitHub Scope**: Organization-level (`murror`)
+- **Runner Name**: `vn2-runners`
+- **Scaling**: 0-10 runners (auto-scale on demand)
+- **Container Mode**: Docker-in-Docker (DinD)
+- **Capabilities**: Docker builds, Node.js/pnpm, kubectl, Helm
+
+### Usage in Workflows
+
+```yaml
+# Use VN2 runners specifically
+runs-on: [self-hosted, vn2-runners]
+
+# Or use any self-hosted runner
+runs-on: [self-hosted]
+```
+
+### Management Commands
+
+```bash
+# Check controller status
+kubectl -n arc-systems get pods
+
+# Check runner scale set
+kubectl -n arc-runners get autoscalingrunnerset
+
+# Check active runners
+kubectl -n arc-runners get pods -l app.kubernetes.io/component=runner
+
+# View controller logs
+kubectl -n arc-systems logs -l app.kubernetes.io/name=gha-runner-scale-set-controller -f
+
+# View listener logs
+kubectl -n arc-runners logs -l app.kubernetes.io/component=runner-scale-set-listener -f
+```
+
+### Installation
+
+See: `arc/clusters/vn2/` for configuration files and `arc/scripts/install-arc.sh` for installation.
 
 ## Access
 
@@ -138,6 +192,7 @@ If pods on different nodes cannot communicate:
 
 | Date | Change | Notes |
 |------|--------|-------|
+| 2025-12-25 | Added Actions Runner Controller (ARC) | GitHub self-hosted runners with auto-scaling |
 | 2025-10-21 | Added vps28-bnix as agent node | Previous networking issues resolved, node rejoined cluster |
 | 2024-09-24 | Removed vps28-bnix | Due to networking issues |
 

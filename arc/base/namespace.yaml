@@ -1,0 +1,21 @@
+---
+# Namespace for ARC controller components
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arc-systems
+  labels:
+    app.kubernetes.io/name: arc-systems
+    app.kubernetes.io/component: controller
+---
+# Namespace for runner pods (separate for security)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arc-runners
+  labels:
+    app.kubernetes.io/name: arc-runners
+    app.kubernetes.io/component: runners
+    # Allow privileged pods for Docker-in-Docker
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged

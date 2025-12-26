@@ -1,0 +1,60 @@
+# ARC Controller Helm Values for VN2 Cluster
+# Chart: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+# Version: 0.10.1
+
+# Controller replica count (single replica for K3s)
+replicaCount: 1
+
+# Image configuration
+image:
+  repository: ghcr.io/actions/gha-runner-scale-set-controller
+  pullPolicy: IfNotPresent
+  # Use specific version for stability
+  tag: "0.10.1"
+
+# Service account configuration
+serviceAccount:
+  create: true
+  name: arc-controller
+
+# Resource limits optimized for K3s
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Pod scheduling - run on control plane node (vps28 has network issues)
+nodeSelector:
+  kubernetes.io/hostname: vps29-bnix
+tolerations:
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+affinity: {}
+
+# Logging configuration
+logLevel: info
+logFormat: json
+
+# Metrics configuration
+metrics:
+  controllerManagerAddr: ":8080"
+  listenerAddr: ":8081"
+  listenerEndpoint: "/metrics"
+
+# Leader election for HA (single replica doesn't need this)
+leaderElection:
+  enabled: false
+
+# Watch all namespaces for runner scale sets
+watchSingleNamespace: ""
+
+# Update strategy
+updateStrategy:
+  type: RollingUpdate
