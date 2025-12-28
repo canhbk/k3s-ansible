@@ -4,8 +4,9 @@ metadata:
   name: postgresql-ha-hourly-backup
   namespace: postgres-db
 spec:
-  # Hourly backup (at minute 0 of every hour)
-  schedule: "0 * * * *"
+  # Backup every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
+  # CloudNativePG uses 6-field cron: seconds minutes hours day month weekday
+  schedule: "0 0 */6 * * *"
   backupOwnerReference: self
   cluster:
     name: postgresql-ha

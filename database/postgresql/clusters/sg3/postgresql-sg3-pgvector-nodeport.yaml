@@ -1,0 +1,42 @@
+# PostgreSQL SG3 pgvector External Access (NodePort)
+# Exposes postgresql-sg3-pgvector cluster for development/debugging via node IPs
+#
+# Access: <any-node-ip>:31432
+# Example: psql "postgresql://app@10.10.0.51:31432/app"
+#
+# Created: 2025-12-11
+# Apply: kubectl apply -f postgresql-sg3-pgvector-nodeport.yaml --context sg3
+# Verify: kubectl get svc postgresql-sg3-pgvector-external -n postgres-db
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-sg3-pgvector-external
+  namespace: postgres-db
+  annotations:
+    environment: "production"
+    team: "devops"
+    cluster: "postgresql-sg3-pgvector"
+    purpose: "Development/debugging access to sg3 PostgreSQL HA cluster via node IPs"
+    warning: "DEVELOPMENT ACCESS - ENSURE FIREWALL RULES RESTRICT ACCESS"
+    created: "2025-12-11"
+    access-method: "nodeport"
+  labels:
+    cnpg.io/cluster: postgresql-sg3-pgvector
+    service.type: external-access
+spec:
+  type: NodePort
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+    protocol: TCP
+    nodePort: 31432  # Fixed port in NodePort range (30000-32767)
+  selector:
+    cnpg.io/cluster: postgresql-sg3-pgvector
+    cnpg.io/instanceRole: primary
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours

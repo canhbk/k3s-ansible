@@ -74,6 +74,36 @@ Update guidance in line with the latest K3s/K8s and Linux server management stan
 
 Maintain a minimal privilege model for all automated operations.
 
+## Task Execution Requirements
+
+**CRITICAL**: Always use sub agents (Task tool) to execute implementation plans.
+
+### Rules
+
+1. **Use specialized sub agents** for executing tasks - leverage the Task tool with appropriate `subagent_type` for different operations
+2. **Run sub agents in parallel** when tasks are independent - use multiple Task tool calls in a single message
+3. **Match agent to task type**:
+   - `Explore` - for codebase exploration and searching
+   - `Plan` - for designing implementation strategies
+   - `git-workflow-executor` - for Git operations
+   - `k8s-cluster-operator` - for Kubernetes cluster operations
+   - `file-creator` - for creating/updating files with exact specifications
+   - `security-vulnerability-expert` - for security reviews
+   - `senior-code-reviewer` - for code reviews after implementation
+
+4. **Benefits of using sub agents**:
+   - Reduces context usage in main conversation
+   - Specialized agents have focused expertise
+   - Parallel execution improves performance
+   - Better organization of complex tasks
+
+5. **When to use sub agents**:
+   - Multi-step implementations
+   - Codebase exploration and research
+   - Kubernetes cluster operations
+   - Creating or modifying configuration files
+   - Git operations
+
 ## Project Overview
 
 This is an Ansible-based automation project for deploying and managing K3s Kubernetes clusters. K3s is a lightweight Kubernetes distribution designed for edge, IoT, and resource-constrained environments.
@@ -251,6 +281,15 @@ The repository includes configurations for various applications:
 - **MySQL Cluster**: Database clustering
 - **Cert-Manager**: TLS certificate management
 - **Rancher**: Kubernetes management UI
+
+### Related Application Repositories
+
+For deployment tasks, reference the following source code repositories for better context:
+
+- **Murror API**: `/Users/canhnv/development/murror/murror-api` - NestJS-based backend service deployed across clusters
+- **Murror AI (ViaSR API)**: `/Users/canhnv/development/murror/viasr-api` - AI/ML service for Murror platform
+- **Auth Service Backend**: `/Users/canhnv/development/murror/auth-service` - Authentication service backend (deployed to US cluster)
+- **Auth Service UI**: `/Users/canhnv/development/murror/auth-service-ui` - Authentication service frontend (deployed to US cluster)
 
 ## Important Variables
 

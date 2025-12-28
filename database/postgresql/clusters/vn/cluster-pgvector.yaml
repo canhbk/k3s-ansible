@@ -110,7 +110,7 @@ spec:
   # Storage configuration
   storage:
     storageClass: longhorn-vn
-    size: 4Gi
+    size: 20Gi  # Expanded from 4Gi on 2025-12-11
 
 ---
 # Database definitions

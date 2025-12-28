@@ -1,0 +1,7 @@
+apiVersion: management.cattle.io/v3
+kind: ClusterRegistrationToken
+metadata:
+  name: default-token
+  namespace: c-m-d27wlxts
+spec:
+  clusterName: c-m-d27wlxts

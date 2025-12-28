@@ -4,7 +4,7 @@
 
 This document provides a quick reference for all services deployed on the SG3 cluster, including access URLs, namespaces, and authentication information.
 
-**Last Updated**: 2025-12-03
+**Last Updated**: 2025-12-11
 
 ## Service Directory
 
@@ -28,7 +28,8 @@ This document provides a quick reference for all services deployed on the SG3 cl
 | Service | URL | Namespace | Purpose | Authentication |
 |---------|-----|-----------|---------|----------------|
 | **pgAdmin** | https://pgadmin.sg3.k3s.canhnv.com | postgres-db | PostgreSQL database administration | admin@canhnv.com / (from secret) |
-| **PostgreSQL** | postgresql-sg3-pgvector-rw.postgres-db.svc.cluster.local:5432 | postgres-db | PostgreSQL 17.2 HA cluster with pgvector | postgres / app / murror / murror-ai |
+| **PostgreSQL (Internal)** | postgresql-sg3-pgvector-rw.postgres-db.svc.cluster.local:5432 | postgres-db | PostgreSQL 17.2 HA cluster with pgvector | postgres / app / murror / murror-ai |
+| **PostgreSQL (External - NodePort)** | <any-node-ip>:31432 | postgres-db | Direct IP access for development/debugging | postgres / app / murror / murror-ai |
 | **InfluxDB** | https://influxdb.sg3.k3s.canhnv.com | influxdb | Time-series database for metrics | admin / (from secret) |
 
 ### Message Queues
@@ -70,6 +71,27 @@ loki-gateway.monitoring.svc.cluster.local
 # InfluxDB endpoint
 influxdb-influxdb2.influxdb.svc.cluster.local:8086
 ```
+
+### External Database Access (NodePort)
+
+For development and debugging purposes, the PostgreSQL cluster can be accessed directly via any node IP:
+
+```bash
+# Connect using node IP + NodePort 31432
+psql "postgresql://app@10.10.0.51:31432/app"
+psql "postgresql://murror@10.10.0.52:31432/app"
+
+# With external IPs (if accessible)
+psql "postgresql://app@15.235.211.39:31432/app"
+```
+
+**Available Node IPs**:
+- Internal: 10.10.0.50-57 (any node)
+- External: 15.235.197.155, 15.235.211.39, etc. (check firewall rules)
+
+**Note**: The NodePort service targets the primary instance only for read-write operations. For read-only access, use the internal cluster services.
+
+**See**: [database/postgresql/clusters/sg3/EXTERNAL_ACCESS.md](../../../database/postgresql/clusters/sg3/EXTERNAL_ACCESS.md) for comprehensive connection examples.
 
 ### Port Forwarding (for non-ingress services)
 
