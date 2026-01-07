@@ -290,6 +290,98 @@ For deployment tasks, reference the following source code repositories for bette
 - **Murror AI (ViaSR API)**: `/Users/canhnv/development/murror/viasr-api` - AI/ML service for Murror platform
 - **Auth Service Backend**: `/Users/canhnv/development/murror/auth-service` - Authentication service backend (deployed to US cluster)
 - **Auth Service UI**: `/Users/canhnv/development/murror/auth-service-ui` - Authentication service frontend (deployed to US cluster)
+- **Numerology Platform**: `/Users/canhnv/development/numerology` - Numerology web platform (see detailed section below)
+
+### Numerology Project
+
+**Repository**: `/Users/canhnv/development/numerology`
+
+A Turborepo + pnpm monorepo containing numerology web applications.
+
+#### Applications
+
+| App | Type | Port | Description |
+|-----|------|------|-------------|
+| backend | NestJS API | 3000 | REST API with PostgreSQL |
+| web | Next.js | 3001 | Marketing/landing pages |
+| client | React+Vite | 80 (nginx) | Main user-facing SPA |
+| admin | React+Vite | 80 (nginx) | Admin dashboard |
+
+#### Deployment Environments
+
+| Environment | Cluster | Domain Pattern | Branch |
+|-------------|---------|----------------|--------|
+| Alpha | SG3 | `*-alpha.numerology.canhnv.com` | dev |
+| Production | VN | `*.numerology.canhnv.com` | main |
+
+#### Alpha Domains (SG3 Cluster - 15.235.197.12)
+
+- `api-alpha.numerology.canhnv.com` - Backend API
+- `web-alpha.numerology.canhnv.com` - Marketing site
+- `app-alpha.numerology.canhnv.com` - Client app
+- `admin-alpha.numerology.canhnv.com` - Admin panel
+
+#### CI/CD Pipeline
+
+GitHub Actions workflows in `.github/workflows/`:
+
+1. **ci.yml** - Lint, typecheck, test, build on PR/push to main/dev
+2. **release.yml** - Semantic versioning with monorepo support
+3. **docker-build.yml** - Build and push to GHCR on release
+4. **deploy.yml** - Helm deploy to Kubernetes
+
+#### Key Files
+
+- `.github/deploy-config.json` - Helm deployment configuration
+- `.github/services-config.json` - Docker build configuration
+- `scripts/helm-deploy.cjs` - Deployment script
+- `apps/*/helm/` - Helm charts for each app
+
+#### GitHub Configuration
+
+**Environments**: `alpha`, `prod`
+
+**Secrets** (per environment):
+- `KUBE_CONFIG` - Base64-encoded kubeconfig
+- `GHCR_TOKEN` - GitHub Container Registry PAT
+- `BACKEND__DB_PASSWORD` - PostgreSQL password
+- `BACKEND__JWT_SECRET` - JWT signing secret
+- `BACKEND__RESEND_API_KEY` - Email service API key
+
+**Variables** (per environment):
+- `INGRESS_CLASS_NAME` - traefik
+- `INGRESS_CLUSTER_ISSUER` - canhnv-com-prod
+- `BACKEND__INGRESS_HOST` - API domain
+- `BACKEND__DB_HOST` - postgresql-rw.postgres-db
+- `BACKEND__DB_PORT` - 5432
+- `BACKEND__DB_USERNAME` - numerology
+- `BACKEND__DB_NAME` - numerology
+
+#### Common Commands
+
+```bash
+cd /Users/canhnv/development/numerology
+
+# Development
+pnpm install
+pnpm dev
+
+# Build & Test
+pnpm build
+pnpm test
+pnpm lint
+pnpm check-types
+
+# Deploy (from app directory)
+cd apps/backend && pnpm deploy
+```
+
+#### Database
+
+Uses CloudNativePG (CNPG) PostgreSQL operator on each cluster:
+- Namespace: `postgres-db`
+- Service: `postgresql-rw.postgres-db`
+- Database: `numerology`
 
 ## Important Variables
 
