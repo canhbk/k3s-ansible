@@ -4,7 +4,7 @@
 
 This document provides a quick reference for all services deployed on the SG3 cluster, including access URLs, namespaces, and authentication information.
 
-**Last Updated**: 2025-12-11
+**Last Updated**: 2025-01-14
 
 ## Service Directory
 
@@ -38,6 +38,13 @@ This document provides a quick reference for all services deployed on the SG3 cl
 |---------|-----|-----------|---------|----------------|
 | **RabbitMQ** | https://rabbitmq.sg3.canhnv.com | rabbitmq | Message broker HA cluster (3 replicas) | (from secret rabbitmq-default-user) |
 
+### Applications
+
+| Service | URL | Namespace | Purpose | Authentication |
+|---------|-----|-----------|---------|----------------|
+| **Auth Service** | https://auth-alpha.ambercare.app | murror-platform | Authentication & OAuth service (Alpha) | JWT / OAuth |
+| **Auth Service UI** | https://auth-ui-alpha.ambercare.app | nsp-auth-service-alpha | OAuth Portal & User Dashboard (Alpha) | Session-based |
+
 ## Accessing Services
 
 ### External Access (via Browser)
@@ -70,6 +77,12 @@ loki-gateway.monitoring.svc.cluster.local
 
 # InfluxDB endpoint
 influxdb-influxdb2.influxdb.svc.cluster.local:8086
+
+# Auth Service API endpoint
+auth-service.murror-platform.svc.cluster.local:3002
+
+# Auth Service UI endpoint
+auth-service-dev-auth-service-ui.nsp-auth-service-alpha.svc.cluster.local:80
 ```
 
 ### External Database Access (NodePort)
@@ -143,6 +156,10 @@ kubectl get secret murror-sg3-secret -n postgres-db \
 
 # Murror-AI user
 kubectl get secret murror-ai-sg3-secret -n postgres-db \
+  -o jsonpath='{.data.password}' | base64 -d && echo
+
+# Auth Service user (murror_auth_service)
+kubectl get secret murror-auth-service-sg3-secret -n postgres-db \
   -o jsonpath='{.data.password}' | base64 -d && echo
 ```
 
@@ -219,6 +236,7 @@ Detailed documentation for each service:
 - **Rancher**: [apps/rancher/clusters/sg3/README.md](../../../apps/rancher/clusters/sg3/README.md)
 - **Monitoring**: [monitoring/clusters/sg3/README.md](../../../monitoring/clusters/sg3/README.md)
 - **RabbitMQ**: [rabbitmq/clusters/sg3/README.md](../../../rabbitmq/clusters/sg3/README.md)
+- **Auth Service**: [AUTH_SERVICE.md](./AUTH_SERVICE.md)
 
 ## Network Configuration
 
@@ -289,6 +307,10 @@ kubectl describe cluster postgresql-sg3-pgvector -n postgres-db
 
 ## Change Log
 
+- **2025-01-14**:
+  - Added Auth Service (murror-platform) for AmberCare Alpha environment
+  - Added Auth Service UI (nsp-auth-service-alpha) for AmberCare Alpha environment
+  - Created murror_auth_service database in PostgreSQL cluster
 - **2025-12-03**:
   - Upgraded RabbitMQ to version 4.0.9-management-alpine
   - Deployed InfluxDB 2.7 time-series database for Subeo organization (20Gi local-path storage)
