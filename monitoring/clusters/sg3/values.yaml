@@ -141,6 +141,12 @@ alertmanager:
       - match:
           alertname: Watchdog
         receiver: 'null'
+      - match:
+          alertname: InfoInhibitor
+        receiver: 'null'
+      - match:
+          severity: info
+        receiver: 'null'
     receivers:
     - name: 'null'
     - name: 'production-alerts'
@@ -195,6 +201,22 @@ alertmanager:
           *Severity:* {{ .Labels.severity }}
           *Details:* {{ .Annotations.description }}
           {{ end }}
+    inhibit_rules:
+    # Inhibit info-level alerts when InfoInhibitor is firing in the same namespace
+    - source_matchers:
+        - alertname = "InfoInhibitor"
+      target_matchers:
+        - severity = "info"
+      equal:
+        - namespace
+    # Standard inhibition: critical alerts inhibit warning alerts
+    - source_matchers:
+        - severity = "critical"
+      target_matchers:
+        - severity = "warning"
+      equal:
+        - alertname
+        - namespace
 
 # Node exporter for production
 nodeExporter:
