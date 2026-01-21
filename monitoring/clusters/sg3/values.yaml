@@ -51,6 +51,21 @@ prometheus:
         prometheus: kube-prometheus-stack
     serviceMonitorNamespaceSelector: {}
 
+# Kubelet metrics (enable cAdvisor for container metrics)
+kubelet:
+  enabled: true
+  serviceMonitor:
+    cAdvisor: true
+    additionalLabels:
+      prometheus: kube-prometheus-stack
+
+# Kube API Server metrics
+kubeApiServer:
+  enabled: true
+  serviceMonitor:
+    additionalLabels:
+      prometheus: kube-prometheus-stack
+
 # Grafana configuration
 grafana:
   # Set the external URL
@@ -106,6 +121,7 @@ alertmanager:
   config:
     global:
       resolve_timeout: 5m
+      slack_api_url: 'https://hooks.slack.com/services/__REDACTED__2'
     route:
       group_by: ['alertname', 'cluster', 'service']
       group_wait: 10s
@@ -117,14 +133,68 @@ alertmanager:
           severity: critical
         receiver: 'critical-alerts'
       - match:
+          namespace: nsp-alpha-murror-ai
+        receiver: 'murror-ai-alerts'
+      - match:
+          namespace: nsp-alpha-murror
+        receiver: 'murror-api-alerts'
+      - match:
           alertname: Watchdog
         receiver: 'null'
     receivers:
     - name: 'null'
     - name: 'production-alerts'
-      # TODO: Configure notification channels (Slack, email, etc.)
+      slack_configs:
+      - channel: '#alert-sg3-cluster'
+        send_resolved: true
+        title: ':warning: [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* SG3 (Production)
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
     - name: 'critical-alerts'
-      # TODO: Configure critical alert channels
+      slack_configs:
+      - channel: '#alert-sg3-critical'
+        send_resolved: true
+        title: ':rotating_light: [CRITICAL] {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* SG3 (Production)
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
+    - name: 'murror-api-alerts'
+      slack_configs:
+      - channel: '#alert-sg3-murror-api'
+        send_resolved: true
+        title: ':warning: [{{ .Status | toUpper }}] Murror API - {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* SG3 (Alpha)
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
+    - name: 'murror-ai-alerts'
+      slack_configs:
+      - channel: '#alert-sg3-murror-ai'
+        send_resolved: true
+        title: ':robot_face: [{{ .Status | toUpper }}] Murror AI - {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* SG3 (Alpha)
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
 
 # Node exporter for production
 nodeExporter:
