@@ -5,7 +5,7 @@
 High-availability RabbitMQ deployment on the SG3 cluster using the **official RabbitMQ Cluster Operator** with 3 replicas for zero-downtime operations.
 
 - **Replicas**: 3 (high availability cluster)
-- **Storage**: 15Gi total (5Gi per replica, Longhorn)
+- **Storage**: 6Gi total (2Gi per replica, Longhorn)
 - **Domain**: https://rabbitmq.sg3.canhnv.com
 - **Deployment Date**: 2025-11-26
 - **Last Updated**: 2025-12-03 (upgraded to RabbitMQ 4.0.9)
@@ -345,12 +345,12 @@ spring:
 **Per Replica:**
 - Memory: 2Gi request, 4Gi limit
 - CPU: 500m request, 2 cores limit
-- Storage: 5Gi Longhorn
+- Storage: 2Gi Longhorn
 
 **Total Cluster:**
 - Memory: 6Gi request, 12Gi limit
 - CPU: 1.5 cores request, 6 cores limit
-- Storage: 15Gi persistent across 3 nodes
+- Storage: 6Gi persistent across 3 nodes
 
 ## Uninstall
 
