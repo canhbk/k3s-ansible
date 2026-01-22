@@ -7,8 +7,8 @@
 strategy:
   type: RollingUpdate
 
-# Number of replicas for high availability
-replicaCount: 2
+# Number of replicas (set to 1 due to RWO volume access mode)
+replicaCount: 1
 
 # Image configuration
 image:
@@ -37,6 +37,10 @@ persistentVolume:
   accessModes:
     - ReadWriteOnce
 
+# Volume permissions disabled - using fsGroup in securityContext instead
+# VolumePermissions:
+#   enabled: false
+
 # Resource allocation
 resources:
   requests:
@@ -58,19 +62,7 @@ ingress:
   enabled: false
 # We use a separate ingress.yaml file for better control over cert-manager
 
-# Pod anti-affinity for high availability
-affinity:
-  podAntiAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchExpressions:
-              - key: app.kubernetes.io/name
-                operator: In
-                values:
-                  - pgadmin4
-          topologyKey: kubernetes.io/hostname
+# Affinity rules removed - not needed for single replica deployment
 
 # Security context
 securityContext:
@@ -127,13 +119,9 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
 
-# Additional init containers (if needed for custom setup)
-init:
-  containerSecurityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
+# Custom init container to fix volume permissions
+# Using fsGroup in securityContext should handle this automatically
+extraInitContainers: []
 
 # Extra environment variables for pgAdmin configuration
 extraEnv:
