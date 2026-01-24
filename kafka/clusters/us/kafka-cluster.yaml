@@ -37,6 +37,16 @@ spec:
         tls: true
         authentication:
           type: scram-sha-512
+        configuration:
+          bootstrap:
+            nodePort: 32455
+          brokers:
+            - broker: 0
+              nodePort: 30568
+              advertisedHost: vps40.canhnv.com
+            - broker: 1
+              nodePort: 30899
+              advertisedHost: vps27.canhnv.com
     authorization:
       type: simple
       superUsers:

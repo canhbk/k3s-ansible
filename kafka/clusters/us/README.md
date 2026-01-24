@@ -9,7 +9,8 @@ Apache Kafka deployment on the US K3s cluster using Strimzi Operator in KRaft mo
 | Cluster Name | kafka-us |
 | Cluster Context | us |
 | Namespace | kafka |
-| Kafka Version | 3.9.0 |
+| Kafka Version | 4.1.1 |
+| Metadata Version | 4.1-IV1 |
 | Strimzi Version | 0.50.0 |
 | Mode | KRaft (no Zookeeper) |
 | Storage Class | longhorn-replicated |
@@ -53,14 +54,14 @@ Apache Kafka deployment on the US K3s cluster using Strimzi Operator in KRaft mo
 |-------------|------|------|----------|-------|
 | kafka-us-kafka-bootstrap | ClusterIP | 9092 | PLAINTEXT | Internal clients |
 | kafka-us-kafka-bootstrap | ClusterIP | 9093 | TLS | Internal clients (secure) |
-| kafka-us-kafka-external-bootstrap | LoadBalancer | 9094 | TLS + SCRAM-SHA-512 | External clients |
+| kafka-us-kafka-external-bootstrap | NodePort | 9094:32455 | TLS + SCRAM-SHA-512 | External clients |
 
 ### Individual Broker Services
 
-| Service Name | Type | Usage |
-|-------------|------|-------|
-| kafka-us-kafka-brokers-0 | ClusterIP | Direct broker 0 access |
-| kafka-us-kafka-brokers-1 | ClusterIP | Direct broker 1 access |
+| Service Name | Type | Port | Usage |
+|-------------|------|------|-------|
+| kafka-us-kafka-brokers-0 | NodePort | 9094:30568 | Direct broker 0 access |
+| kafka-us-kafka-brokers-1 | NodePort | 9094:30899 | Direct broker 1 access |
 
 ## Connection Information
 
@@ -83,17 +84,50 @@ SASL_PASSWORD=<password>
 
 ### External (from outside Kubernetes)
 
-```bash
-# Get external IP
-kubectl get svc kafka-us-kafka-external-bootstrap -n kafka -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+The Kafka cluster is exposed via NodePort services for external access.
 
-# Connection string
-BOOTSTRAP_SERVERS=<external-ip>:9094
-SECURITY_PROTOCOL=SASL_SSL
-SASL_MECHANISM=SCRAM-SHA-512
-SASL_USERNAME=<username>
-SASL_PASSWORD=<password>
+**Quick Start:**
+
+```bash
+# 1. Load connection credentials
+source ~/kafka-certs/kafka-us-env.sh
+
+# 2. View connection details
+~/kafka-certs/connect-kafka-us.sh
+
+# 3. Test with kcat (if installed)
+kcat -b 65.49.60.35:32455 \
+  -X security.protocol=SASL_SSL \
+  -X sasl.mechanism=SCRAM-SHA-512 \
+  -X sasl.username=kafka-admin \
+  -X sasl.password=$KAFKA_ADMIN_PASSWORD \
+  -X ssl.ca.location=~/kafka-certs/kafka-us-cluster-ca.crt \
+  -L
 ```
+
+**Connection Details:**
+
+| Property | Value |
+|----------|-------|
+| Bootstrap Server | `65.49.60.35:32455` |
+| Alternative Nodes | `64.71.161.44:32455`, `74.82.63.155:32455` |
+| Security Protocol | SASL_SSL |
+| SASL Mechanism | SCRAM-SHA-512 |
+| Username | kafka-admin |
+| Password | See `~/kafka-certs/kafka-us-env.sh` |
+| CA Certificate | `~/kafka-certs/kafka-us-cluster-ca.crt` |
+
+**Individual Brokers:**
+- Broker 0: `65.49.60.35:30568`
+- Broker 1: `65.49.60.35:30899`
+
+**Local Connection Files:**
+- `~/kafka-certs/README.md` - Complete connection guide
+- `~/kafka-certs/connect-kafka-us.sh` - Helper script
+- `~/kafka-certs/kafka-us-env.sh` - Environment variables
+- `~/kafka-certs/kafka-us-cluster-ca.crt` - TLS CA certificate
+
+For detailed local connection instructions and examples with various clients (Node.js, Python, Go), see `~/kafka-certs/README.md`.
 
 ## Topics
 
@@ -435,9 +469,79 @@ Consider using:
 - Kafka Connect with S3 sink connector
 - Cruise Control for topic data snapshots
 
+## AKHQ - Kafka GUI
+
+AKHQ is a web-based GUI for managing and monitoring the Kafka cluster.
+
+### Access Information
+
+| Property | Value |
+|----------|-------|
+| URL | https://akhq.us.canhnv.com |
+| Authentication | Form-based login (AKHQ native) |
+| Default Users | admin (full access), reader (read-only) |
+| Password Hashing | BCRYPT |
+
+### Features
+
+- **Topic Management**: View, create, delete topics and manage configurations
+- **Message Browser**: Produce and consume messages with search and filtering
+- **Consumer Groups**: Monitor lag, view offsets, reset positions
+- **Cluster Monitoring**: View broker metrics, configurations, and health
+- **Schema Registry**: Manage Avro/JSON schemas (if enabled)
+- **Kafka Connect**: Monitor and manage connectors (if enabled)
+
+### Quick Start
+
+```bash
+# Navigate to AKHQ directory
+cd akhq/
+
+# View deployment instructions
+cat README.md
+
+# Deploy AKHQ
+./deploy.sh
+```
+
+### Login
+
+1. Visit https://akhq.us.canhnv.com
+2. Use the form-based login (no HTTP basic auth)
+3. Credentials:
+   - **Admin**: Full cluster access (read/write/delete)
+   - **Reader**: Read-only access
+
+### Architecture
+
+AKHQ connects to Kafka using:
+- **Bootstrap Server**: `kafka-us-kafka-bootstrap.kafka.svc.cluster.local:9092`
+- **Security Protocol**: SASL_PLAINTEXT
+- **SASL Mechanism**: SCRAM-SHA-512
+- **Credentials**: Uses `kafka-admin` user
+
+Authentication is handled by AKHQ's built-in Micronaut Security with:
+- Form-based login page
+- BCRYPT password hashing
+- JWT token generation
+- RBAC with configurable roles
+
+### Documentation
+
+For complete AKHQ documentation including:
+- Secrets setup and password generation
+- User management and role configuration
+- Deployment and troubleshooting
+- Security considerations
+- Advanced configuration
+
+See: [AKHQ Documentation](akhq/README.md)
+
 ## Additional Resources
 
 For more detailed documentation, see:
 - [Main Kafka Documentation](/Users/canhnv/development/canhnv/k3s-ansible/kafka/README.md)
 - [US Cluster Kafka Guide](/Users/canhnv/development/canhnv/k3s-ansible/docs/clusters/us/KAFKA.md)
+- [AKHQ Documentation](akhq/README.md)
 - [Strimzi Documentation](https://strimzi.io/docs/)
+- [AKHQ Official Documentation](https://akhq.io/docs/)

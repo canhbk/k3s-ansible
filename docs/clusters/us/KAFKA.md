@@ -30,7 +30,8 @@ The US cluster runs a production-ready Kafka deployment using Strimzi Operator w
 | ------------------- | -------------------- |
 | Namespace           | `kafka`              |
 | Cluster Name        | `kafka-us`           |
-| Kafka Version       | 3.9.0                |
+| Kafka Version       | 4.1.1                |
+| Metadata Version    | 4.1-IV1              |
 | Strimzi Version     | 0.50.0               |
 | Mode                | KRaft (no Zookeeper) |
 | Controller Replicas | 1                    |
@@ -455,7 +456,7 @@ sequenceDiagram
 flowchart TB
     subgraph "External Access"
         ExtClient[External Client]
-        LB[LoadBalancer Service<br/>kafka-us-kafka-external-bootstrap<br/>Port: 9094]
+        NP[NodePort Service<br/>kafka-us-kafka-external-bootstrap<br/>Port: 9094]
     end
 
     subgraph "Internal Access"
@@ -480,8 +481,8 @@ flowchart TB
         Svc1[kafka-us-kafka-brokers-1]
     end
 
-    ExtClient --> LB
-    LB --> External
+    ExtClient --> NP
+    NP --> External
 
     IntClient --> Bootstrap
     Bootstrap --> Plain
@@ -524,7 +525,7 @@ flowchart TB
 - Protocol: SASL_SSL
 - Authentication: SCRAM-SHA-512
 - Encryption: TLS 1.2+
-- Type: LoadBalancer (NodePort alternative)
+- Type: NodePort
 - Use case: External client access
 - Access: Outside Kubernetes cluster
 
@@ -536,15 +537,16 @@ kafka-us-kafka-bootstrap.kafka.svc.cluster.local
   - Port 9092: Plain + Auth
   - Port 9093: TLS + Auth
 
-# External Service (LoadBalancer)
+# External Service (NodePort)
 kafka-us-kafka-external-bootstrap.kafka.svc.cluster.local
-  - Port 9094: TLS + Auth (external access)
+  - Port 9094: TLS + Auth (external access via NodePort)
 
-# Individual Broker Services (ClusterIP)
+# Individual Broker Services (NodePort)
 kafka-us-kafka-brokers-0.kafka.svc.cluster.local
 kafka-us-kafka-brokers-1.kafka.svc.cluster.local
   - Port 9092: Plain
   - Port 9093: TLS
+  - NodePorts for direct broker access
 ```
 
 ### Connection Strings
@@ -575,6 +577,111 @@ bootstrap.servers=<external-ip>:9094
 security.protocol=SASL_SSL
 sasl.mechanism=SCRAM-SHA-512
 ```
+
+## External Access from Local Machine
+
+### Connection Details
+
+The Kafka cluster is accessible from the internet via NodePort services:
+
+| Property | Value |
+|----------|-------|
+| Bootstrap Server | `vps27.canhnv.com:32455` |
+| Alternative Bootstrap | `vps40.canhnv.com:32455` |
+| Broker 0 | `vps40.canhnv.com:30568` |
+| Broker 1 | `vps27.canhnv.com:30899` |
+| Security Protocol | SASL_SSL |
+| SASL Mechanism | SCRAM-SHA-512 |
+| Username | `kafka-admin` or `app-user` |
+
+### Prerequisites
+
+1. **Extract CA Certificate:**
+   ```bash
+   mkdir -p ~/kafka-certs
+   kubectl config use-context us
+   kubectl get secret kafka-us-cluster-ca-cert -n kafka -o jsonpath='{.data.ca\.crt}' | base64 -d > ~/kafka-certs/kafka-us-cluster-ca.crt
+   ```
+
+2. **Get Password:**
+   ```bash
+   kubectl get secret kafka-admin -n kafka -o jsonpath='{.data.password}' | base64 -d && echo
+   ```
+
+### Connect with kcat
+
+```bash
+# Set password
+export KAFKA_ADMIN_PASSWORD=$(kubectl get secret kafka-admin -n kafka -o jsonpath='{.data.password}' | base64 -d)
+
+# List topics
+kcat -L -b vps27.canhnv.com:32455 \
+  -X security.protocol=SASL_SSL \
+  -X sasl.mechanism=SCRAM-SHA-512 \
+  -X sasl.username=kafka-admin \
+  -X sasl.password="$KAFKA_ADMIN_PASSWORD" \
+  -X ssl.ca.location=$HOME/kafka-certs/kafka-us-cluster-ca.crt
+
+# Produce message
+echo "test message" | kcat -P -b vps27.canhnv.com:32455 -t events \
+  -X security.protocol=SASL_SSL \
+  -X sasl.mechanism=SCRAM-SHA-512 \
+  -X sasl.username=kafka-admin \
+  -X sasl.password="$KAFKA_ADMIN_PASSWORD" \
+  -X ssl.ca.location=$HOME/kafka-certs/kafka-us-cluster-ca.crt
+
+# Consume messages
+kcat -C -b vps27.canhnv.com:32455 -t events -o beginning \
+  -X security.protocol=SASL_SSL \
+  -X sasl.mechanism=SCRAM-SHA-512 \
+  -X sasl.username=kafka-admin \
+  -X sasl.password="$KAFKA_ADMIN_PASSWORD" \
+  -X ssl.ca.location=$HOME/kafka-certs/kafka-us-cluster-ca.crt
+```
+
+### Connect with Node.js (kafkajs)
+
+```javascript
+const { Kafka } = require('kafkajs');
+const fs = require('fs');
+
+const kafka = new Kafka({
+  clientId: 'my-app',
+  brokers: ['vps27.canhnv.com:32455'],
+  ssl: {
+    rejectUnauthorized: true,
+    ca: [fs.readFileSync('/path/to/kafka-us-cluster-ca.crt', 'utf-8')],
+  },
+  sasl: {
+    mechanism: 'scram-sha-512',
+    username: 'kafka-admin',
+    password: process.env.KAFKA_ADMIN_PASSWORD,
+  },
+});
+```
+
+### Connect with Python (confluent-kafka)
+
+```python
+from confluent_kafka import Consumer, Producer
+
+config = {
+    'bootstrap.servers': 'vps27.canhnv.com:32455',
+    'security.protocol': 'SASL_SSL',
+    'sasl.mechanism': 'SCRAM-SHA-512',
+    'sasl.username': 'kafka-admin',
+    'sasl.password': os.environ['KAFKA_ADMIN_PASSWORD'],
+    'ssl.ca.location': '/path/to/kafka-us-cluster-ca.crt',
+    'group.id': 'my-consumer-group',
+}
+```
+
+### Local Connection Files
+
+Connection helper files are available at `~/kafka-certs/`:
+- `kafka-us-cluster-ca.crt` - TLS CA certificate
+- `kafka-us-env.sh` - Environment variables (source before use)
+- `connect-kafka-us.sh` - Helper script with examples
 
 ## Storage Architecture
 
@@ -1231,8 +1338,8 @@ metadata:
   namespace: kafka
 spec:
   kafka:
-    version: 3.9.0
-    metadataVersion: 3.9-IV0
+    version: 4.1.1
+    metadataVersion: 4.1-IV1
 
     # Listeners
     listeners:
@@ -1250,10 +1357,20 @@ spec:
           type: scram-sha-512
       - name: external
         port: 9094
-        type: loadbalancer
+        type: nodeport
         tls: true
         authentication:
           type: scram-sha-512
+        configuration:
+          bootstrap:
+            nodePort: 32455
+          brokers:
+            - broker: 0
+              nodePort: 30568
+              advertisedHost: vps40.canhnv.com
+            - broker: 1
+              nodePort: 30899
+              advertisedHost: vps27.canhnv.com
 
     # Authorization
     authorization:
