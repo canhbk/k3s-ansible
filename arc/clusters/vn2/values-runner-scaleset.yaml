@@ -15,24 +15,29 @@ runnerScaleSetName: "vn2-runners"
 runnerGroup: "Default"
 
 # Autoscaling configuration
-minRunners: 0
-maxRunners: 10
+# Minimum 2 runners always available (idle when no jobs)
+minRunners: 2
+maxRunners: 30
 
-# Container mode: Docker-in-Docker for full Docker support
-containerMode:
-  type: "dind"
-
-# Override runner template to use unix socket instead of TLS
-# Note: Only override specific fields, not full container specs
+# Custom Docker-in-Docker template with MTU configuration
+# The VN2 cluster uses Wireguard VPN with MTU 1420, requiring Docker to use MTU 1400
+# to prevent network connectivity issues in container builds
 template:
   spec:
     containers:
       - name: runner
-        image: ghcr.io/actions/actions-runner:latest
+        image: ghcr.io/murror/arc-runner:latest
         command: ["/home/runner/run.sh"]
         env:
           - name: DOCKER_HOST
             value: "unix:///var/run/docker.sock"
+          - name: RUNNER_TOOL_CACHE
+            value: "/home/runner/actions-tool-cache"
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: dind-sock
+            mountPath: /var/run
         resources:
           requests:
             cpu: 500m
@@ -40,6 +45,44 @@ template:
           limits:
             cpu: 4000m
             memory: 8Gi
+
+      - name: dind
+        image: docker:27-dind
+        args:
+          - dockerd
+          - --host=unix:///var/run/docker.sock
+          - --group=$(DOCKER_GROUP_GID)
+          # MTU configuration is handled via /etc/docker/daemon.json from ConfigMap
+        env:
+          - name: DOCKER_GROUP_GID
+            value: "1001"
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: dind-sock
+            mountPath: /var/run
+          - name: daemon-json
+            mountPath: /etc/docker/daemon.json
+            subPath: daemon.json
+            readOnly: true
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+
+    volumes:
+      - name: work
+        emptyDir: {}
+      - name: dind-sock
+        emptyDir: {}
+      - name: daemon-json
+        configMap:
+          name: docker-daemon-config
 
     # Node affinity - prefer worker nodes
     affinity:
@@ -54,6 +97,10 @@ template:
     # Tolerations for any taints
     tolerations:
       - operator: Exists
+
+    # Image pull secrets for private registry
+    imagePullSecrets:
+      - name: ghcr-pull-secret
 
 # Listener pod configuration
 listenerTemplate:
