@@ -1,0 +1,60 @@
+# Rancher Helm Values - SG3 Cluster
+# Chart: rancher-2.11.2
+# Deployment Date: 2025-11-25
+
+# Replica configuration
+# 3 replicas for HA in production 8-node cluster
+replicas: 3
+
+# Hostname for Rancher UI
+hostname: rancher.sg3.canhnv.com
+
+# Bootstrap password for initial admin user
+bootstrapPassword: admin
+
+# Ingress configuration
+ingress:
+  tls:
+    # Use cert-manager with existing ClusterIssuer
+    source: secret
+  extraAnnotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+
+# Resource limits and requests
+# Optimized 2025-12-07: Reduced requests based on actual usage analysis
+# Actual usage: 20-65m CPU, 566-938Mi memory per pod
+# New requests provide 4-12x safety margin above peak usage
+resources:
+  requests:
+    cpu: 250m      # Was: 500m (reduced by 50%)
+    memory: 1536Mi # Was: 2Gi (reduced by ~25%)
+  limits:
+    cpu: 2000m     # Unchanged - allows burst capacity
+    memory: 4Gi    # Unchanged - allows burst capacity
+
+# Startup probe configuration
+# Extended timeout for CRD application (5 minutes)
+startupProbe:
+  failureThreshold: 30
+  periodSeconds: 10
+  httpGet:
+    path: /healthz
+    port: 80
+    scheme: HTTP
+
+# Pod anti-affinity for spreading replicas across nodes
+antiAffinity: preferred
+topologyKey: kubernetes.io/hostname
+
+# Audit logging
+auditLog:
+  level: 1
+  maxAge: 10
+  maxBackup: 10
+  maxSize: 100
+
+# Global cattle settings
+global:
+  cattle:
+    psp:
+      enabled: false  # PSP deprecated in K8s 1.25+

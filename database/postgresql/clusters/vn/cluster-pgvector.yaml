@@ -1,0 +1,150 @@
+# PostgreSQL HA Cluster with pgvector Configuration for VN
+# Using CloudNative-PG Operator with pgvector extension
+#
+# This creates a separate PostgreSQL cluster with pgvector extension
+# alongside the existing postgresql-ha cluster
+#
+# Prerequisites:
+# 1. CloudNative-PG operator installed
+# 2. Namespace created: kubectl create namespace postgres-db
+# 3. Secrets applied: kubectl apply -f secrets-pgvector.yaml
+#
+# Deploy:
+# kubectl apply -f cluster-pgvector.yaml
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ClusterImageCatalog
+metadata:
+  name: postgresql-pgvector
+  namespace: postgres-db
+spec:
+  images:
+    - major: 17
+      image: pgvector/pgvector:0.8.0-pg17
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-pgvector
+  namespace: postgres-db
+spec:
+  # User/Group IDs
+  postgresUID: 999
+  postgresGID: 999
+
+  # Affinity and tolerations for storage nodes
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: longhorn
+              operator: In
+              values:
+                - "true"
+    tolerations:
+      - key: dedicated
+        operator: Equal
+        value: storage
+        effect: NoSchedule
+
+  # Managed roles
+  managed:
+    roles:
+      - name: be
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: be-pgvector-secret
+      - name: ai
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: ai-pgvector-secret
+      - name: dev
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: dev-pgvector-secret
+      - name: vps
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        passwordSecret:
+          name: vps-pgvector-secret
+
+  # Cluster configuration
+  instances: 1
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: superuser-pgvector-secret
+
+  # Image configuration
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    name: postgresql-pgvector
+    major: 17
+
+  # Storage configuration
+  storage:
+    storageClass: longhorn-vn
+    size: 20Gi  # Expanded from 4Gi on 2025-12-11
+
+---
+# Database definitions
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: murror-ai-pgvector
+  namespace: postgres-db
+spec:
+  name: murror-ai
+  owner: ai
+  cluster:
+    name: postgresql-pgvector
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: murror-be-pgvector
+  namespace: postgres-db
+spec:
+  name: murror-be
+  owner: be
+  cluster:
+    name: postgresql-pgvector
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: vps-management-pgvector
+  namespace: postgres-db
+spec:
+  name: vps-management
+  owner: vps
+  cluster:
+    name: postgresql-pgvector

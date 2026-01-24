@@ -1,0 +1,21 @@
+# PodMonitor for PostgreSQL pgvector cluster metrics
+# This configures Prometheus to scrape CNPG PostgreSQL pod metrics
+#
+# Apply: kubectl apply -f podmonitor-pgvector.yaml
+
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: postgresql-pgvector
+  namespace: postgres-db
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: postgresql-pgvector
+  podMetricsEndpoints:
+  - port: metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics

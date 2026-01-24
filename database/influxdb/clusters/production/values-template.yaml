@@ -1,0 +1,71 @@
+# Production cluster template for InfluxDB
+# Copy this file to clusters/<cluster-name>/values.yaml and modify as needed
+
+# Production-specific admin configuration
+adminUser:
+  organization: "k3s-CLUSTER_NAME"  # Replace CLUSTER_NAME
+  bucket: "production"
+  retention_policy: "90d"  # 3 months retention for production
+
+# Larger persistence for production
+persistence:
+  size: 100Gi
+  # Adjust storage class based on cluster
+  # storageClass: longhorn-vn  # For VN clusters
+  # storageClass: local-path   # For others
+
+# Production resources
+resources:
+  requests:
+    memory: 1Gi
+    cpu: 500m
+  limits:
+    memory: 4Gi
+    cpu: 2000m
+
+# Production labels
+podLabels:
+  environment: production
+  cluster: CLUSTER_NAME  # Replace with actual cluster name
+
+# Production environment variables
+env:
+  - name: INFLUXDB_LOG_LEVEL
+    value: "warn"
+  - name: INFLUXDB_HTTP_LOG_ENABLED
+    value: "false"
+
+# Metrics for production monitoring
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    labels:
+      prometheus: kube-prometheus-stack
+      environment: production
+      cluster: CLUSTER_NAME  # Replace with actual cluster name
+
+# Node affinity for production
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - influxdb2
+        topologyKey: kubernetes.io/hostname
+
+# Production backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: 30  # Keep 30 days of backups
+  # Configure S3 or other backup destination
+  # s3:
+  #   endpoint:
+  #   bucket:
+  #   prefix: influxdb-CLUSTER_NAME

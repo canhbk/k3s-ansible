@@ -1,0 +1,110 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: murror-ai-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: murror-ai-pod-alerts
+      interval: 30s
+      rules:
+        - alert: MurrorAIPodNotReady
+          expr: |
+            kube_pod_status_ready{namespace="nsp-prod-murror-ai", pod=~"murror-ai-.*", condition="true"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nsp-prod-murror-ai
+            app: murror-ai
+            cluster: vn
+          annotations:
+            summary: "Murror AI pod is not ready (VN Production)"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been in a non-ready state for more than 5 minutes."
+
+        - alert: MurrorAIPodRestarts
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="nsp-prod-murror-ai", pod=~"murror-ai-.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nsp-prod-murror-ai
+            app: murror-ai
+            cluster: vn
+          annotations:
+            summary: "Murror AI pod is restarting (VN Production)"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last 15 minutes."
+
+        - alert: MurrorAIContainerCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="nsp-prod-murror-ai", pod=~"murror-ai-.*"}[15m]) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            namespace: nsp-prod-murror-ai
+            app: murror-ai
+            cluster: vn
+          annotations:
+            summary: "Murror AI container is crash looping (VN Production)"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is crash looping with {{ $value }} restarts per second over the last 15 minutes."
+
+        - alert: MurrorAIDeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas{namespace="nsp-prod-murror-ai", deployment="murror-ai"}
+            !=
+            kube_deployment_status_replicas_available{namespace="nsp-prod-murror-ai", deployment="murror-ai"}
+          for: 10m
+          labels:
+            severity: warning
+            namespace: nsp-prod-murror-ai
+            app: murror-ai
+            cluster: vn
+          annotations:
+            summary: "Murror AI deployment replicas mismatch (VN Production)"
+            description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has {{ $value }} replicas available, but {{ $labels.replicas }} are specified."
+
+        - alert: MurrorAIHighMemoryUsage
+          expr: |
+            (
+              sum(container_memory_working_set_bytes{namespace="nsp-prod-murror-ai", pod=~"murror-ai-.*", container!=""})
+              /
+              sum(container_spec_memory_limit_bytes{namespace="nsp-prod-murror-ai", pod=~"murror-ai-.*", container!=""})
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nsp-prod-murror-ai
+            app: murror-ai
+            cluster: vn
+          annotations:
+            summary: "Murror AI high memory usage (VN Production)"
+            description: "Murror AI pods in namespace {{ $labels.namespace }} are using more than 90% of their memory limit."
+
+        - alert: MurrorAINoPodsRunning
+          expr: |
+            sum(kube_pod_status_phase{namespace="nsp-prod-murror-ai", pod=~"murror-ai-.*", phase="Running"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+            namespace: nsp-prod-murror-ai
+            app: murror-ai
+            cluster: vn
+          annotations:
+            summary: "No Murror AI pods are running (VN Production)"
+            description: "No Murror AI pods are in a running state in namespace {{ $labels.namespace }}. This is a critical service outage."
+
+        - alert: MurrorAICeleryWorkerNotReady
+          expr: |
+            kube_pod_status_ready{namespace="nsp-prod-murror-ai", pod=~"murror-ai-celery-worker.*", condition="true"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nsp-prod-murror-ai
+            app: murror-ai-celery-worker
+            cluster: vn
+          annotations:
+            summary: "Murror AI Celery worker is not ready (VN Production)"
+            description: "Celery worker pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been in a non-ready state for more than 5 minutes."

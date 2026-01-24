@@ -1,0 +1,32 @@
+# PostgreSQL LoadBalancer Service for AI Team - VN pgvector cluster
+# WARNING: This exposes PostgreSQL to the internet - Use with caution
+#
+# This service provides external access to the PostgreSQL pgvector primary instance
+# for the AI team to access the murror-ai database.
+#
+# Deploy:
+# kubectl apply -f postgres-murror-ai-loadbalancer.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-murror-ai-pgvector
+  namespace: postgres-db
+  annotations:
+    environment: "production"
+    team: "ai-team"
+    database: "murror-ai"
+    purpose: "AI team access to murror-ai database with pgvector extension"
+    warning: "EXPOSED TO INTERNET - ENSURE STRONG PASSWORDS"
+    created: "2025-08-05"
+spec:
+  type: LoadBalancer
+  selector:
+    cnpg.io/cluster: postgresql-pgvector
+    cnpg.io/instanceRole: primary
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  sessionAffinity: ClientIP

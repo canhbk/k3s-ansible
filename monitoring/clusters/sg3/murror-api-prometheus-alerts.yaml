@@ -1,0 +1,97 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: murror-api-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: murror-api-pod-alerts
+      interval: 30s
+      rules:
+        - alert: MurrorAPIPodNotReady
+          expr: |
+            kube_pod_status_ready{namespace="nsp-alpha-murror", pod=~"murror-api-.*", condition="true"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nsp-alpha-murror
+            app: murror-api
+            cluster: sg3
+          annotations:
+            summary: "Murror API pod is not ready"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been in a non-ready state for more than 5 minutes."
+
+        - alert: MurrorAPIPodRestarts
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="nsp-alpha-murror", pod=~"murror-api-.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nsp-alpha-murror
+            app: murror-api
+            cluster: sg3
+          annotations:
+            summary: "Murror API pod is restarting"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last 15 minutes."
+
+        - alert: MurrorAPIContainerCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="nsp-alpha-murror", pod=~"murror-api-.*"}[15m]) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            namespace: nsp-alpha-murror
+            app: murror-api
+            cluster: sg3
+          annotations:
+            summary: "Murror API container is crash looping"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is crash looping with {{ $value }} restarts per second over the last 15 minutes."
+
+        - alert: MurrorAPIDeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas{namespace="nsp-alpha-murror", deployment="murror-api"}
+            !=
+            kube_deployment_status_replicas_available{namespace="nsp-alpha-murror", deployment="murror-api"}
+          for: 10m
+          labels:
+            severity: warning
+            namespace: nsp-alpha-murror
+            app: murror-api
+            cluster: sg3
+          annotations:
+            summary: "Murror API deployment replicas mismatch"
+            description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has {{ $value }} replicas available, but {{ $labels.replicas }} are specified."
+
+        - alert: MurrorAPIHighMemoryUsage
+          expr: |
+            (
+              sum(container_memory_working_set_bytes{namespace="nsp-alpha-murror", pod=~"murror-api-.*", container!=""})
+              /
+              sum(container_spec_memory_limit_bytes{namespace="nsp-alpha-murror", pod=~"murror-api-.*", container!=""})
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            namespace: nsp-alpha-murror
+            app: murror-api
+            cluster: sg3
+          annotations:
+            summary: "Murror API high memory usage"
+            description: "Murror API pods in namespace {{ $labels.namespace }} are using more than 90% of their memory limit."
+
+        - alert: MurrorAPINoPodsRunning
+          expr: |
+            sum(kube_pod_status_phase{namespace="nsp-alpha-murror", pod=~"murror-api-.*", phase="Running"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+            namespace: nsp-alpha-murror
+            app: murror-api
+            cluster: sg3
+          annotations:
+            summary: "No Murror API pods are running"
+            description: "No Murror API pods are in a running state in namespace {{ $labels.namespace }}. This is a critical service outage."

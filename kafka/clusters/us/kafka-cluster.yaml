@@ -1,0 +1,227 @@
+# US Cluster Kafka Cluster Configuration
+# KRaft mode deployment (no Zookeeper)
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: kafka-us
+  namespace: kafka
+  labels:
+    cluster-region: us
+    environment: production
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 4.1.1
+    listeners:
+      # Internal plain listener with SCRAM authentication
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+        authentication:
+          type: scram-sha-512
+      # Internal TLS listener with SCRAM authentication
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: scram-sha-512
+      # External listener with TLS and SCRAM authentication
+      - name: external
+        port: 9094
+        type: nodeport
+        tls: true
+        authentication:
+          type: scram-sha-512
+    authorization:
+      type: simple
+      superUsers:
+        # Entity Operator users for internal operations
+        - CN=kafka-us-entity-topic-operator
+        - CN=kafka-us-entity-user-operator
+        - CN=kafka-us-cruise-control
+    config:
+      offsets.topic.replication.factor: 2
+      transaction.state.log.replication.factor: 2
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 2
+      min.insync.replicas: 1
+      num.io.threads: 8
+      num.network.threads: 4
+      socket.send.buffer.bytes: 102400
+      socket.receive.buffer.bytes: 102400
+      socket.request.max.bytes: 104857600
+      log.retention.hours: 168
+      log.segment.bytes: 1073741824
+      log.retention.check.interval.ms: 300000
+      compression.type: producer
+      auto.create.topics.enable: false
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: kafka-metrics-config
+          key: kafka-metrics-config.yml
+  entityOperator:
+    topicOperator:
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 50m
+        limits:
+          memory: 512Mi
+          cpu: 250m
+    userOperator:
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 50m
+        limits:
+          memory: 512Mi
+          cpu: 250m
+  cruiseControl:
+    brokerCapacity:
+      cpu: "1"
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-metrics-config
+  namespace: kafka
+data:
+  kafka-metrics-config.yml: |
+    lowercaseOutputName: true
+    rules:
+      # Broker metrics
+      - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          topic: "$4"
+          partition: "$5"
+      - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          broker: "$4:$5"
+      # BrokerTopicMetrics - Messages in per second
+      - pattern: kafka.server<type=BrokerTopicMetrics, name=MessagesInPerSec, topic=(.+)><>Count
+        name: kafka_server_brokertopicmetrics_messagesin_total
+        type: COUNTER
+        labels:
+          topic: "$1"
+      - pattern: kafka.server<type=BrokerTopicMetrics, name=MessagesInPerSec><>Count
+        name: kafka_server_brokertopicmetrics_messagesin_total
+        type: COUNTER
+      # BrokerTopicMetrics - Bytes in/out per second
+      - pattern: kafka.server<type=BrokerTopicMetrics, name=BytesInPerSec, topic=(.+)><>Count
+        name: kafka_server_brokertopicmetrics_bytesin_total
+        type: COUNTER
+        labels:
+          topic: "$1"
+      - pattern: kafka.server<type=BrokerTopicMetrics, name=BytesInPerSec><>Count
+        name: kafka_server_brokertopicmetrics_bytesin_total
+        type: COUNTER
+      - pattern: kafka.server<type=BrokerTopicMetrics, name=BytesOutPerSec, topic=(.+)><>Count
+        name: kafka_server_brokertopicmetrics_bytesout_total
+        type: COUNTER
+        labels:
+          topic: "$1"
+      - pattern: kafka.server<type=BrokerTopicMetrics, name=BytesOutPerSec><>Count
+        name: kafka_server_brokertopicmetrics_bytesout_total
+        type: COUNTER
+      # Controller metrics
+      - pattern: kafka.controller<type=KafkaController, name=(.+)><>Value
+        name: kafka_controller_$1
+        type: GAUGE
+      - pattern: kafka.controller<type=ControllerStats, name=(.+)><>Count
+        name: kafka_controller_stats_$1_total
+        type: COUNTER
+      # Replica metrics
+      - pattern: kafka.server<type=ReplicaManager, name=(.+)><>Value
+        name: kafka_server_replicamanager_$1
+        type: GAUGE
+      - pattern: kafka.server<type=ReplicaManager, name=(.+)><>Count
+        name: kafka_server_replicamanager_$1_total
+        type: COUNTER
+      # ReplicaFetcherManager metrics
+      - pattern: kafka.server<type=ReplicaFetcherManager, name=MaxLag, clientId=(.+)><>Value
+        name: kafka_server_replicafetchermanager_maxlag
+        type: GAUGE
+        labels:
+          clientId: "$1"
+      # Log metrics
+      - pattern: kafka.log<type=LogFlushStats, name=LogFlushRateAndTimeMs><>Count
+        name: kafka_log_logflushstats_total
+        type: COUNTER
+      - pattern: kafka.log<type=Log, name=Size, topic=(.+), partition=(.+)><>Value
+        name: kafka_log_log_size
+        type: GAUGE
+        labels:
+          topic: "$1"
+          partition: "$2"
+      # Network metrics
+      - pattern: kafka.network<type=RequestMetrics, name=(.+), request=(.+)><>Count
+        name: kafka_network_requestmetrics_$1_total
+        type: COUNTER
+        labels:
+          request: "$2"
+      - pattern: kafka.network<type=RequestMetrics, name=(.+), request=(.+)><>(Mean|Max|Min|StdDev)
+        name: kafka_network_requestmetrics_$1
+        type: GAUGE
+        labels:
+          request: "$2"
+          aggregate: "$3"
+      # JVM metrics
+      - pattern: java.lang<type=Memory><HeapMemoryUsage>(.+)
+        name: jvm_memory_heap_$1
+        type: GAUGE
+      - pattern: java.lang<type=Memory><NonHeapMemoryUsage>(.+)
+        name: jvm_memory_nonheap_$1
+        type: GAUGE
+      - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionCount
+        name: jvm_gc_collection_count_total
+        type: COUNTER
+        labels:
+          gc: "$1"
+      - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionTime
+        name: jvm_gc_collection_time_total
+        type: COUNTER
+        labels:
+          gc: "$1"
+      - pattern: java.lang<type=Threading><>ThreadCount
+        name: jvm_threads_count
+        type: GAUGE
+      # Partition counts
+      - pattern: kafka.server<type=ReplicaManager, name=PartitionCount><>Value
+        name: kafka_server_replicamanager_partitioncount
+        type: GAUGE
+      - pattern: kafka.server<type=ReplicaManager, name=LeaderCount><>Value
+        name: kafka_server_replicamanager_leadercount
+        type: GAUGE
+      - pattern: kafka.server<type=ReplicaManager, name=UnderReplicatedPartitions><>Value
+        name: kafka_server_replicamanager_underreplicatedpartitions
+        type: GAUGE
+      - pattern: kafka.server<type=ReplicaManager, name=OfflineReplicaCount><>Value
+        name: kafka_server_replicamanager_offlinereplicacount
+        type: GAUGE
+      # KRaft Controller metrics
+      - pattern: kafka.controller<type=KafkaController, name=ActiveControllerCount><>Value
+        name: kafka_controller_activecontrollercount
+        type: GAUGE
+      - pattern: kafka.controller<type=KafkaController, name=OfflinePartitionsCount><>Value
+        name: kafka_controller_offlinepartitionscount
+        type: GAUGE

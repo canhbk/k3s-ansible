@@ -1,0 +1,43 @@
+- name: Ensure wireguard-tools is installed
+  apt:
+    name: wireguard
+    state: present
+  become: true
+
+- name: Check if private key exists
+  stat:
+    path: /etc/wireguard/privatekey
+  register: privatekey_stat
+  become: true
+
+- name: Generate new private key (only if not exists)
+  command: wg genkey
+  register: wg_private_key
+  when: not privatekey_stat.stat.exists
+  become: true
+
+- name: Save private key (only if newly generated)
+  copy:
+    content: "{{ wg_private_key.stdout_lines[0] }}"
+    dest: /etc/wireguard/privatekey
+    owner: root
+    mode: '0600'
+  when: not privatekey_stat.stat.exists
+  become: true
+
+- name: Read existing private key
+  slurp:
+    src: /etc/wireguard/privatekey
+  register: existing_private_key
+  when: privatekey_stat.stat.exists
+  become: true
+
+- name: Generate/Read public key
+  shell: cat /etc/wireguard/privatekey | wg pubkey
+  register: wg_public_key
+  changed_when: false
+  become: true
+
+- set_fact:
+    my_public_key: "{{ wg_public_key.stdout }}"
+    my_private_key: "{{ wg_private_key.stdout_lines[0] if not privatekey_stat.stat.exists else (existing_private_key.content | b64decode | trim) }}"

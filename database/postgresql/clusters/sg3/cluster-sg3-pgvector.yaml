@@ -1,0 +1,130 @@
+# PostgreSQL HA Cluster with pgvector for SG3
+# 3-instance production configuration with automatic failover
+#
+# Prerequisites:
+# 1. CNPG operator installed
+# 2. postgres-db namespace created
+# 3. Secrets applied
+#
+# Deploy: kubectl apply -f cluster-sg3-pgvector.yaml
+
+---
+# PostgreSQL HA Cluster
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-sg3-pgvector
+  namespace: postgres-db
+  labels:
+    cluster-region: sg3
+    app: postgresql
+    environment: production
+spec:
+  # High Availability: 3 instances with automatic failover
+  instances: 3
+
+  # Enable superuser access
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: superuser-sg3-secret
+
+  # Managed application users
+  managed:
+    roles:
+      - name: app
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        connectionLimit: 100
+        passwordSecret:
+          name: app-sg3-secret
+      - name: murror
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        connectionLimit: 100
+        passwordSecret:
+          name: murror-sg3-secret
+      - name: murror-ai
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        connectionLimit: 100
+        passwordSecret:
+          name: murror-ai-sg3-secret
+      - name: notifications
+        login: true
+        ensure: present
+        superuser: false
+        createdb: false
+        createrole: false
+        inherit: false
+        bypassrls: false
+        connectionLimit: 100
+        passwordSecret:
+          name: notifications-sg3-secret
+
+  # Bootstrap with initial database
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+      encoding: UTF8
+      locale: en_US.UTF-8
+      secret:
+        name: app-sg3-secret
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
+
+  # Image configuration - using default CNPG PostgreSQL image
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.2
+
+  # Storage configuration
+  storage:
+    storageClass: longhorn
+    size: 20Gi
+
+  # Resource limits for production workload
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+  # Pod anti-affinity for HA (spread across nodes)
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+
+  # PostgreSQL configuration optimized for mixed workload
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "512MB"
+      effective_cache_size: "3GB"
+      work_mem: "16MB"
+      maintenance_work_mem: "256MB"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      wal_buffers: "16MB"
+      max_wal_size: "4GB"
+      min_wal_size: "1GB"
+      checkpoint_completion_target: "0.9"
+
+  # Monitoring (integrates with existing Prometheus on sg3)
+  monitoring:
+    disableDefaultQueries: false

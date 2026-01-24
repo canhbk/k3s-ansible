@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alerting-config
+  namespace: monitoring
+  labels:
+    grafana_alert: "1"
+data:
+  alerting-config.yaml: |
+    apiVersion: 1
+    contactPoints:
+      - name: slack-murror-ai
+        orgId: 1
+        receivers:
+          - uid: slack-murror-ai-receiver
+            type: slack
+            settings:
+              url: https://hooks.slack.com/services/__REDACTED__2
+              title: ':robot_face: [{{ .Status | toUpper }}] Murror AI - {{ .GroupLabels.alertname }}'
+              text: |
+                {{ range .Alerts }}
+                *Alert:* {{ .Annotations.summary }}
+                *Cluster:* SG3 (Alpha)
+                *Namespace:* {{ .Labels.namespace }}
+                *Severity:* {{ .Labels.severity }}
+                *Details:* {{ .Annotations.description }}
+                {{ end }}
+            disableResolveMessage: false
+
+      - name: slack-murror-api
+        orgId: 1
+        receivers:
+          - uid: slack-murror-api-receiver
+            type: slack
+            settings:
+              url: https://hooks.slack.com/services/__REDACTED__2
+              title: ':warning: [{{ .Status | toUpper }}] Murror API - {{ .GroupLabels.alertname }}'
+              text: |
+                {{ range .Alerts }}
+                *Alert:* {{ .Annotations.summary }}
+                *Cluster:* SG3 (Alpha)
+                *Namespace:* {{ .Labels.namespace }}
+                *Severity:* {{ .Labels.severity }}
+                *Details:* {{ .Annotations.description }}
+                {{ end }}
+            disableResolveMessage: false
+
+    policies:
+      - orgId: 1
+        receiver: grafana-default-email
+        group_by:
+          - grafana_folder
+          - alertname
+        group_wait: 10s
+        group_interval: 10s
+        repeat_interval: 12h
+        routes:
+          - receiver: slack-murror-ai
+            matchers:
+              - namespace =~ "nsp-alpha-murror-ai.*"
+            continue: false
+            group_by:
+              - alertname
+              - namespace
+            group_wait: 10s
+            group_interval: 10s
+            repeat_interval: 5m
+
+          - receiver: slack-murror-api
+            matchers:
+              - namespace =~ "nsp-alpha-murror.*"
+            continue: false
+            group_by:
+              - alertname
+              - namespace
+            group_wait: 10s
+            group_interval: 10s
+            repeat_interval: 5m

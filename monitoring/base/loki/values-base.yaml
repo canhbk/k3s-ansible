@@ -1,0 +1,217 @@
+# Base Loki Configuration for Simple Scalable Deployment
+# This configuration is shared across all clusters and defines the core Loki setup
+# Cluster-specific overrides should be defined in monitoring/clusters/{cluster}/loki-values.yaml
+
+loki:
+  # Authentication is disabled for internal cluster use
+  auth_enabled: false
+
+  # Common configuration
+  commonConfig:
+    replication_factor: 3
+
+  # Storage schema v13 with TSDB index (latest recommended)
+  schemaConfig:
+    configs:
+      - from: 2024-01-01
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+  # Storage configuration - filesystem backend with PVCs
+  storage:
+    type: filesystem
+    filesystem:
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
+
+  # Limits configuration
+  limits_config:
+    # Retention period: 15 days (matches Prometheus)
+    retention_period: 360h
+
+    # Ingestion rate limits
+    ingestion_rate_mb: 5
+    ingestion_burst_size_mb: 15
+
+    # Per-stream limits
+    per_stream_rate_limit: 5MB
+    per_stream_rate_limit_burst: 15MB
+
+    # Query limits
+    max_query_parallelism: 32
+    max_query_series: 10000
+    max_query_lookback: 0
+
+    # Split queries by interval
+    split_queries_by_interval: 15m
+
+    # Reject old samples
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+
+    # Max streams per user
+    max_streams_per_user: 10000
+    max_global_streams_per_user: 50000
+
+  # Compactor configuration - handles retention and compaction
+  compactor:
+    working_directory: /var/loki/compactor
+    compaction_interval: 2h
+    retention_enabled: true
+    retention_delete_delay: 2h
+    retention_delete_worker_count: 150
+    delete_request_store: filesystem
+
+# Deployment mode: Monolithic (single binary with filesystem storage)
+deploymentMode: SingleBinary
+
+# Single Binary configuration (all-in-one Loki)
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 50Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+# Monitoring integration
+monitoring:
+  serviceMonitor:
+    enabled: false  # We create ServiceMonitor separately
+  selfMonitoring:
+    enabled: false
+    grafanaAgent:
+      installOperator: false
+
+# Test components
+test:
+  enabled: false
+
+# Promtail configuration for log collection
+promtail:
+  enabled: true
+
+  config:
+    # Promtail server configuration
+    server:
+      http_listen_port: 3101
+      grpc_listen_port: 0
+
+    # Positions file to track which logs have been read
+    positions:
+      filename: /tmp/positions.yaml
+
+    # Loki server endpoints (uses gateway service)
+    clients:
+      - url: http://loki-gateway/loki/api/v1/push
+
+    # Scrape configuration
+    scrape_configs:
+      # Collect logs from all pods via Kubernetes API
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+
+        # Pipeline stages for log processing
+        pipeline_stages:
+          # Parse container runtime (CRI) format
+          - cri: {}
+
+          # Drop logs from noisy K3s load balancer pods
+          - drop:
+              source: namespace
+              expression: "kube-system"
+              drop_counter_reason: "kube-system-svclb"
+              older_than: 24h
+              longer_than: 8KB
+
+          - match:
+              selector: '{app="svclb"}'
+              action: drop
+              drop_counter_reason: "svclb-pods"
+
+          # Parse JSON logs if present
+          - json:
+              expressions:
+                level: level
+                message: message
+                timestamp: timestamp
+
+          # Extract log level
+          - labels:
+              level:
+
+        # Relabeling to add Kubernetes metadata
+        relabel_configs:
+          # Keep only pods with actual logs
+          - source_labels:
+              - __meta_kubernetes_pod_controller_name
+            regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
+            action: replace
+            target_label: __tmp_controller_name
+
+          # Add namespace label
+          - source_labels:
+              - __meta_kubernetes_namespace
+            action: replace
+            target_label: namespace
+
+          # Add pod name label
+          - source_labels:
+              - __meta_kubernetes_pod_name
+            action: replace
+            target_label: pod
+
+          # Add container name label
+          - source_labels:
+              - __meta_kubernetes_pod_container_name
+            action: replace
+            target_label: container
+
+          # Add node name label
+          - source_labels:
+              - __meta_kubernetes_pod_node_name
+            action: replace
+            target_label: node
+
+          # Add app label if present
+          - source_labels:
+              - __meta_kubernetes_pod_label_app
+            action: replace
+            target_label: app
+
+          # Add app.kubernetes.io/name label if present
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_name
+            action: replace
+            target_label: app_name
+
+          # Add job label from pod label
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_component
+            action: replace
+            target_label: component
+
+          # Construct log path
+          - source_labels:
+              - __meta_kubernetes_namespace
+              - __meta_kubernetes_pod_name
+              - __meta_kubernetes_pod_container_name
+            separator: /
+            target_label: __path__
+            replacement: /var/log/pods/*$1*/*$2*/*.log
+
+          # Add phase label (Running, Pending, etc.)
+          - source_labels:
+              - __meta_kubernetes_pod_phase
+            action: replace
+            target_label: phase

@@ -1,0 +1,89 @@
+# Prometheus Alert Rules for PostgreSQL VN cluster
+# This defines alerting rules for monitoring PostgreSQL storage usage
+#
+# Apply: kubectl apply -f prometheus-alerts.yaml
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: postgresql-vn-pvc-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+  - name: postgresql-vn-storage
+    interval: 30s
+    rules:
+    # Warning: PVC storage usage > 80% for postgresql-ha
+    - alert: PostgreSQLStorageWarning
+      expr: |
+        100 * (
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~"postgresql-ha-.*", namespace="postgres-db"})
+          /
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"postgresql-ha-.*", namespace="postgres-db"})
+        ) > 80
+        or
+        100 * (1 - (
+          sum by (persistentvolumeclaim, namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes{persistentvolumeclaim=~"postgresql-ha-.*", namespace="postgres-db"})
+          -
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"postgresql-ha-.*", namespace="postgres-db"})
+        ) /
+        sum by (persistentvolumeclaim, namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes{persistentvolumeclaim=~"postgresql-ha-.*", namespace="postgres-db"})) > 80
+      for: 1m
+      labels:
+        severity: warning
+        cluster: vn
+        service: postgresql-ha
+      annotations:
+        summary: "PostgreSQL HA storage usage above 80%"
+        description: "PVC {{ $labels.persistentvolumeclaim }} usage is above threshold"
+
+    # Warning: PVC storage usage > 80% for postgresql-pgvector
+    - alert: PostgreSQLPgVectorStorageWarning
+      expr: |
+        100 * (
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~"postgresql-pgvector-.*", namespace="postgres-db"})
+          /
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"postgresql-pgvector-.*", namespace="postgres-db"})
+        ) > 80
+        or
+        100 * (1 - (
+          sum by (persistentvolumeclaim, namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes{persistentvolumeclaim=~"postgresql-pgvector-.*", namespace="postgres-db"})
+          -
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"postgresql-pgvector-.*", namespace="postgres-db"})
+        ) /
+        sum by (persistentvolumeclaim, namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes{persistentvolumeclaim=~"postgresql-pgvector-.*", namespace="postgres-db"})) > 80
+      for: 1m
+      labels:
+        severity: warning
+        cluster: vn
+        service: postgresql-pgvector
+      annotations:
+        summary: "PostgreSQL pgvector storage usage above 80%"
+        description: "PVC {{ $labels.persistentvolumeclaim }} usage is above threshold"
+
+    # Critical: PVC storage usage > 90%
+    - alert: PostgreSQLStorageCritical
+      expr: |
+        100 * (
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~"postgresql-(ha|pgvector)-.*", namespace="postgres-db"})
+          /
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"postgresql-(ha|pgvector)-.*", namespace="postgres-db"})
+        ) > 90
+        or
+        100 * (1 - (
+          sum by (persistentvolumeclaim, namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes{persistentvolumeclaim=~"postgresql-(ha|pgvector)-.*", namespace="postgres-db"})
+          -
+          sum by (persistentvolumeclaim, namespace) (kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"postgresql-(ha|pgvector)-.*", namespace="postgres-db"})
+        ) /
+        sum by (persistentvolumeclaim, namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes{persistentvolumeclaim=~"postgresql-(ha|pgvector)-.*", namespace="postgres-db"})) > 90
+      for: 2m
+      labels:
+        severity: critical
+        cluster: vn
+        service: postgresql
+      annotations:
+        summary: "PostgreSQL storage CRITICAL - above 90%"
+        description: "PVC {{ $labels.persistentvolumeclaim }} usage is above 90% - IMMEDIATE ACTION REQUIRED"

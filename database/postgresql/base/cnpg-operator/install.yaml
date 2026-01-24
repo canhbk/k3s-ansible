@@ -1,0 +1,15 @@
+# CloudNative-PG Operator Installation
+# Version: 1.26.0
+# Source: https://cloudnative-pg.io/
+#
+# To install:
+# kubectl apply --server-side -f install.yaml
+#
+# Or directly from upstream:
+# kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.26/releases/cnpg-1.26.0.yaml
+#
+# Verify installation:
+# kubectl get deploy -n cnpg-system cnpg-controller-manager
+#
+# Note: This file should be updated when new versions are released
+# Check releases at: https://github.com/cloudnative-pg/cloudnative-pg/releases

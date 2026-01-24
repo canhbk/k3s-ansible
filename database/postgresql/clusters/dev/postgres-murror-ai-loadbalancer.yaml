@@ -1,0 +1,33 @@
+# PostgreSQL LoadBalancer Service for AI Team
+# WARNING: This exposes PostgreSQL to the internet - DEVELOPMENT ONLY
+#
+# This service provides external access to the PostgreSQL primary instance
+# for the AI team to access the murror-ai database.
+#
+# Deploy:
+# kubectl apply -f postgres-murror-ai-loadbalancer.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-murror-ai
+  namespace: postgres-db
+  annotations:
+    environment: "development"
+    team: "ai-team"
+    database: "murror-ai"
+    purpose: "AI team access to murror-ai database only"
+    warning: "DEVELOPMENT ONLY - OPEN TO INTERNET"
+    created: "2025-07-31"
+spec:
+  type: LoadBalancer
+  selector:
+    cnpg.io/cluster: postgresql-ha
+    cnpg.io/instanceRole: primary
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  sessionAffinity: ClientIP
+  # No IP restrictions - open to internet for AI team access from any location

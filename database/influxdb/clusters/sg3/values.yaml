@@ -1,0 +1,67 @@
+# SG3 cluster specific values for InfluxDB
+# This file overrides the base values
+
+# SG3 admin configuration per requirements
+adminUser:
+  organization: "Subeo"
+  bucket: "production"
+  retention_policy: "60d"  # 60 days retention
+
+# Storage configuration for SG3 cluster
+persistence:
+  size: 20Gi
+  storageClass: local-path  # Use local-path (node-local storage) due to Longhorn capacity constraints
+
+# Production-grade resources per requirements
+resources:
+  requests:
+    memory: 1Gi
+    cpu: 500m
+  limits:
+    memory: 4Gi
+    cpu: 2000m
+
+# Production labels for SG3
+podLabels:
+  environment: production
+  cluster: sg3
+  region: singapore
+  provider: ovh
+
+# Production environment variables
+env:
+  - name: INFLUXDB_LOG_LEVEL
+    value: "warn"
+  - name: INFLUXDB_HTTP_LOG_ENABLED
+    value: "false"
+
+# Metrics for production monitoring with Prometheus
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    labels:
+      prometheus: kube-prometheus-stack
+      environment: production
+      cluster: sg3
+      region: singapore
+
+# Pod anti-affinity for HA (spread across nodes)
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - influxdb2
+        topologyKey: kubernetes.io/hostname
+
+# Backup configuration (disabled initially)
+backup:
+  enabled: false
+  schedule: "0 2 * * *"  # Daily at 2 AM if enabled
+  retention: 30  # Keep 30 days of backups

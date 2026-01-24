@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dev-logger-cluster-logs
+subjects:
+  - kind: ServiceAccount
+    name: dev-logger
+    namespace: dev-access
+roleRef:
+  kind: ClusterRole
+  name: cluster-log-reader
+  apiGroup: rbac.authorization.k8s.io

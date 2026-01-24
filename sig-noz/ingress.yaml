@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sig-noz-ingress
+  namespace: signoz
+
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - signoz.dev.canhnv.com
+    secretName: canhnv-com-staging-tls
+  rules:
+  - host: signoz.dev.canhnv.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: signoz
+            port:
+              number: 8080

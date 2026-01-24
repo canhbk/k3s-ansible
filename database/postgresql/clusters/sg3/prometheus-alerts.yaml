@@ -1,0 +1,75 @@
+# Prometheus Alert Rules for PostgreSQL sg3 cluster
+# This defines alerting rules for monitoring PostgreSQL health
+#
+# Apply: kubectl apply -f prometheus-alerts.yaml
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: postgresql-sg3-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+  - name: postgresql-sg3
+    interval: 30s
+    rules:
+    # Critical: Instance down
+    - alert: PostgreSQLInstanceDown
+      expr: up{job=~".*postgresql-sg3-pgvector.*"} == 0
+      for: 2m
+      labels:
+        severity: critical
+        cluster: postgresql-sg3-pgvector
+      annotations:
+        summary: "PostgreSQL instance {{ $labels.pod }} is down"
+        description: "PostgreSQL instance {{ $labels.pod }} in namespace {{ $labels.namespace }} has been down for more than 2 minutes"
+
+    # Critical: All instances down
+    - alert: PostgreSQLClusterDown
+      expr: count(up{job=~".*postgresql-sg3-pgvector.*"} == 1) == 0
+      for: 1m
+      labels:
+        severity: critical
+        cluster: postgresql-sg3-pgvector
+      annotations:
+        summary: "PostgreSQL cluster completely down"
+        description: "All PostgreSQL instances in sg3 cluster are down"
+
+    # Warning: High connections
+    - alert: PostgreSQLHighConnections
+      expr: |
+        (sum(cnpg_backends_total) by (pod) / 200) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+        cluster: postgresql-sg3-pgvector
+      annotations:
+        summary: "High connection usage on {{ $labels.pod }}"
+        description: "Pod {{ $labels.pod }} is using more than 80% of max connections"
+
+    # Warning: Replication lag (if replicas exist)
+    - alert: PostgreSQLReplicationLag
+      expr: |
+        cnpg_pg_replication_lag > 10
+      for: 5m
+      labels:
+        severity: warning
+        cluster: postgresql-sg3-pgvector
+      annotations:
+        summary: "High replication lag detected on {{ $labels.pod }}"
+        description: "Replication lag is {{ $value }} seconds on {{ $labels.pod }}"
+
+    # Warning: Database size growing fast
+    - alert: PostgreSQLDatabaseGrowth
+      expr: |
+        rate(cnpg_pg_database_size_bytes[1h]) > 10000000
+      for: 10m
+      labels:
+        severity: warning
+        cluster: postgresql-sg3-pgvector
+      annotations:
+        summary: "Rapid database growth detected"
+        description: "Database {{ $labels.datname }} is growing at {{ $value }} bytes/sec"

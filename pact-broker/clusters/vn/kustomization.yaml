@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: pact-broker-vn
+
+resources:
+  - ../../base
+
+images:
+  - name: pactfoundation/pact-broker
+    newTag: "2.137.0-pactbroker2.118.0"
+
+commonLabels:
+  environment: vn
+  cluster: vn

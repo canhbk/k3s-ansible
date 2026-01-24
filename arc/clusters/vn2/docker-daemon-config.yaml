@@ -1,0 +1,34 @@
+---
+# ConfigMap for Docker daemon configuration in ARC DinD containers
+# Required to fix MTU mismatch issues when running on Wireguard-based networks
+#
+# The VN2 cluster uses Wireguard VPN with MTU 1420, but Docker's default bridge
+# network uses MTU 1500. This mismatch causes network connectivity failures
+# for containers running Docker builds (e.g., corepack/pnpm network errors).
+#
+# Apply with: kubectl apply -f docker-daemon-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-daemon-config
+  namespace: arc-runners
+  labels:
+    app.kubernetes.io/name: arc-runners
+    app.kubernetes.io/component: dind-config
+data:
+  daemon.json: |
+    {
+      "mtu": 1400,
+      "default-network-opts": {
+        "bridge": {
+          "com.docker.network.driver.mtu": "1400"
+        }
+      },
+      "dns": ["8.8.8.8", "8.8.4.4"],
+      "storage-driver": "overlay2",
+      "log-driver": "json-file",
+      "log-opts": {
+        "max-size": "10m",
+        "max-file": "3"
+      }
+    }

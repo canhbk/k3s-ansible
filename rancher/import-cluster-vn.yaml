@@ -1,0 +1,11 @@
+apiVersion: provisioning.cattle.io/v1
+kind: Cluster
+metadata:
+  name: vn
+  namespace: fleet-default
+  annotations:
+    field.cattle.io/description: "VN Production Cluster - Vietnam"
+spec:
+  agentEnvVars: []
+  cloudCredentialSecretName: ""
+  kubernetesVersion: ""

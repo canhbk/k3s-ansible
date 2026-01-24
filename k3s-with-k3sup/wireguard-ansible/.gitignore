@@ -1,0 +1,13 @@
+# Local inventory files with sensitive data
+inventory/hosts.local.yaml
+inventory/*.local.yaml
+
+# Ansible retry files
+*.retry
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

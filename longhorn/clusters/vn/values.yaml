@@ -1,0 +1,59 @@
+# VN cluster specific Longhorn values
+# These values override the base configuration in base/values-base.yaml
+
+# VN cluster optimized for single-node with storage node dedication
+persistence:
+  defaultClassReplicaCount: 1  # Single replica for VN
+
+csi:
+  # Lower replica counts for VN cluster (single-node optimization)
+  attacherReplicaCount: 1
+  provisionerReplicaCount: 1
+  resizerReplicaCount: 1
+  snapshotterReplicaCount: 1
+
+defaultSettings:
+  defaultReplicaCount: 1  # Single replica default
+  # VN cluster uses dedicated storage nodes
+  taintToleration: "dedicated=storage:NoSchedule"
+  systemManagedComponentsNodeSelector: "role:storage"
+
+longhornManager:
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "storage"
+      effect: "NoSchedule"
+  nodeSelector:
+    role: "storage"
+
+longhornDriver:
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "storage"
+      effect: "NoSchedule"
+  nodeSelector:
+    role: "storage"
+
+longhornUI:
+  replicas: 1  # Single replica for VN
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "storage"
+      effect: "NoSchedule"
+  nodeSelector:
+    role: "storage"
+
+ingress:
+  host: vn.longhorn.canhnv.com
+  annotations:
+    cert-manager.io/cluster-issuer: canhnv-com-staging
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      cluster: vn
+      environment: production

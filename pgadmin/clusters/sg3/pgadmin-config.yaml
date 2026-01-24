@@ -1,0 +1,38 @@
+# pgAdmin Server Configuration for SG3 Cluster
+# Pre-configured PostgreSQL server connections
+# This ConfigMap will be mounted into pgAdmin to automatically add the PostgreSQL cluster connection
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgadmin-servers
+  namespace: postgres-db
+  labels:
+    app: pgadmin
+    cluster: sg3
+data:
+  servers.json: |
+    {
+      "Servers": {
+        "1": {
+          "Name": "postgresql-sg3-pgvector",
+          "Group": "SG3 Cluster",
+          "Host": "postgresql-sg3-pgvector-rw.postgres-db.svc.cluster.local",
+          "Port": 5432,
+          "MaintenanceDB": "postgres",
+          "Username": "postgres",
+          "SSLMode": "prefer",
+          "Comment": "PostgreSQL 17.2 HA cluster with pgvector extension - Primary read-write endpoint"
+        },
+        "2": {
+          "Name": "postgresql-sg3-pgvector-readonly",
+          "Group": "SG3 Cluster",
+          "Host": "postgresql-sg3-pgvector-ro.postgres-db.svc.cluster.local",
+          "Port": 5432,
+          "MaintenanceDB": "postgres",
+          "Username": "postgres",
+          "SSLMode": "prefer",
+          "Comment": "PostgreSQL 17.2 HA cluster - Read-only replicas endpoint"
+        }
+      }
+    }

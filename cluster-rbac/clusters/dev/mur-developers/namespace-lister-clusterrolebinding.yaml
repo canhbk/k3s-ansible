@@ -1,0 +1,14 @@
+# ClusterRoleBinding to allow mur-developers to list namespaces
+# This binds the namespace-lister ClusterRole to the mur-developers ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mur-developers-namespace-lister
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: namespace-lister
+subjects:
+  - kind: ServiceAccount
+    name: mur-developers
+    namespace: dev-access

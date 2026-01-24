@@ -1,0 +1,94 @@
+# Dev cluster specific values for kube-prometheus-stack
+# This file overrides the base values
+
+# Global labels to identify this cluster
+global:
+  additionalLabels:
+    cluster: dev
+    environment: development
+    region: us
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # External labels for federation/remote write
+    externalLabels:
+      cluster: dev
+      environment: development
+
+    # Dev-specific resource limits (can be lower than production)
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+
+    # Smaller storage for dev
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 30Gi
+
+# Grafana configuration
+grafana:
+  # Set the external URL for dev
+  grafana.ini:
+    server:
+      domain: grafana.dev.k3s.canhnv.com
+      root_url: "https://grafana.dev.k3s.canhnv.com/"
+
+  # Dev-specific resources
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+  # Smaller persistence for dev
+  persistence:
+    size: 5Gi
+
+# Alertmanager configuration
+alertmanager:
+  alertmanagerSpec:
+    # Dev-specific storage
+    storage:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 5Gi
+
+  # Basic alertmanager config for dev
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'null'
+      routes:
+      - match:
+          alertname: Watchdog
+        receiver: 'null'
+    receivers:
+    - name: 'null'
+
+# Enable ingress through separate ingress.yaml for better control
+grafana:
+  ingress:
+    enabled: false  # We'll use our own ingress definition
+
+# Additional ServiceMonitors for dev services
+additionalServiceMonitors: []
+
+# Cluster-specific labels
+commonLabels:
+  cluster: dev
+  monitoring: kube-prometheus

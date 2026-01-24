@@ -1,0 +1,245 @@
+# SG3 cluster values for kube-prometheus-stack
+# Custom sizing with Longhorn distributed storage
+
+# Global labels to identify this cluster
+global:
+  additionalLabels:
+    cluster: sg3
+    environment: production
+    region: singapore
+    provider: ovh
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # External labels for federation/remote write
+    externalLabels:
+      cluster: sg3
+      environment: production
+      region: singapore
+      provider: ovh
+
+    # Production resource limits (custom sizing)
+    resources:
+      requests:
+        cpu: 1
+        memory: 2Gi
+      limits:
+        cpu: 2
+        memory: 4Gi
+
+    # Longhorn distributed storage - 25Gi per replica
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 25Gi
+
+    # Retention settings optimized for 25Gi storage
+    retention: 15d
+    retentionSize: 20GB
+
+    # Single replica (Longhorn provides data durability)
+    replicas: 1
+
+    # Enable Longhorn ServiceMonitor discovery
+    serviceMonitorSelector:
+      matchLabels:
+        prometheus: kube-prometheus-stack
+    serviceMonitorNamespaceSelector: {}
+
+# Kubelet metrics (enable cAdvisor for container metrics)
+kubelet:
+  enabled: true
+  serviceMonitor:
+    cAdvisor: true
+    additionalLabels:
+      prometheus: kube-prometheus-stack
+
+# Kube API Server metrics
+kubeApiServer:
+  enabled: true
+  serviceMonitor:
+    additionalLabels:
+      prometheus: kube-prometheus-stack
+
+# Grafana configuration
+grafana:
+  # Set the external URL
+  grafana.ini:
+    server:
+      domain: grafana.sg3.k3s.canhnv.com
+      root_url: "https://grafana.sg3.k3s.canhnv.com/"
+
+  # Production resources (custom sizing)
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  # Longhorn persistence - 25Gi
+  persistence:
+    enabled: true
+    storageClassName: longhorn
+    size: 25Gi
+
+  # Single replica for now
+  replicas: 1
+
+# Alertmanager configuration
+alertmanager:
+  alertmanagerSpec:
+    # Longhorn storage - 25Gi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 25Gi
+
+    # Production resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+    # Single replica
+    replicas: 1
+
+  # Production alerting config
+  config:
+    global:
+      resolve_timeout: 5m
+      slack_api_url: 'https://hooks.slack.com/services/__REDACTED__2'
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      receiver: 'production-alerts'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'critical-alerts'
+      - match:
+          namespace: nsp-alpha-murror-ai
+        receiver: 'murror-ai-alerts'
+      - match:
+          namespace: nsp-alpha-murror
+        receiver: 'murror-api-alerts'
+      - match:
+          alertname: Watchdog
+        receiver: 'null'
+      - match:
+          alertname: InfoInhibitor
+        receiver: 'null'
+      - match:
+          severity: info
+        receiver: 'null'
+    receivers:
+    - name: 'null'
+    - name: 'production-alerts'
+      slack_configs:
+      - channel: '#alert-sg3-cluster'
+        send_resolved: true
+        title: ':warning: [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* SG3 (Production)
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
+    - name: 'critical-alerts'
+      slack_configs:
+      - channel: '#alert-sg3-critical'
+        send_resolved: true
+        title: ':rotating_light: [CRITICAL] {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* SG3 (Production)
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
+    - name: 'murror-api-alerts'
+      slack_configs:
+      - channel: '#alert-sg3-murror-api'
+        send_resolved: true
+        title: ':warning: [{{ .Status | toUpper }}] Murror API - {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* SG3 (Alpha)
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
+    - name: 'murror-ai-alerts'
+      slack_configs:
+      - channel: '#alert-sg3-murror-ai'
+        send_resolved: true
+        title: ':robot_face: [{{ .Status | toUpper }}] Murror AI - {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* SG3 (Alpha)
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
+    inhibit_rules:
+    # Inhibit info-level alerts when InfoInhibitor is firing in the same namespace
+    - source_matchers:
+        - alertname = "InfoInhibitor"
+      target_matchers:
+        - severity = "info"
+      equal:
+        - namespace
+    # Standard inhibition: critical alerts inhibit warning alerts
+    - source_matchers:
+        - severity = "critical"
+      target_matchers:
+        - severity = "warning"
+      equal:
+        - alertname
+        - namespace
+
+# Node exporter for production
+nodeExporter:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# kube-state-metrics
+kubeStateMetrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# Additional ServiceMonitors (Longhorn will be auto-discovered)
+additionalServiceMonitors: []
+
+# Cluster-specific labels
+commonLabels:
+  cluster: sg3
+  monitoring: kube-prometheus

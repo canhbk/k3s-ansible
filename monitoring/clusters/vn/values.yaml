@@ -1,0 +1,195 @@
+# VN cluster values for kube-prometheus-stack
+
+# Global labels to identify this cluster
+global:
+  additionalLabels:
+    cluster: vn
+    environment: production
+    region: asia
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # External labels for federation/remote write
+    externalLabels:
+      cluster: vn
+      environment: production
+      region: asia
+
+    # Production resource limits
+    resources:
+      requests:
+        cpu: 1
+        memory: 4Gi
+      limits:
+        memory: 8Gi
+
+    # Production storage - 20Gi as requested
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          resources:
+            requests:
+              storage: 20Gi
+
+    # High availability (if multiple nodes available)
+    replicas: 1
+
+# Grafana configuration
+grafana:
+  # Set the external URL
+  grafana.ini:
+    server:
+      domain: grafana.vn.k3s.canhnv.com
+      root_url: "https://grafana.vn.k3s.canhnv.com/"
+
+  # Production resources
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+  # Production persistence - 10Gi as requested
+  persistence:
+    size: 10Gi
+
+  # High availability (optional)
+  replicas: 1
+
+# Alertmanager configuration
+alertmanager:
+  alertmanagerSpec:
+    # Production storage
+    storage:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 20Gi
+
+    # Production resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+
+    # High availability (if needed)
+    replicas: 1
+
+  # Production alerting config with Slack integration
+  config:
+    global:
+      resolve_timeout: 5m
+      slack_api_url: 'https://hooks.slack.com/services/__REDACTED__Z'
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 1h
+      receiver: 'production-alerts'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'critical-alerts'
+        repeat_interval: 30m
+      - match:
+          service: postgresql-ha
+        receiver: 'database-alerts'
+      - match:
+          service: postgresql-pgvector
+        receiver: 'database-alerts'
+      - match:
+          service: murror-api
+        receiver: 'murror-api-alerts'
+      - match:
+          alertname: Watchdog
+        receiver: 'null'
+    receivers:
+    - name: 'null'
+    - name: 'production-alerts'
+      slack_configs:
+      - channel: '#alert-production-database'
+        send_resolved: true
+        title: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* {{ .Labels.cluster }}
+          *Severity:* {{ .Labels.severity }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+    - name: 'critical-alerts'
+      slack_configs:
+      - channel: '#alert-production-database'
+        send_resolved: true
+        title: ':rotating_light: [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *CRITICAL ALERT:* {{ .Annotations.summary }}
+          *Cluster:* {{ .Labels.cluster }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+    - name: 'database-alerts'
+      slack_configs:
+      - channel: '#alert-production-database'
+        send_resolved: true
+        title: ':floppy_disk: [{{ .Status | toUpper }}] PostgreSQL - {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* VN
+          *Service:* {{ .Labels.service }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
+    - name: 'murror-api-alerts'
+      slack_configs:
+      - channel: '#alert-production-murror-api'
+        send_resolved: true
+        title: ':warning: [{{ .Status | toUpper }}] Murror API - {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Cluster:* VN
+          *Service:* {{ .Labels.service }}
+          *Namespace:* {{ .Labels.namespace }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:* {{ .Annotations.description }}
+          {{ end }}
+
+# Kubelet metrics (enable cadvisor for volume metrics)
+kubelet:
+  enabled: true
+  serviceMonitor:
+    cAdvisor: true
+    additionalLabels:
+      prometheus: kube-prometheus-stack
+
+# Kube API Server metrics
+kubeApiServer:
+  enabled: true
+  serviceMonitor:
+    additionalLabels:
+      prometheus: kube-prometheus-stack
+
+# Node exporter for production
+nodeExporter:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+# Additional ServiceMonitors for production services
+additionalServiceMonitors: []
+
+# Cluster-specific labels
+commonLabels:
+  cluster: vn
+  monitoring: kube-prometheus

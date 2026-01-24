@@ -1,0 +1,117 @@
+# PostgreSQL HA Replica Cluster - Streaming Replication from VN
+# This creates a read-only replica in US cluster that streams from VN primary
+#
+# Prerequisites:
+# 1. CloudNative-PG operator installed in US cluster
+# 2. Namespace: kubectl create namespace postgres-db
+# 3. Replication secret: kubectl get secret -n postgres-db replication-user-ha-secret
+# 4. VN Primary accessible at 14.225.210.108:5434
+#
+# Deploy:
+# kubectl apply -f cluster-ha-replica-streaming.yaml
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-ha-replica
+  namespace: postgres-db
+spec:
+  instances: 1
+
+  # Image configuration matching VN primary
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    major: 17
+    name: postgresql
+
+  # Bootstrap from VN primary
+  bootstrap:
+    pg_basebackup:
+      source: postgresql-ha-primary-vn
+
+  # CRITICAL: Enable continuous streaming replication
+  replica:
+    enabled: true
+    source: postgresql-ha-primary-vn
+
+  # External cluster configuration for VN primary
+  externalClusters:
+    - name: postgresql-ha-primary-vn
+      connectionParameters:
+        host: "14.225.210.108"
+        port: "5434"
+        user: "replication_user_ha"
+        dbname: "postgres"
+        sslmode: "disable"  # Using non-SSL as per previous configuration
+      password:
+        name: replication-user-ha-secret
+        key: password
+
+  # PostgreSQL configuration for standby
+  postgresql:
+    parameters:
+      # Memory settings
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      work_mem: "4MB"
+      # Standby settings
+      hot_standby_feedback: "on"
+      wal_receiver_status_interval: "10s"
+      wal_receiver_timeout: "30s"
+      # Logging
+      log_destination: csvlog
+      log_directory: /controller/log
+      log_filename: postgres
+      logging_collector: "on"
+      # Worker settings
+      max_parallel_workers: "32"
+      max_worker_processes: "32"
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "100m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  # Storage configuration
+  storage:
+    size: 5Gi
+    storageClass: longhorn-replicated
+    resizeInUseVolumes: true
+
+  # Monitoring
+  monitoring:
+    disableDefaultQueries: false
+    customQueriesConfigMap:
+      - name: cnpg-default-monitoring
+        key: queries
+
+  # Security settings matching primary
+  enableSuperuserAccess: false
+  postgresUID: 26
+  postgresGID: 26
+
+  # Node affinity
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: longhorn
+                operator: In
+                values:
+                  - "true"
+
+  # Update strategy
+  primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: restart
+
+  # Log level for debugging
+  logLevel: info

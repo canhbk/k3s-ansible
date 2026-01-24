@@ -1,0 +1,37 @@
+---
+- name: Upgrade K3s agent nodes to v1.32.5+k3s1
+  hosts: k3s_agents
+  become: yes
+  vars:
+    k3s_version: "v1.32.5+k3s1"
+    k3s_control_host: vps8
+
+  tasks:
+    - name: Get K3s token from control-plane
+      delegate_to: "{{ k3s_control_host }}"
+      become: yes
+      command: cat /var/lib/rancher/k3s/server/node-token
+      register: control_token
+
+    - name: Get K3s server URL from control-plane systemd unit
+      delegate_to: "{{ k3s_control_host }}"
+      become: yes
+      shell: grep -oP '(?<=--tls-san )[^ ]+' /etc/systemd/system/k3s.service || hostname -I | awk '{print $1}'
+      register: control_ip
+
+    - name: Install K3s Agent {{ k3s_version }}
+      shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="{{ k3s_version }}" sh -s - agent \
+          --server https://{{ control_ip.stdout }}:6443 \
+          --token {{ control_token.stdout }}
+      environment:
+        INSTALL_K3S_SKIP_START: "false"
+
+    - name: Verify agent version
+      command: k3s --version
+      register: agent_version
+      ignore_errors: true
+
+    - name: Show installed agent version
+      debug:
+        msg: "K3s Agent version: {{ agent_version.stdout | default('Install failed') }}"

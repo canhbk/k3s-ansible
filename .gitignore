@@ -6,8 +6,62 @@ inventory.yml
 inventory.*.yml
 playbook/debug.yml
 
-# Longhorn
-longhorn/auth
+# PostgreSQL secrets with actual passwords
+*.local
+secrets.yaml.local
+**/secrets.yaml.local
 
-# K3s
+# Inventory files with sensitive data
+inventory.*.local.yml
+inventory.prod.yml
+inventory.vn.yml
+inventory.vn-2.yml
+inventory.db.yml
+
+# Backup files
+*.backup
+*.bak
+
+# Database dumps
+*.sql
+*.dump
+
+# Longhorn sensitive files
+longhorn/.secrets.env
+longhorn/longhornctl
+longhorn/auth
+longhorn/basic-auth
+**/basic-auth-secret.yaml
+.idea/
+
+# Kubernetes kubeconfig files with tokens
 *.kubeconfig.yaml
+**/kubeconfig.yaml
+**/kubeconfig
+**/*.kubeconfig
+kubeconfig*
+*kubeconfig*
+*.kubeconfig
+dev-logger.kubeconfig.yaml
+kubeconfig-sg3*
+
+# Kubernetes secrets and tokens
+**/secrets/
+**/*-token.yaml
+
+# Local files with actual credentials (never commit these)
+*.local.yaml
+**/secrets.local.yaml
+**/admin-secret.local.yaml
+**/backend-influxdb-config.local.yaml
+**/app-rabbitmq-secret.local.yaml
+**/murror-secret.local.yaml
+**/murror-ai-secret.local.yaml
+**/secrets-*.local.yaml
+
+# OAuth and API credentials (actual values)
+redis/clusters/dev/oauth2-proxy/values.yaml
+database/postgresql/clusters/vn/secrets-r2-backup.yaml
+
+# GitHub App private keys
+*.private-key.pem

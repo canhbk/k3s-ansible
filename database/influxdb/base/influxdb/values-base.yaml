@@ -1,0 +1,106 @@
+# Base values for InfluxDB 2.x
+# These values are shared across all clusters
+# Cluster-specific values should override these
+
+# InfluxDB v2 configuration
+image:
+  repository: influxdb
+  tag: "2.7-alpine"
+  pullPolicy: IfNotPresent
+
+# Authentication
+adminUser:
+  organization: "k3s"
+  bucket: "default"
+  retention_policy: "30d"
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: local-path
+  accessMode: ReadWriteOnce
+  size: 50Gi
+  mountPath: /var/lib/influxdb2
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8086
+  targetPort: 8086
+  annotations: {}
+  labels: {}
+
+# Resource configuration
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    memory: 2Gi
+    cpu: 1000m
+
+# Liveness and readiness probes
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3
+
+# Pod configuration
+podAnnotations: {}
+podLabels: {}
+
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Environment variables
+env: {}
+
+# Configuration for InfluxDB
+config:
+  reporting_disabled: true
+  http:
+    auth_enabled: true
+    bind_address: ":8086"
+    https_enabled: false
+    flux_enabled: true
+  storage:
+    wal_fsync_delay: "100ms"
+
+# Metrics configuration for Prometheus
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: influxdb
+    interval: 30s
+    labels:
+      prometheus: kube-prometheus-stack
+
+# Backup configuration
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  retention: 7

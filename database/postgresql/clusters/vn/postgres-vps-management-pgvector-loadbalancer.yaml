@@ -1,0 +1,33 @@
+# PostgreSQL LoadBalancer Service for VPS Management - VN pgvector cluster
+# WARNING: This exposes PostgreSQL to the internet - PRODUCTION ENVIRONMENT
+#
+# This service provides external access to the PostgreSQL pgvector primary instance
+# for the VPS management application database.
+#
+# Deploy:
+# kubectl apply -f postgres-vps-management-pgvector-loadbalancer.yaml
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-vps-management-pgvector
+  namespace: postgres-db
+  annotations:
+    environment: "production"
+    team: "devops"
+    database: "vps-management"
+    purpose: "VPS management application database access with pgvector extension"
+    warning: "PRODUCTION - EXPOSED TO INTERNET - ENSURE STRONG PASSWORDS AND CONSIDER FIREWALL RULES"
+    created: "2025-09-11"
+spec:
+  type: LoadBalancer
+  selector:
+    cnpg.io/cluster: postgresql-pgvector
+    cnpg.io/instanceRole: primary
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  sessionAffinity: ClientIP
+  # Production environment - Consider implementing IP restrictions or VPN access

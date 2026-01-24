@@ -1,0 +1,28 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ambercare-app-staging-cert
+spec:
+  secretName: ambercare-app-staging-tls
+  issuerRef:
+    name: letsencrypt-ambercare-app-staging
+    kind: ClusterIssuer
+  commonName: "ambercare.app"
+  dnsNames:
+    - "ambercare.app"
+    - "*.ambercare.app"
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: canhnv-com-staging-cert
+spec:
+  secretName: canhnv-com-staging-tls
+  issuerRef:
+    name: letsencrypt-canhnv-com-staging
+    kind: ClusterIssuer
+  commonName: "canhnv.com"
+  dnsNames:
+    - "canhnv.com"
+    - "*.canhnv.com"

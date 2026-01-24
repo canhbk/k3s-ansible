@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-influxdb-config
+  namespace: default  # Change to your backend's namespace
+type: Opaque
+stringData:
+  INFLUXDB_URL: "http://influxdb-influxdb2.influxdb.svc.cluster.local:8086"
+  INFLUXDB_TOKEN: "<CHANGE_ME_INFLUXDB_TOKEN>"
+  INFLUXDB_ORG: "murror"
+  INFLUXDB_BUCKET: "murror_api_metrics"

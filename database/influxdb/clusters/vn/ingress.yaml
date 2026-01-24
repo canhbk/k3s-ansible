@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: influxdb
+  namespace: influxdb
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # SSL configuration
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/ssl-ciphers: "ECDHE+AESGCM:ECDHE+AES256:ECDHE+AES128:RSA+AESGCM:RSA+AES256:RSA+AES128"
+    # InfluxDB specific
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    # Rate limiting for production
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - influxdb.vn.k3s.canhnv.com
+    secretName: influxdb-vn-tls
+  rules:
+  - host: influxdb.vn.k3s.canhnv.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: influxdb-influxdb2
+            port:
+              number: 8086

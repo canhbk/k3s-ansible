@@ -1,0 +1,120 @@
+# This inventory file contains public information only
+# For passwords, create inventory/hosts.local.yaml (see README.md)
+all:
+  hosts:
+    vps3:
+      ansible_host: 84.247.152.54
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.3
+    vps4:
+      ansible_host: 84.247.152.53
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.4
+
+    vps6:
+      ansible_host: 160.191.245.246
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.6
+
+    vps8:
+      ansible_host: 46.250.231.255
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.8
+
+    vps9:
+      ansible_host: 46.250.232.0
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.9
+
+    vps19:
+      ansible_host: 62.146.234.36
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.19
+
+    vps20:
+      ansible_host: 62.146.234.37
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.20
+
+    vps22:
+      ansible_host: 14.225.210.108
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.22
+
+    vps23:
+      ansible_host: 14.225.210.165
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.23
+
+    vps24:
+      ansible_host: 14.225.210.170
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.24
+
+    vps26:
+      ansible_host: 65.49.60.35
+      ansible_user: client_3419_1
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.26
+    vps27:
+      ansible_host: 64.71.161.44
+      ansible_user: client_3419_2
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.27
+    vps28:
+      ansible_host: 163.61.73.77
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.28
+
+    vps29:
+      ansible_host: 163.61.73.78
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.29
+
+    vps30:
+      ansible_host: 163.61.73.79
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.30
+
+    vps31:
+      ansible_host: 163.61.73.90
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.31
+
+    vps33:
+      ansible_host: 14.225.210.189
+      ansible_user: root
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.33
+
+    vps34:
+      ansible_host: 31.14.17.182
+      ansible_user: alwyzon
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.34
+
+    vps36:
+      ansible_host: 203.34.137.95
+      ansible_user: alwyzon
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.36
+
+    vps40:
+      ansible_host: 74.82.63.155
+      ansible_user: client_3419_3
+      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      wg_ip: 10.10.0.40

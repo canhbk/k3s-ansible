@@ -1,0 +1,35 @@
+# PostgreSQL LoadBalancer Service for Backend Testing
+# WARNING: This exposes PostgreSQL to the internet - DEVELOPMENT ONLY
+#
+# This service provides external access to the PostgreSQL primary instance
+# for testing purposes to access the murror-be database with read-only permissions.
+#
+# Deploy:
+# kubectl apply -f postgres-murror-be-loadbalancer.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-murror-be
+  namespace: postgres-db
+  annotations:
+    environment: "development"
+    team: "backend-testing"
+    database: "murror-be"
+    purpose: "Read-only testing access to murror-be database"
+    warning: "DEVELOPMENT ONLY - OPEN TO INTERNET"
+    user: "tester"
+    permissions: "read-only"
+    created: "2025-09-16"
+spec:
+  type: LoadBalancer
+  selector:
+    cnpg.io/cluster: postgresql-ha
+    cnpg.io/instanceRole: primary
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  sessionAffinity: ClientIP
+  # No IP restrictions - open to internet for testing access from any location

@@ -24,7 +24,7 @@ kubectl apply -f cloudflare-tls/manifests.yaml.local
 
 helm install rancher rancher-stable/rancher \
   --namespace cattle-system \
-  --set hostname=vn2.k3s.canhnv.com \
+  --set hostname=vn.k3s.canhnv.com \
   --set bootstrapPassword=admin \
   --set ingress.tls.source=letsEncrypt \
   --set letsEncrypt.email=canhcvp1998@gmail.com \
@@ -37,6 +37,13 @@ helm install rancher rancher-stable/rancher \
 
 ```bash
 curl -sSfL -o longhornctl https://github.com/longhorn/cli/releases/download/v1.9.0/longhornctl-linux-amd64
+
+# For ARM platform
+curl -sSfL -o longhornctl https://github.com/longhorn/cli/releases/download/v1.9.0/longhornctl-linux-arm64
+
+# For MacOS Apple silicon chip
+curl -sSfL -o longhornctl https://github.com/longhorn/cli/releases/download/v1.9.0/longhornctl-darwin-arm64
+
 chmod +x longhornctl
 
 ./longhornctl --kube-config ~/.kube/config --image longhornio/longhorn-cli:v1.9.0 install preflight
@@ -48,6 +55,7 @@ chmod +x longhornctl
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.9.0/deploy/longhorn.yaml
+kubectl apply -f longhorn/longhorn.yaml
 
 # Monitor installation process
 kubectl get pods \

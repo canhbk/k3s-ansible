@@ -1,0 +1,6 @@
+- name: Setup WireGuard Mesh
+  hosts: all
+  become: true
+  gather_facts: false
+  roles:
+    - wireguard

@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: test-cert
+  namespace: ma-30
+spec:
+  secretName: test-cert-tls
+  issuerRef:
+    name: ambercare-app
+    kind: ClusterIssuer
+  commonName: ma-30.ai.api.ambercare.app
+  dnsNames:
+    - ma-30.ai.api.ambercare.app

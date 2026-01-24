@@ -1,0 +1,47 @@
+---
+# Example: How to use InfluxDB config in your backend deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: murror-backend
+  namespace: default  # Change to your namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: murror-backend
+  template:
+    metadata:
+      labels:
+        app: murror-backend
+    spec:
+      containers:
+      - name: backend
+        image: your-backend-image:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: backend-influxdb-config
+        # Or use individual env vars:
+        # env:
+        # - name: INFLUXDB_URL
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: backend-influxdb-config
+        #       key: INFLUXDB_URL
+        # - name: INFLUXDB_TOKEN
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: backend-influxdb-config
+        #       key: INFLUXDB_TOKEN
+        # - name: INFLUXDB_ORG
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: backend-influxdb-config
+        #       key: INFLUXDB_ORG
+        # - name: INFLUXDB_BUCKET
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: backend-influxdb-config
+        #       key: INFLUXDB_BUCKET

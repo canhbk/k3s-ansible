@@ -1,0 +1,42 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: xbuzi-com-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: canhcvp1998@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-xbuzi-com
+    solvers:
+      - dns01:
+          cloudflare:
+            email: canhcvp1998@gmail.com
+            apiTokenSecretRef:
+              name: cloudflare-token-secret
+              key: cloudflare-token
+        selector:
+          dnsZones:
+            - "xbuzi.com"
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: xbuzi-com
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: canhcvp1998@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-xbuzi-com
+    solvers:
+      - dns01:
+          cloudflare:
+            email: canhcvp1998@gmail.com
+            apiTokenSecretRef:
+              name: cloudflare-token-secret
+              key: cloudflare-token
+        selector:
+          dnsZones:
+            - "xbuzi.com"

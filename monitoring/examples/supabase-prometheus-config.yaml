@@ -1,0 +1,15 @@
+scrape_configs:
+  - job_name: "supabase_metrics"
+    metrics_path: "/customer/v1/privileged/metrics"
+    scheme: https
+    basic_auth:
+      username: "service_role"
+      password: "<your_service_role_jwt>"  # Replace with your actual service role JWT
+    static_configs:
+      - targets: 
+          - "<your-project-id>.supabase.co:443"  # Replace with your project ID
+        labels:
+          environment: "production"
+          service: "supabase"
+    scrape_interval: 30s
+    scrape_timeout: 10s

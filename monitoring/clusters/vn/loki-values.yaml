@@ -1,0 +1,126 @@
+# VN Cluster-Specific Loki Configuration
+# Overrides for monitoring/base/loki/values-base.yaml
+# Monolithic deployment mode for simplicity
+
+# Deployment mode: SingleBinary (all components in one pod)
+deploymentMode: SingleBinary
+
+# Single Binary configuration (all-in-one Loki)
+singleBinary:
+  replicas: 1
+
+  persistence:
+    enabled: true
+    storageClass: local-path  # Use local-path due to Longhorn storage constraints
+    size: 20Gi
+
+  resources:
+    requests:
+      cpu: 1
+      memory: 2Gi
+    limits:
+      cpu: 4
+      memory: 8Gi
+
+  # Node affinity to schedule only on VN cluster nodes
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - vps22-vnix
+            - vps23-vnix
+            - vps24-vnix
+            - vps33-vnix-nvme-dedicated-cpu
+
+# Disable scalable mode components (not used in SingleBinary mode)
+backend:
+  replicas: 0
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+gateway:
+  enabled: false
+
+# Promtail configuration for log collection
+promtail:
+  enabled: true
+
+  # Client configuration for SingleBinary Loki (override base config)
+  config:
+    clients:
+      - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+        # Required for Loki multi-tenancy (adds X-Scope-OrgID header)
+        tenant_id: "1"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Tolerations to run on all nodes including control plane
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+# Loki configuration overrides
+loki:
+  # No replication in single binary mode
+  commonConfig:
+    replication_factor: 1
+
+  # Server configuration
+  server:
+    log_level: info
+
+  # Storage configuration - filesystem (backed by local-path or Longhorn PVC)
+  storage:
+    type: filesystem
+    filesystem:
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
+
+  # Schema configuration (required by Loki chart)
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        index:
+          period: 24h
+          prefix: index_
+        object_store: filesystem
+        schema: v13
+        store: tsdb
+
+  # Log retention
+  limits_config:
+    retention_period: 360h  # 15 days
+
+# Disable external caches for SingleBinary mode
+# SingleBinary has internal caching, external memcached not required
+# This fixes the issue where loki-chunks-cache-0 was stuck pending due to
+# requesting 9830Mi (9.6 GiB) memory which exceeded node capacity
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false
+
+# Resource allocations summary for VN Monolithic Mode:
+# - Loki single binary: 1 CPU request / 4 CPU limit / 2Gi RAM request / 8Gi RAM limit / 20Gi local-path storage
+# - Promtail: 100m CPU / 128Mi RAM × nodes (DaemonSet) = distributed across all nodes
+# - External caches: DISABLED (saves ~11 GiB memory, 1 CPU core)
+# TOTAL: ~1.8 CPU / ~3Gi RAM / 20Gi storage (local-path, no replication - data lost if node fails)

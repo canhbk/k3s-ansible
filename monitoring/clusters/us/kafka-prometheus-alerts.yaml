@@ -1,0 +1,161 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kafka-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: kafka-cluster-alerts
+      interval: 30s
+      rules:
+        - alert: KafkaUnderReplicatedPartitions
+          expr: |
+            sum(kafka_server_replicamanager_underreplicatedpartitions{namespace="kafka", strimzi_io_cluster="kafka-us"}) > 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka has under-replicated partitions (US Cluster)"
+            description: "Kafka cluster has {{ $value }} under-replicated partitions. This indicates that some partitions do not have enough in-sync replicas."
+
+        - alert: KafkaOfflinePartitions
+          expr: |
+            sum(kafka_controller_offlinepartitionscount{namespace="kafka", strimzi_io_cluster="kafka-us"}) > 0
+          for: 1m
+          labels:
+            severity: critical
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka has offline partitions (US Cluster)"
+            description: "Kafka cluster has {{ $value }} offline partitions. This is a critical issue affecting data availability."
+
+        - alert: KafkaNoActiveController
+          expr: |
+            max(kafka_controller_activecontrollercount{namespace="kafka", strimzi_io_cluster="kafka-us"}) < 1
+          for: 1m
+          labels:
+            severity: critical
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka has no active controller (US Cluster)"
+            description: "Kafka cluster has no active controller. This is a critical issue preventing cluster operations."
+
+        - alert: KafkaBrokerDown
+          expr: |
+            count(up{namespace="kafka", strimzi_io_cluster="kafka-us", strimzi_io_kind="Kafka"} == 1) < 2
+          for: 2m
+          labels:
+            severity: critical
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka broker is down (US Cluster)"
+            description: "Only {{ $value }} Kafka broker(s) are online. Expected at least 2 brokers for high availability."
+
+        - alert: KafkaDiskUsageHigh
+          expr: |
+            (kubelet_volume_stats_used_bytes{namespace="kafka", persistentvolumeclaim=~"data-kafka-us-.*"}
+            /
+            kubelet_volume_stats_capacity_bytes{namespace="kafka", persistentvolumeclaim=~"data-kafka-us-.*"}) * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka disk usage is high (US Cluster)"
+            description: "Kafka PVC {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full. Consider expanding storage or cleaning up old data."
+
+        - alert: KafkaDiskUsageCritical
+          expr: |
+            (kubelet_volume_stats_used_bytes{namespace="kafka", persistentvolumeclaim=~"data-kafka-us-.*"}
+            /
+            kubelet_volume_stats_capacity_bytes{namespace="kafka", persistentvolumeclaim=~"data-kafka-us-.*"}) * 100 > 90
+          for: 2m
+          labels:
+            severity: critical
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka disk usage is critical (US Cluster)"
+            description: "Kafka PVC {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full. Immediate action required to prevent data loss."
+
+        - alert: KafkaHighMemoryUsage
+          expr: |
+            (
+              container_memory_working_set_bytes{namespace="kafka", pod=~"kafka-us-.*", container="kafka"}
+              /
+              container_spec_memory_limit_bytes{namespace="kafka", pod=~"kafka-us-.*", container="kafka"}
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka memory usage is high (US Cluster)"
+            description: "Kafka pod {{ $labels.pod }} is using {{ $value | humanizePercentage }} of its memory limit."
+
+        - alert: KafkaHighCPUUsage
+          expr: |
+            (
+              rate(container_cpu_usage_seconds_total{namespace="kafka", pod=~"kafka-us-.*", container="kafka"}[5m])
+              /
+              container_spec_cpu_quota{namespace="kafka", pod=~"kafka-us-.*", container="kafka"}
+              * container_spec_cpu_period{namespace="kafka", pod=~"kafka-us-.*", container="kafka"}
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka CPU usage is high (US Cluster)"
+            description: "Kafka pod {{ $labels.pod }} is using {{ $value | humanizePercentage }} of its CPU limit."
+
+        - alert: KafkaJVMHeapUsageHigh
+          expr: |
+            (
+              jvm_memory_heap_used{namespace="kafka", strimzi_io_cluster="kafka-us"}
+              /
+              jvm_memory_heap_max{namespace="kafka", strimzi_io_cluster="kafka-us"}
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka JVM heap usage is high (US Cluster)"
+            description: "Kafka pod {{ $labels.pod }} JVM heap is {{ $value | humanizePercentage }} full. Consider increasing heap size."
+
+        - alert: KafkaHighGCRate
+          expr: |
+            rate(jvm_gc_collection_time_total{namespace="kafka", strimzi_io_cluster="kafka-us"}[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            namespace: kafka
+            cluster: us
+            component: kafka
+          annotations:
+            summary: "Kafka has high GC rate (US Cluster)"
+            description: "Kafka pod {{ $labels.pod }} is spending {{ $value | humanizePercentage }} of time in garbage collection."

@@ -1,0 +1,104 @@
+name: Build ARC Runner Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_version:
+        description: 'ARC Runner base image version'
+        required: false
+        default: '2.331.0'
+      node_24_version:
+        description: 'Node.js 24.x version to pre-cache'
+        required: false
+        default: '24.13.0'
+      node_22_version:
+        description: 'Node.js 22.x version to pre-cache'
+        required: false
+        default: '22.13.0'
+      node_20_version:
+        description: 'Node.js 20.x version to pre-cache'
+        required: false
+        default: '20.19.0'
+  schedule:
+    # Run weekly on Sunday at 6 AM UTC to keep the image updated
+    - cron: '0 6 * * 0'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: murror/arc-runner
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix={{date 'YYYYMMDD'}}-
+            type=schedule,pattern={{date 'YYYYMMDD'}}
+
+      - name: Set build args
+        id: build-args
+        run: |
+          RUNNER_VERSION="${{ github.event.inputs.runner_version || '2.331.0' }}"
+          NODE_24="${{ github.event.inputs.node_24_version || '24.13.0' }}"
+          NODE_22="${{ github.event.inputs.node_22_version || '22.13.0' }}"
+          NODE_20="${{ github.event.inputs.node_20_version || '20.19.0' }}"
+
+          echo "runner_version=${RUNNER_VERSION}" >> $GITHUB_OUTPUT
+          echo "node_24_version=${NODE_24}" >> $GITHUB_OUTPUT
+          echo "node_22_version=${NODE_22}" >> $GITHUB_OUTPUT
+          echo "node_20_version=${NODE_20}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./arc/clusters/vn2/custom-runner-image
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            RUNNER_VERSION=${{ steps.build-args.outputs.runner_version }}
+            NODE_24_VERSION=${{ steps.build-args.outputs.node_24_version }}
+            NODE_22_VERSION=${{ steps.build-args.outputs.node_22_version }}
+            NODE_20_VERSION=${{ steps.build-args.outputs.node_20_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output image details
+        run: |
+          echo "### ARC Runner Image Built Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Pre-cached Node.js Versions:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Node.js 24: ${{ steps.build-args.outputs.node_24_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Node.js 22: ${{ steps.build-args.outputs.node_22_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Node.js 20: ${{ steps.build-args.outputs.node_20_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Runner Base Version:** ${{ steps.build-args.outputs.runner_version }}" >> $GITHUB_STEP_SUMMARY

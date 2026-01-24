@@ -1,0 +1,59 @@
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: redis-ingress
+#   namespace: mystery-join
+#   # annotations:
+#   #   nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+# spec:
+#   rules:
+#     - host: redis-master.dev.canhnv.com
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: redis-master
+#                 port:
+#                   number: 6379
+#     - host: redis-replica.dev.canhnv.com
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: redis-replicas
+#                 port:
+#                   number: 6380
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: redis
+  namespace: mystery-join
+spec:
+  entryPoints:
+    - redis
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: redis-master
+          port: 6379
+          terminationDelay: -1
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: redis-replica
+  namespace: mystery-join
+spec:
+  entryPoints:
+    - redis-replica
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: redis-replicas
+          port: 6380
+          terminationDelay: -1

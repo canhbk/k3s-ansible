@@ -1,0 +1,126 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redis-insight-auth
+  namespace: redis
+spec:
+  basicAuth:
+    secret: basic-auth
+    realm: "Authentication Required"
+---
+# Redis Insight service with name 'redisinsight-service'
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: redis
+  name: redisinsight-service       # name should not be 'redisinsight'
+                                   # since the service creates
+                                   # environment variables that
+                                   # conflicts with redisinsight
+                                   # application's environment
+                                   # variables `RI_APP_HOST` and
+                                   # `RI_APP_PORT`
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 5540
+  selector:
+    app: redisinsight
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: canhnv-com-us-cert
+  namespace: redis
+spec:
+  secretName: canhnv-com-us-tls
+  issuerRef:
+    name: canhnv-com-staging
+    kind: ClusterIssuer
+  commonName: "*.us.canhnv.com"
+  dnsNames:
+    - "us.canhnv.com"
+    - "*.us.canhnv.com"
+---
+# Redis Insight Ingress with name 'redisinsight-ingress'
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: redis
+  name: redisinsight-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: redis-redis-insight-auth@kubernetescrd
+spec:
+  rules:
+    - host: redis.us.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: redisinsight-service
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - redis.us.canhnv.com
+      secretName: canhnv-com-us-tls # TLS secret for the Ingress
+
+---
+# Redis Insight deployment with name 'redisinsight'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: redis #namespace for the deployment
+  name: redisinsight #deployment name
+  labels:
+    app: redisinsight #deployment label
+spec:
+  replicas: 1 #a single replica pod
+  selector:
+    matchLabels:
+      app: redisinsight #which pods is the deployment managing, as defined by the pod template
+  template: #pod template
+    metadata:
+      labels:
+        app: redisinsight #label for pod/s
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name:  redisinsight #Container name (DNS_LABEL, unique)
+        image: redis/redisinsight:2.70 #repo/image
+        imagePullPolicy: IfNotPresent
+        env:
+        # Preconfigured Redis connections
+        - name: RI_REDIS_HOST0
+          value: "redis.redis.svc.cluster.local"
+        - name: RI_REDIS_PORT0
+          value: "6379"
+        - name: RI_REDIS_USERNAME0
+          value: "default"
+        - name: RI_REDIS_PASSWORD0
+          valueFrom:
+            secretKeyRef:
+              name: redis-password-secret
+              key: redis-password
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+            ephemeral-storage: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+            ephemeral-storage: "1Gi"
+        volumeMounts:
+        - name: redisinsight #Pod volumes to mount into the container's filesystem. Cannot be updated.
+          mountPath: /data
+        ports:
+        - containerPort: 5540 #exposed container port and protocol
+          protocol: TCP
+      volumes:
+      - name: redisinsight
+        emptyDir: {} # node-ephemeral volume https://kubernetes.io/docs/concepts/storage/volumes/#emptydir

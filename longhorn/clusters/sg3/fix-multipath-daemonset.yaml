@@ -1,0 +1,87 @@
+# DaemonSet to fix multipath configuration for Longhorn
+# This configures multipathd to blacklist Longhorn block devices
+# Reference: https://longhorn.io/kb/troubleshooting-volume-with-multipath/
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fix-multipath-longhorn
+  namespace: longhorn-system
+  labels:
+    app: fix-multipath-longhorn
+spec:
+  selector:
+    matchLabels:
+      app: fix-multipath-longhorn
+  template:
+    metadata:
+      labels:
+        app: fix-multipath-longhorn
+    spec:
+      hostPID: true
+      hostNetwork: true
+      containers:
+      - name: fix-multipath
+        image: alpine:3.18
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - sh
+        - -c
+        - |
+          echo "Starting multipath fix on $(hostname)..."
+
+          # Backup existing config
+          if [ -f /etc/multipath.conf ]; then
+            cp /etc/multipath.conf /etc/multipath.conf.backup.$(date +%Y%m%d%H%M%S)
+            echo "Backed up existing multipath.conf"
+          fi
+
+          # Write new config with Longhorn blacklist
+          cat > /etc/multipath.conf << 'MPCONF'
+          defaults {
+              user_friendly_names yes
+          }
+
+          blacklist {
+              devnode "^sd[a-z0-9]+"
+          }
+          MPCONF
+
+          echo "Updated /etc/multipath.conf with Longhorn blacklist"
+
+          # Restart multipathd to apply changes
+          systemctl restart multipathd
+          echo "Restarted multipathd service"
+
+          # Verify config applied
+          echo "Verifying configuration..."
+          multipath -t | grep -A5 blacklist || echo "Blacklist section found"
+
+          # Check multipathd status
+          systemctl status multipathd --no-pager | head -10
+
+          echo "============================================"
+          echo "Multipath configuration fix completed on $(hostname)"
+          echo "============================================"
+
+          # Sleep to keep pod running for log inspection
+          sleep infinity
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+      tolerations:
+      - operator: Exists
+      terminationGracePeriodSeconds: 5

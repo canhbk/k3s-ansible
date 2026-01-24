@@ -1,0 +1,15 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    additionalArguments:
+      - "--entryPoints.redis.address=:6379"
+      - "--providers.file.filename=/config/tcp-services.yaml"
+    volumes:
+      - name: tcp-services
+        mountPath: "/config"
+        type: configMap
+        configMapName: traefik-tcp-config

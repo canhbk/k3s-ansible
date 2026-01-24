@@ -1,0 +1,44 @@
+# EU cluster specific Longhorn values
+# These values override the base configuration in base/values-base.yaml
+
+# EU cluster has only 2 nodes - adjusted for small cluster
+persistence:
+  defaultClassReplicaCount: 2  # Use 2 replicas for redundancy
+
+csi:
+  # Single replica for CSI components (2-node cluster limitation)
+  attacherReplicaCount: 1
+  provisionerReplicaCount: 1
+  resizerReplicaCount: 1
+  snapshotterReplicaCount: 1
+
+defaultSettings:
+  defaultReplicaCount: 2  # Default 2 replicas for data redundancy
+  # No specific node taints/tolerations for EU cluster
+  taintToleration: ""
+  systemManagedComponentsNodeSelector: ""
+
+longhornManager:
+  tolerations: []
+  nodeSelector: {}
+
+longhornDriver:
+  tolerations: []
+  nodeSelector: {}
+
+longhornUI:
+  replicas: 1  # Single UI replica for 2-node cluster
+  tolerations: []
+  nodeSelector: {}
+
+ingress:
+  host: eu.longhorn.canhnv.com
+  annotations:
+    cert-manager.io/cluster-issuer: canhnv-com-staging
+
+metrics:
+  serviceMonitor:
+    enabled: false  # Disabled until Prometheus operator is installed
+    additionalLabels:
+      cluster: eu
+      environment: production

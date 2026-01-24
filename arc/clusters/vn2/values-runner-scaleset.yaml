@@ -1,0 +1,123 @@
+# ARC Runner Scale Set Helm Values for VN2 Cluster
+# Chart: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+# Version: 0.13.1
+
+# GitHub configuration
+githubConfigUrl: "https://github.com/murror"
+
+# Use pre-created Kubernetes secret for GitHub App credentials
+githubConfigSecret: github-app-secret
+
+# Runner scale set name (unique identifier)
+runnerScaleSetName: "vn2-runners"
+
+# Runner group (default for organization)
+runnerGroup: "Default"
+
+# Autoscaling configuration
+# Minimum 2 runners always available (idle when no jobs)
+minRunners: 2
+maxRunners: 30
+
+# Custom Docker-in-Docker template with MTU configuration
+# The VN2 cluster uses Wireguard VPN with MTU 1420, requiring Docker to use MTU 1400
+# to prevent network connectivity issues in container builds
+template:
+  spec:
+    containers:
+      - name: runner
+        # TODO: Switch back to custom image once rebuilt with runner v2.331.0
+        # image: ghcr.io/murror/arc-runner:latest
+        image: ghcr.io/actions/actions-runner:2.331.0
+        command: ["/home/runner/run.sh"]
+        env:
+          - name: DOCKER_HOST
+            value: "unix:///var/run/docker.sock"
+          - name: RUNNER_TOOL_CACHE
+            value: "/home/runner/actions-tool-cache"
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: dind-sock
+            mountPath: /var/run
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+
+      - name: dind
+        image: docker:27-dind
+        args:
+          - dockerd
+          - --host=unix:///var/run/docker.sock
+          - --group=$(DOCKER_GROUP_GID)
+          # MTU configuration is handled via /etc/docker/daemon.json from ConfigMap
+        env:
+          - name: DOCKER_GROUP_GID
+            value: "1001"
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: dind-sock
+            mountPath: /var/run
+          - name: daemon-json
+            mountPath: /etc/docker/daemon.json
+            subPath: daemon.json
+            readOnly: true
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+
+    volumes:
+      - name: work
+        emptyDir: {}
+      - name: dind-sock
+        emptyDir: {}
+      - name: daemon-json
+        configMap:
+          name: docker-daemon-config
+
+    # Node affinity - prefer worker nodes
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: DoesNotExist
+
+    # Tolerations for any taints
+    tolerations:
+      - operator: Exists
+
+    # Image pull secrets for private registry
+    imagePullSecrets:
+      - name: ghcr-pull-secret
+
+# Listener pod configuration
+listenerTemplate:
+  spec:
+    containers:
+      - name: listener
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+# Controller service account (references the one created in arc-systems)
+controllerServiceAccount:
+  namespace: arc-systems
+  name: arc-controller-gha-rs-controller

@@ -1,0 +1,25 @@
+# PostgreSQL HA Cluster pg_hba Update for VN
+# This patch adds pg_hba rules to allow replication from US cluster
+#
+# Apply this patch to the existing postgresql-ha cluster:
+# kubectl patch cluster postgresql-ha -n postgres-db --type merge -p "$(cat cluster-ha-pghba-update.yaml)"
+#
+# Or apply directly:
+# kubectl apply -f cluster-ha-pghba-update.yaml
+
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-ha
+  namespace: postgres-db
+spec:
+  postgresql:
+    pg_hba:
+      # Allow replication connections from US cluster external IPs
+      - host postgres replication_user_ha 65.49.60.35/32 scram-sha-256
+      - host replication replication_user_ha 65.49.60.35/32 scram-sha-256
+      - host postgres replication_user_ha 64.71.161.44/32 scram-sha-256
+      - host replication replication_user_ha 64.71.161.44/32 scram-sha-256
+      # Alternative: Allow from any IP (less secure but simpler)
+      # - host postgres replication_user_ha 0.0.0.0/0 scram-sha-256
+      # - host replication replication_user_ha 0.0.0.0/0 scram-sha-256

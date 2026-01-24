@@ -1,0 +1,23 @@
+# PostgreSQL Database for Murror Notification Service on SG3
+#
+# Creates the 'murror-notifications' database owned by the 'notifications' user
+# on the postgresql-sg3-pgvector cluster.
+#
+# Prerequisites:
+# 1. notifications-sg3-secret applied
+# 2. notifications role added to cluster-sg3-pgvector.yaml
+#
+# Usage:
+# kubectl apply -f database-notifications.yaml -n postgres-db
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: murror-notifications
+  namespace: postgres-db
+spec:
+  name: murror-notifications
+  owner: notifications
+  cluster:
+    name: postgresql-sg3-pgvector

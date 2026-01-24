@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ai-prod-log-reader-binding
+  namespace: nsp-prod-murror-ai
+subjects:
+  - kind: ServiceAccount
+    name: ai-prod-log-reader
+    namespace: ai-prod-log-access
+roleRef:
+  kind: Role
+  name: ai-prod-log-reader
+  apiGroup: rbac.authorization.k8s.io

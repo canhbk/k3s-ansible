@@ -1,0 +1,77 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: supabase-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: supabase.rules
+      interval: 30s
+      rules:
+        # High CPU Usage
+        - alert: SupabaseHighCPU
+          expr: cpu_usage{job="supabase_metrics"} > 80
+          for: 5m
+          labels:
+            severity: warning
+            service: supabase
+          annotations:
+            summary: "High CPU usage on Supabase ({{ $labels.instance }})"
+            description: "CPU usage is above 80% (current value: {{ $value }}%)"
+
+        # High Memory Usage
+        - alert: SupabaseHighMemory
+          expr: ram_usage{job="supabase_metrics"} > 85
+          for: 5m
+          labels:
+            severity: warning
+            service: supabase
+          annotations:
+            summary: "High memory usage on Supabase ({{ $labels.instance }})"
+            description: "Memory usage is above 85% (current value: {{ $value }}%)"
+
+        # Connection Pool Exhaustion
+        - alert: SupabaseConnectionPoolExhausted
+          expr: active_connections{job="supabase_metrics"} > 90
+          for: 2m
+          labels:
+            severity: critical
+            service: supabase
+          annotations:
+            summary: "Database connection pool near exhaustion"
+            description: "Active connections are above 90 (current value: {{ $value }})"
+
+        # High Replication Lag
+        - alert: SupabaseHighReplicationLag
+          expr: replication_slots_max_lag_bytes{job="supabase_metrics"} > 10737418240  # 10GB
+          for: 5m
+          labels:
+            severity: critical
+            service: supabase
+          annotations:
+            summary: "High replication lag detected"
+            description: "Replication lag is above 10GB (current value: {{ $value | humanize }})"
+
+        # PostgREST Connection Timeouts
+        - alert: SupabasePostgRESTTimeouts
+          expr: rate(pgrst_db_pool_timeouts_total{job="supabase_metrics"}[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            service: supabase
+          annotations:
+            summary: "PostgREST experiencing connection pool timeouts"
+            description: "Connection pool timeout rate is {{ $value }} per second"
+
+        # Disk I/O High
+        - alert: SupabaseHighDiskIO
+          expr: rate(node_disk_io_time_seconds_total{job="supabase_metrics"}[5m]) > 0.9
+          for: 10m
+          labels:
+            severity: warning
+            service: supabase
+          annotations:
+            summary: "High disk I/O on Supabase instance"
+            description: "Disk I/O time is above 90% (current value: {{ $value | humanizePercentage }})"

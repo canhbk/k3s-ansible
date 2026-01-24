@@ -1,0 +1,8 @@
+# Ignore secret files
+secrets*.yaml
+*.yaml.local
+*.yaml.backup-*
+!cluster-pgvector.yaml.backup-20250827-100816
+
+# Ignore deployment scripts with potentially sensitive information
+deploy*.sh

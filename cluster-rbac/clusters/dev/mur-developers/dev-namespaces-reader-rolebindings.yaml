@@ -1,0 +1,105 @@
+---
+# RoleBinding for mu-43 namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-namespaces-reader-binding
+  namespace: mu-43
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-namespaces-reader
+subjects:
+  - kind: ServiceAccount
+    name: mur-developers
+    namespace: dev-access
+---
+# RoleBinding for mu-66 namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-namespaces-reader-binding
+  namespace: mu-66
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-namespaces-reader
+subjects:
+  - kind: ServiceAccount
+    name: mur-developers
+    namespace: dev-access
+---
+# RoleBinding for mu-69 namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-namespaces-reader-binding
+  namespace: mu-69
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-namespaces-reader
+subjects:
+  - kind: ServiceAccount
+    name: mur-developers
+    namespace: dev-access
+---
+# RoleBinding for mu-70 namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-namespaces-reader-binding
+  namespace: mu-70
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-namespaces-reader
+subjects:
+  - kind: ServiceAccount
+    name: mur-developers
+    namespace: dev-access
+---
+# RoleBinding for mu-81 namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-namespaces-reader-binding
+  namespace: mu-81
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-namespaces-reader
+subjects:
+  - kind: ServiceAccount
+    name: mur-developers
+    namespace: dev-access
+---
+# RoleBinding for nsp-alpha-murror namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-namespaces-reader-binding
+  namespace: nsp-alpha-murror
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-namespaces-reader
+subjects:
+  - kind: ServiceAccount
+    name: mur-developers
+    namespace: dev-access
+---
+# RoleBinding for nsp-alpha-murror-ai namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-namespaces-reader-binding
+  namespace: nsp-alpha-murror-ai
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dev-namespaces-reader
+subjects:
+  - kind: ServiceAccount
+    name: mur-developers
+    namespace: dev-access
