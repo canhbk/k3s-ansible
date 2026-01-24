@@ -1,0 +1,86 @@
+# US Cluster Kafka Node Pools
+# Using KRaft mode - no Zookeeper required
+---
+# Controller Node Pool - manages cluster metadata
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: kafka-controllers
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-us
+spec:
+  replicas: 1
+  roles:
+    - controller
+  storage:
+    type: persistent-claim
+    size: 1Gi
+    class: longhorn-replicated
+    deleteClaim: false
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+  template:
+    pod:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: longhorn
+                    operator: In
+                    values:
+                      - "true"
+---
+# Broker Node Pool - handles message processing
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: kafka-brokers
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-us
+spec:
+  replicas: 2
+  roles:
+    - broker
+  storage:
+    type: persistent-claim
+    size: 5Gi
+    class: longhorn-replicated
+    deleteClaim: false
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+  template:
+    pod:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    strimzi.io/cluster: kafka-us
+                    strimzi.io/kind: Kafka
+                    strimzi.io/pool-name: kafka-brokers
+                topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: longhorn
+                    operator: In
+                    values:
+                      - "true"

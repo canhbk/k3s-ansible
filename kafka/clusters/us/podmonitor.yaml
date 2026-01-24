@@ -1,0 +1,69 @@
+# Kafka PodMonitor for Prometheus metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-cluster-metrics
+  namespace: kafka
+  labels:
+    cluster: us
+    app: kafka
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/cluster: kafka-us
+      strimzi.io/kind: Kafka
+  namespaceSelector:
+    matchNames:
+      - kafka
+  podMetricsEndpoints:
+    - port: tcp-prometheus
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-entity-operator-metrics
+  namespace: kafka
+  labels:
+    cluster: us
+    app: kafka
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/cluster: kafka-us
+      strimzi.io/kind: Kafka
+      strimzi.io/name: kafka-us-entity-operator
+  namespaceSelector:
+    matchNames:
+      - kafka
+  podMetricsEndpoints:
+    - port: healthcheck
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-cruise-control-metrics
+  namespace: kafka
+  labels:
+    cluster: us
+    app: kafka
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/cluster: kafka-us
+      strimzi.io/kind: Kafka
+      strimzi.io/name: kafka-us-cruise-control
+  namespaceSelector:
+    matchNames:
+      - kafka
+  podMetricsEndpoints:
+    - port: rest-api
+      path: /metrics
+      interval: 30s
