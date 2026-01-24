@@ -147,6 +147,9 @@ On 2025-12-08, the VN cluster backup was successfully restored to the EU cluster
 - **Storage Class**: `longhorn-vn`
 - **Status**: Healthy
 - **Node**: vps22-vnix (migrated from vps33)
+- **Database Size**: 1.2GB (murror-ai)
+- **Vector Records**: ~50,491 article_documents (498MB data + 396MB indexes)
+- **Current Usage**: 5.1GB / 20GB (26%)
 
 ## Monitoring & Alerting
 
@@ -178,11 +181,35 @@ PostgreSQL is monitored via Prometheus with alerts sent to Slack.
 
 Access via: `https://grafana.vn.k3s.canhnv.com`
 
+## Incident History
+
+### 2026-01-22: PostgreSQL pgvector Storage Investigation and WAL Cleanup
+
+**Issue**: Disk usage at 61% (12GB/20GB) with alert potential for storage pressure.
+
+**Root Cause**:
+- Archive mode was enabled (`archive_mode=on`) but `archive_command` was empty
+- This caused PostgreSQL to retain ALL WAL files indefinitely
+- 474 WAL files accumulated since December 8th, consuming 7.4GB
+
+**Resolution**:
+1. Disabled archive mode by adding `-c archive_mode=off` to PostgreSQL startup command
+2. Forced checkpoint to trigger WAL cleanup: `CHECKPOINT;`
+3. Executed `VACUUM ANALYZE` to optimize database
+
+**Results**:
+- WAL files reduced: 474 → 39 files
+- WAL directory size: 7.4GB → 593MB
+- Total disk usage: 12GB → 5.1GB (61% → 26%)
+- No PVC expansion needed - current 20Gi provides adequate headroom
+
+**Prevention**: Archive mode now properly disabled. WAL retention controlled by `max_wal_size` (1GB) and `wal_keep_size` (512MB).
+
 ## Last Updated
 
-- Date: 2025-12-15
+- Date: 2026-01-22
 - Service Type: NodePort
 - NodePort: 30432
 - Backup: Cloudflare R2 (Hourly, 30-day retention)
-- Storage: postgresql-pgvector PVC expanded to 20Gi
+- Storage: postgresql-pgvector-1 at 26% usage (5.1GB/20GB)
 - Monitoring: Prometheus alerts with Slack notifications

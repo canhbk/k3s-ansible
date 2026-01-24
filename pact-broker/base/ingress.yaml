@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pact-broker
+  namespace: pact-broker
+  labels:
+    app: pact-broker
+    app.kubernetes.io/name: pact-broker
+  annotations:
+    cert-manager.io/cluster-issuer: canhnv-com-staging
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - pact-broker.canhnv.com
+      secretName: pact-broker-tls
+  rules:
+    - host: pact-broker.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pact-broker
+                port:
+                  number: 9292

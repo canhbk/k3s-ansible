@@ -1,0 +1,33 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pact-broker-db
+  namespace: postgres-db
+spec:
+  instances: 2
+  primaryUpdateStrategy: unsupervised
+
+  storage:
+    size: 10Gi
+    storageClass: longhorn
+
+  bootstrap:
+    initdb:
+      database: pact_broker
+      owner: pact_broker
+      secret:
+        name: pact-broker-db-credentials
+
+  affinity:
+    enablePodAntiAffinity: true
+
+  monitoring:
+    enablePodMonitor: true
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"

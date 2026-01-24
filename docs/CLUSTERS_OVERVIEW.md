@@ -82,6 +82,14 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 - **API Endpoint**: <https://15.235.211.39:6443>
 - **Region Label**: `region=sg3`
 - **Created**: 2025-11-24
+- **Key Services**:
+  - Auth Service (Alpha) - `auth-alpha.ambercare.app`
+  - PostgreSQL HA (postgres-db namespace) with pgvector
+  - RabbitMQ HA cluster
+  - Prometheus/Grafana monitoring
+  - Longhorn distributed storage
+  - Rancher management UI
+  - InfluxDB time-series database
 
 #### US Cluster
 

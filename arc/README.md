@@ -198,12 +198,76 @@ jobs:
 ## Custom Runner Image
 
 The custom runner image includes:
-- Node.js 22 LTS
+- Node.js 22 LTS (system-wide)
 - pnpm (latest)
 - Docker CLI + Buildx
 - kubectl
 - Helm
 - PostgreSQL client
+- Pre-cached Node.js versions for faster `actions/setup-node`
+
+### Tool Cache for Faster Builds
+
+The custom runner image pre-caches multiple Node.js versions to eliminate download time during `actions/setup-node` execution. This significantly speeds up workflow runs.
+
+**Pre-cached Node.js versions:**
+- Node.js 24.13.0
+- Node.js 22.13.0
+- Node.js 20.19.0
+
+**How it works:**
+1. Node.js binaries are downloaded during image build
+2. Extracted to `$RUNNER_TOOL_CACHE/node/{version}/x64/`
+3. Marker files (`.complete`) indicate successful cache
+4. `actions/setup-node` detects cached versions and skips download
+
+**Benefits:**
+- Workflow runs start 30-60 seconds faster
+- Reduced network dependency
+- Consistent Node.js versions across builds
+
+**Verification:**
+```bash
+# SSH into a runner pod
+kubectl -n arc-runners exec -it <runner-pod> -- bash
+
+# Check cached versions
+ls -la /home/runner/actions-tool-cache/node/
+# Should show: 24.13.0/ 22.13.0/ 20.19.0/
+
+# Verify tool cache structure
+ls -la /home/runner/actions-tool-cache/node/24.13.0/
+# Should show: x64/ and x64.complete
+```
+
+**Updating cached versions:**
+
+Option 1 - GitHub Actions (Recommended):
+```bash
+# Trigger workflow manually with custom versions
+# Go to: Actions > Build ARC Runner Image > Run workflow
+# Or wait for weekly automatic build (Sunday 6 AM UTC)
+```
+
+Option 2 - Manual build:
+```bash
+cd arc/clusters/vn2/custom-runner-image
+
+docker build \
+  --build-arg NODE_24_VERSION=24.14.0 \
+  --build-arg NODE_22_VERSION=22.14.0 \
+  --build-arg NODE_20_VERSION=20.20.0 \
+  -t ghcr.io/murror/arc-runner:latest .
+
+docker push ghcr.io/murror/arc-runner:latest
+
+# Restart runner scale set to use new image
+helm upgrade vn2-runners \
+  --namespace arc-runners \
+  --values arc/clusters/vn2/values-runner-scaleset.yaml \
+  oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
+  --version 0.13.1
+```
 
 ### Build Custom Image
 
@@ -214,11 +278,14 @@ docker build -t ghcr.io/murror/arc-runner:latest .
 docker push ghcr.io/murror/arc-runner:latest
 ```
 
-To use the custom image, update `values-runner-scaleset.yaml`:
+The custom image is already configured in `values-runner-scaleset.yaml`:
 ```yaml
 containers:
   - name: runner
     image: ghcr.io/murror/arc-runner:latest
+    env:
+      - name: RUNNER_TOOL_CACHE
+        value: "/home/runner/actions-tool-cache"
 ```
 
 ## Troubleshooting
@@ -243,6 +310,50 @@ containers:
    ```
 
 2. Verify DOCKER_HOST environment variable is set correctly
+
+### Network Connectivity Issues in Docker Builds
+
+**Symptoms:**
+- TLS handshake failures when pulling from registries
+- Connection timeouts to external services
+- `corepack` or `pnpm` network errors
+- Error: "read: connection reset by peer"
+
+**Root Cause:**
+MTU mismatch between the host network and Docker's bridge network. The VN2 cluster uses Wireguard VPN (MTU 1420), but Docker defaults to MTU 1500. This causes packet fragmentation that breaks TLS connections.
+
+**Solution:**
+Configure Docker to use MTU 1400 (already configured in VN2 runner scale set):
+
+1. Verify the `docker-daemon-config` ConfigMap exists:
+   ```bash
+   kubectl -n arc-runners get configmap docker-daemon-config
+   ```
+
+2. Check that DinD containers are using the correct MTU:
+   ```bash
+   kubectl -n arc-runners exec -it <runner-pod> -c dind -- docker network inspect bridge | grep -i mtu
+   # Should show: "com.docker.network.driver.mtu": "1400"
+   ```
+
+3. Verify daemon.json is mounted:
+   ```bash
+   kubectl -n arc-runners exec -it <runner-pod> -c dind -- cat /etc/docker/daemon.json
+   ```
+
+**Key Configuration:**
+- DinD container args: `--mtu=1400` and `--default-network-opt=bridge=com.docker.network.driver.mtu=1400`
+- Daemon config: `daemon.json` ConfigMap with MTU settings
+- Applies to all networks created by Docker
+
+**Verification:**
+Test network connectivity inside a build:
+```yaml
+- name: Test network
+  run: |
+    docker run --rm alpine ping -c 4 google.com
+    docker run --rm alpine wget -O- https://registry.npmjs.org
+```
 
 ### Runners Scale Slowly
 

@@ -76,7 +76,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "avg(rate(container_cpu_usage_seconds_total{namespace=\"nsp-alpha-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"}[5m]) / on(namespace,pod,container) kube_pod_container_resource_limits{namespace=\"nsp-alpha-murror-ai\",pod=~\"murror-ai.*\",resource=\"cpu\",container!=\"\"}) * 100",
+              "expr": "avg(rate(container_cpu_usage_seconds_total{namespace=\"nsp-prod-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"}[5m]) / on(namespace,pod,container) kube_pod_container_resource_limits{namespace=\"nsp-prod-murror-ai\",pod=~\"murror-ai.*\",resource=\"cpu\",container!=\"\"}) * 100",
               "refId": "A"
             }
           ],
@@ -142,7 +142,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "avg(container_memory_working_set_bytes{namespace=\"nsp-alpha-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"} / container_spec_memory_limit_bytes{namespace=\"nsp-alpha-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"} * 100)",
+              "expr": "avg(container_memory_working_set_bytes{namespace=\"nsp-prod-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"} / on(namespace,pod,container) kube_pod_container_resource_limits{namespace=\"nsp-prod-murror-ai\",pod=~\"murror-ai.*\",resource=\"memory\",container!=\"\"} * 100)",
               "refId": "A"
             }
           ],
@@ -231,7 +231,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"nsp-alpha-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"}[5m])",
+              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"nsp-prod-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"}[5m])",
               "legendFormat": "{{pod}} - CPU",
               "refId": "A"
             }
@@ -348,7 +348,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "container_memory_working_set_bytes{namespace=\"nsp-alpha-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"}",
+              "expr": "container_memory_working_set_bytes{namespace=\"nsp-prod-murror-ai\",pod=~\"murror-ai.*\",container!=\"\",container!=\"POD\"}",
               "legendFormat": "{{pod}} - Working Set",
               "refId": "A"
             },
@@ -357,7 +357,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "kube_pod_container_resource_limits{namespace=\"nsp-alpha-murror-ai\",pod=~\"murror-ai.*\",resource=\"memory\",container!=\"\"}",
+              "expr": "kube_pod_container_resource_limits{namespace=\"nsp-prod-murror-ai\",pod=~\"murror-ai.*\",resource=\"memory\",container!=\"\"}",
               "legendFormat": "{{pod}} - Limit",
               "refId": "B"
             }
@@ -390,7 +390,7 @@ data:
                 "type": "loki",
                 "uid": "P8E80F9AEF21F6940"
               },
-              "expr": "{namespace=\"nsp-alpha-murror-ai\", app=\"murror-ai\"}",
+              "expr": "{namespace=\"nsp-prod-murror-ai\", app=\"murror-ai\"}",
               "refId": "A"
             }
           ],
@@ -422,7 +422,7 @@ data:
                 "type": "loki",
                 "uid": "P8E80F9AEF21F6940"
               },
-              "expr": "{namespace=\"nsp-alpha-murror-ai\", app=\"murror-ai\"} !~ \"(?i)(INFO|DEBUG|WARNING|WARN)\" |~ \"(?i)(ERROR|CRITICAL)\"",
+              "expr": "{namespace=\"nsp-prod-murror-ai\", app=\"murror-ai\"} |~ \" - (ERROR|CRITICAL) - \"",
               "refId": "A"
             }
           ],
@@ -454,7 +454,7 @@ data:
                 "type": "loki",
                 "uid": "P8E80F9AEF21F6940"
               },
-              "expr": "{namespace=\"nsp-alpha-murror-ai\", app=\"murror-ai\"} |~ \"(?i)WARNING\"",
+              "expr": "{namespace=\"nsp-prod-murror-ai\", app=\"murror-ai\"} |~ \"(?i)WARNING\"",
               "refId": "A"
             }
           ],
@@ -540,7 +540,7 @@ data:
                 "type": "loki",
                 "uid": "P8E80F9AEF21F6940"
               },
-              "expr": "sum(rate({namespace=\"nsp-alpha-murror-ai\", app=\"murror-ai\"} !~ \"(?i)(INFO|DEBUG|WARNING|WARN)\" |~ \"(?i)(ERROR|CRITICAL)\" [5m]))",
+              "expr": "sum(rate({namespace=\"nsp-prod-murror-ai\", app=\"murror-ai\"} |~ \" - (ERROR|CRITICAL) - \" [5m]))",
               "refId": "A"
             }
           ],
@@ -549,15 +549,15 @@ data:
         }
       ],
       "schemaVersion": 39,
-      "tags": ["murror", "ai", "logs", "monitoring"],
+      "tags": ["murror", "ai", "logs", "monitoring", "vn", "production"],
       "time": {
         "from": "now-1h",
         "to": "now"
       },
       "timepicker": {},
       "timezone": "browser",
-      "title": "Murror AI - Logs & Metrics",
-      "uid": "murror-ai-alpha",
+      "title": "Murror AI - Logs & Metrics (VN Production)",
+      "uid": "murror-ai-vn-prod",
       "version": 1,
       "weekStart": ""
     }

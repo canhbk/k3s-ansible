@@ -73,7 +73,9 @@ curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/
 dig +short subdomain.canhnv.com @1.1.1.1
 ```
 
-## Current DNS Records (Numerology Alpha)
+## Current DNS Records
+
+### Numerology Alpha
 
 | Subdomain | Type | Target IP | Cluster |
 |-----------|------|-----------|---------|
@@ -81,6 +83,14 @@ dig +short subdomain.canhnv.com @1.1.1.1
 | web-alpha.numerology | A | 15.235.197.12 | SG3 |
 | app-alpha.numerology | A | 15.235.197.12 | SG3 |
 | admin-alpha.numerology | A | 15.235.197.12 | SG3 |
+
+### Clotheshop Alpha
+
+| Subdomain | Type | Target IP | Cluster |
+|-----------|------|-----------|---------|
+| api-alpha.clotheshop | A | 15.235.197.12 | SG3 |
+| web-alpha.clotheshop | A | 15.235.197.12 | SG3 |
+| admin-alpha.clotheshop | A | 15.235.197.12 | SG3 |
 
 ## Token Permissions
 

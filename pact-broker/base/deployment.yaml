@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pact-broker
+  namespace: pact-broker
+  labels:
+    app: pact-broker
+    app.kubernetes.io/name: pact-broker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pact-broker
+  template:
+    metadata:
+      labels:
+        app: pact-broker
+        app.kubernetes.io/name: pact-broker
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - pact-broker
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: pact-broker
+          image: pactfoundation/pact-broker:2.110.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9292
+              protocol: TCP
+          env:
+            - name: PACT_BROKER_DATABASE_ADAPTER
+              value: postgres
+            - name: PACT_BROKER_DATABASE_HOST
+              value: pact-broker-db-rw.postgres-db.svc.cluster.local
+            - name: PACT_BROKER_DATABASE_PORT
+              value: "5432"
+            - name: PACT_BROKER_DATABASE_NAME
+              value: pact_broker
+            - name: PACT_BROKER_DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: pact-broker-app-secret
+                  key: db-username
+            - name: PACT_BROKER_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pact-broker-app-secret
+                  key: db-password
+            - name: PACT_BROKER_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: pact-broker-app-secret
+                  key: admin-username
+            - name: PACT_BROKER_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pact-broker-app-secret
+                  key: admin-password
+            - name: PACT_BROKER_READ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: pact-broker-app-secret
+                  key: read-username
+            - name: PACT_BROKER_READ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pact-broker-app-secret
+                  key: read-password
+            - name: PACT_BROKER_ALLOW_PUBLIC_READ
+              value: "false"
+            - name: PACT_BROKER_WEBHOOK_HOST_WHITELIST
+              value: "github.com"
+            - name: PACT_BROKER_PORT
+              value: "9292"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /diagnostic/status/heartbeat
+              port: 9292
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /diagnostic/status/heartbeat
+              port: 9292
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000

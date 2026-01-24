@@ -243,6 +243,33 @@ All nodes are labeled with `region=sg3` for workload scheduling:
 kubectl run my-app --image=my-app:latest --node-selector region=sg3
 ```
 
+## Application Deployments
+
+### Auth Service (Alpha)
+
+**Deployed**: January 14, 2025
+**Namespace**: murror-platform
+**Domain**: auth-alpha.ambercare.app
+
+The Auth Service provides authentication and OAuth capabilities for the AmberCare platform Alpha environment.
+
+**Components**:
+- NestJS API with JWT authentication
+- PostgreSQL database: `murror_auth_service`
+- Google OAuth integration
+- Resend email service
+
+**Access**:
+```bash
+# Check deployment
+kubectl get pods -n murror-platform -l app.kubernetes.io/name=auth-service
+
+# Test health
+curl https://auth-alpha.ambercare.app/api/health
+```
+
+See [AUTH_SERVICE.md](./AUTH_SERVICE.md) for detailed documentation.
+
 ## Related Documentation
 
 - [Clusters Overview](../../CLUSTERS_OVERVIEW.md)
@@ -251,6 +278,12 @@ kubectl run my-app --image=my-app:latest --node-selector region=sg3
 - [k3sup Documentation](../../../k3s-with-k3sup/README.md)
 
 ## Change Log
+
+- **2025-01-14**: Added Auth Service (Alpha environment)
+  - Created murror_auth_service database in PostgreSQL cluster
+  - Deployed to murror-platform namespace
+  - Domain: auth-alpha.ambercare.app
+  - Integrated with GitHub Actions CI/CD pipeline
 
 - **2025-11-24**: Initial cluster setup with 3 control plane nodes and 5 worker nodes
   - Configured Wireguard mesh network (10.10.0.50-57)

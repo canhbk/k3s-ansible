@@ -1,0 +1,179 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: murror-api-log-alert-rules
+  namespace: monitoring
+  labels:
+    grafana_alert: "1"
+data:
+  murror-api-log-alerts.yaml: |
+    apiVersion: 1
+    groups:
+      - orgId: 1
+        name: murror-api-log-alerts
+        folder: Murror API Alerts
+        interval: 1m
+        rules:
+          - uid: murror-api-error-log-detected-vn
+            title: Murror API - Error Log Detected (VN)
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 60
+                  to: 0
+                datasourceUid: P8E80F9AEF21F6940
+                model:
+                  expr: 'count_over_time({namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", app="murror-api"} | json | severity="ERROR" [1m])'
+                  queryType: range
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 60
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - A
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  reducer: last
+                  type: reduce
+                  refId: B
+              - refId: C
+                relativeTimeRange:
+                  from: 60
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: B
+                  type: threshold
+                  refId: C
+            noDataState: NoData
+            execErrState: Error
+            for: 0s
+            annotations:
+              summary: Error logs detected in Murror API (VN Production)
+              description: |
+                Error logs have been detected in the Murror API application.
+                Namespace: {{ .Labels.namespace }}
+                App: murror-api
+                Check the logs for details.
+            labels:
+              severity: warning
+              namespace: nsp-prod-murror
+              app: murror-api
+              cluster: vn
+
+          - uid: murror-api-high-error-rate-vn
+            title: Murror API - High Error Rate (VN)
+            condition: C
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: P8E80F9AEF21F6940
+                model:
+                  expr: 'rate({namespace=~"nsp-prod-murror.*|murror-kol-prod-vn", app="murror-api"} | json | severity="ERROR" [5m])'
+                  queryType: range
+                  refId: A
+              - refId: B
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0.1
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - A
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: A
+                  reducer: last
+                  type: reduce
+                  refId: B
+              - refId: C
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                    - evaluator:
+                        params:
+                          - 0.1
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                          - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                  datasource:
+                    type: __expr__
+                    uid: __expr__
+                  expression: B
+                  type: threshold
+                  refId: C
+            noDataState: NoData
+            execErrState: Error
+            for: 5m
+            annotations:
+              summary: High error rate in Murror API (VN Production)
+              description: |
+                The error rate in Murror API has exceeded 0.1 errors per second for 5 minutes.
+                Namespace: {{ .Labels.namespace }}
+                App: murror-api
+                This indicates a potential issue that needs investigation.
+            labels:
+              severity: critical
+              namespace: nsp-prod-murror
+              app: murror-api
+              cluster: vn

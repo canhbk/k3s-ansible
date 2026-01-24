@@ -56,7 +56,12 @@
       "Bash(do echo \"=== $key ===\")",
       "Bash(do echo '=== $key ===')",
       "Bash(git commit:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(openssl x509:*)",
+      "Bash(gh variable list:*)",
+      "Bash(gh variable set:*)",
+      "Bash(gh secret list:*)",
+      "Bash(gh run list:*)"
     ],
     "deny": []
   }

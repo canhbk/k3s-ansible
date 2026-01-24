@@ -38,6 +38,9 @@ prometheus:
 
 # Grafana configuration
 grafana:
+  # Disable default dashboards (24 dashboards)
+  defaultDashboardsEnabled: false
+
   # Set the external URL
   grafana.ini:
     server:
