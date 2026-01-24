@@ -26,7 +26,9 @@ template:
   spec:
     containers:
       - name: runner
-        image: ghcr.io/murror/arc-runner:latest
+        # TODO: Switch back to custom image once rebuilt with runner v2.331.0
+        # image: ghcr.io/murror/arc-runner:latest
+        image: ghcr.io/actions/actions-runner:2.331.0
         command: ["/home/runner/run.sh"]
         env:
           - name: DOCKER_HOST
