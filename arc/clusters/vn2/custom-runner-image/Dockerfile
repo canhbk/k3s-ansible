@@ -7,11 +7,18 @@
 # Push:
 #   docker push ghcr.io/murror/arc-runner:latest
 
-ARG RUNNER_VERSION=2.321.0
+ARG RUNNER_VERSION=2.331.0
+ARG NODE_24_VERSION=24.13.0
+ARG NODE_22_VERSION=22.13.0
+ARG NODE_20_VERSION=20.19.0
+
 FROM ghcr.io/actions/actions-runner:${RUNNER_VERSION}
 
 # Switch to root for installations
 USER root
+
+# Set tool cache environment variable
+ENV RUNNER_TOOL_CACHE=/home/runner/actions-tool-cache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -64,6 +71,36 @@ RUN node --version && \
 # Create runner workspace directory
 RUN mkdir -p /home/runner/_work && \
     chown -R runner:runner /home/runner/_work
+
+# Pre-cache Node.js versions for faster setup-node action
+ARG NODE_24_VERSION
+ARG NODE_22_VERSION
+ARG NODE_20_VERSION
+
+RUN mkdir -p ${RUNNER_TOOL_CACHE}/node && \
+    # Download and cache Node.js 24
+    curl -fsSL https://nodejs.org/dist/v${NODE_24_VERSION}/node-v${NODE_24_VERSION}-linux-x64.tar.gz \
+        | tar xz -C ${RUNNER_TOOL_CACHE}/node && \
+    mv ${RUNNER_TOOL_CACHE}/node/node-v${NODE_24_VERSION}-linux-x64 ${RUNNER_TOOL_CACHE}/node/${NODE_24_VERSION} && \
+    mkdir -p ${RUNNER_TOOL_CACHE}/node/${NODE_24_VERSION}/x64 && \
+    mv ${RUNNER_TOOL_CACHE}/node/${NODE_24_VERSION}/* ${RUNNER_TOOL_CACHE}/node/${NODE_24_VERSION}/x64/ 2>/dev/null || true && \
+    touch ${RUNNER_TOOL_CACHE}/node/${NODE_24_VERSION}/x64.complete && \
+    # Download and cache Node.js 22
+    curl -fsSL https://nodejs.org/dist/v${NODE_22_VERSION}/node-v${NODE_22_VERSION}-linux-x64.tar.gz \
+        | tar xz -C ${RUNNER_TOOL_CACHE}/node && \
+    mv ${RUNNER_TOOL_CACHE}/node/node-v${NODE_22_VERSION}-linux-x64 ${RUNNER_TOOL_CACHE}/node/${NODE_22_VERSION} && \
+    mkdir -p ${RUNNER_TOOL_CACHE}/node/${NODE_22_VERSION}/x64 && \
+    mv ${RUNNER_TOOL_CACHE}/node/${NODE_22_VERSION}/* ${RUNNER_TOOL_CACHE}/node/${NODE_22_VERSION}/x64/ 2>/dev/null || true && \
+    touch ${RUNNER_TOOL_CACHE}/node/${NODE_22_VERSION}/x64.complete && \
+    # Download and cache Node.js 20
+    curl -fsSL https://nodejs.org/dist/v${NODE_20_VERSION}/node-v${NODE_20_VERSION}-linux-x64.tar.gz \
+        | tar xz -C ${RUNNER_TOOL_CACHE}/node && \
+    mv ${RUNNER_TOOL_CACHE}/node/node-v${NODE_20_VERSION}-linux-x64 ${RUNNER_TOOL_CACHE}/node/${NODE_20_VERSION} && \
+    mkdir -p ${RUNNER_TOOL_CACHE}/node/${NODE_20_VERSION}/x64 && \
+    mv ${RUNNER_TOOL_CACHE}/node/${NODE_20_VERSION}/* ${RUNNER_TOOL_CACHE}/node/${NODE_20_VERSION}/x64/ 2>/dev/null || true && \
+    touch ${RUNNER_TOOL_CACHE}/node/${NODE_20_VERSION}/x64.complete && \
+    # Set proper ownership
+    chown -R runner:runner ${RUNNER_TOOL_CACHE}
 
 # Switch back to runner user
 USER runner
