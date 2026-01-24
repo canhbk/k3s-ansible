@@ -1,0 +1,105 @@
+# AKHQ Deployment for US Kafka Cluster
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: akhq
+  namespace: kafka
+  labels:
+    app: akhq
+    cluster-region: us
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: akhq
+  template:
+    metadata:
+      labels:
+        app: akhq
+        cluster-region: us
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/prometheus"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: akhq
+          image: tchiotludo/akhq:0.25.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: management
+              containerPort: 28081
+              protocol: TCP
+          env:
+            # Kafka admin password from existing secret
+            - name: KAFKA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-admin
+                  key: password
+            # AKHQ auth secrets
+            - name: AKHQ_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: akhq-secrets
+                  key: jwt-secret
+            - name: AKHQ_ADMIN_PASSWORD_HASH
+              valueFrom:
+                secretKeyRef:
+                  name: akhq-secrets
+                  key: admin-password-hash
+            - name: AKHQ_READER_PASSWORD_HASH
+              valueFrom:
+                secretKeyRef:
+                  name: akhq-secrets
+                  key: reader-password-hash
+            # JVM tuning
+            - name: JAVA_OPTS
+              value: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+          volumeMounts:
+            - name: config
+              mountPath: /app/application.yml
+              subPath: application.yml
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: config
+          configMap:
+            name: akhq-config

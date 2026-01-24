@@ -1,0 +1,109 @@
+# AKHQ Configuration for US Kafka Cluster
+# Uses built-in form authentication with RBAC
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: akhq-config
+  namespace: kafka
+  labels:
+    app: akhq
+    cluster-region: us
+data:
+  application.yml: |
+    micronaut:
+      security:
+        enabled: true
+        token:
+          jwt:
+            signatures:
+              secret:
+                generator:
+                  secret: "${AKHQ_JWT_SECRET}"
+
+    akhq:
+      connections:
+        kafka-us:
+          properties:
+            bootstrap.servers: "kafka-us-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            security.protocol: SASL_PLAINTEXT
+            sasl.mechanism: SCRAM-SHA-512
+            sasl.jaas.config: "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"kafka-admin\" password=\"${KAFKA_ADMIN_PASSWORD}\";"
+
+      security:
+        default-group: no-roles
+
+        # Define custom roles with resources and actions (AKHQ 0.25.x format)
+        roles:
+          admin-role:
+            - resources: [ "TOPIC", "TOPIC_DATA" ]
+              actions: [ "READ", "CREATE", "DELETE" ]
+            - resources: [ "TOPIC" ]
+              actions: [ "UPDATE", "READ_CONFIG", "ALTER_CONFIG" ]
+            - resources: [ "NODE" ]
+              actions: [ "READ", "READ_CONFIG", "ALTER_CONFIG" ]
+            - resources: [ "CONSUMER_GROUP" ]
+              actions: [ "READ", "DELETE", "UPDATE_OFFSETS" ]
+            - resources: [ "ACL" ]
+              actions: [ "READ" ]
+            - resources: [ "CONNECTOR" ]
+              actions: [ "READ", "CREATE", "UPDATE_STATE", "DELETE" ]
+            - resources: [ "SCHEMA" ]
+              actions: [ "READ", "CREATE", "UPDATE", "DELETE", "DELETE_VERSION" ]
+            - resources: [ "CONNECT_CLUSTER" ]
+              actions: [ "READ" ]
+            - resources: [ "KSQLDB" ]
+              actions: [ "READ", "EXECUTE" ]
+
+          reader-role:
+            - resources: [ "TOPIC", "TOPIC_DATA" ]
+              actions: [ "READ" ]
+            - resources: [ "TOPIC" ]
+              actions: [ "READ_CONFIG" ]
+            - resources: [ "NODE" ]
+              actions: [ "READ", "READ_CONFIG" ]
+            - resources: [ "CONSUMER_GROUP" ]
+              actions: [ "READ" ]
+            - resources: [ "ACL" ]
+              actions: [ "READ" ]
+            - resources: [ "CONNECTOR" ]
+              actions: [ "READ" ]
+            - resources: [ "SCHEMA" ]
+              actions: [ "READ" ]
+            - resources: [ "CONNECT_CLUSTER" ]
+              actions: [ "READ" ]
+
+        # Map groups to roles (new format)
+        groups:
+          no-roles: []
+          admin:
+            - role: admin-role
+              patterns: [ ".*" ]
+              clusters: [ ".*" ]
+          reader:
+            - role: reader-role
+              patterns: [ ".*" ]
+              clusters: [ ".*" ]
+
+        # Basic authentication users (keep same format)
+        basic-auth:
+          - username: admin
+            # Password hash generated with: echo -n "password" | python3 -c "import bcrypt,sys; print(bcrypt.hashpw(sys.stdin.read().encode(), bcrypt.gensalt()).decode())"
+            password: "${AKHQ_ADMIN_PASSWORD_HASH}"
+            passwordHash: BCRYPT
+            groups:
+              - admin
+          - username: reader
+            password: "${AKHQ_READER_PASSWORD_HASH}"
+            passwordHash: BCRYPT
+            groups:
+              - reader
+
+      ui-options:
+        topic:
+          default-view: ALL
+          skip-consumer-groups: false
+          skip-last-record: false
+          show-all-consumer-groups: true
+        topic-data:
+          sort: NEWEST

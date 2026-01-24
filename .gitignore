@@ -65,3 +65,6 @@ database/postgresql/clusters/vn/secrets-r2-backup.yaml
 
 # GitHub App private keys
 *.private-key.pem
+
+# AKHQ secrets
+kafka/clusters/*/akhq/secret.yaml

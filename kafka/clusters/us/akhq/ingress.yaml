@@ -1,0 +1,32 @@
+# AKHQ Ingress for US Kafka Cluster
+# No basic auth middleware - AKHQ handles authentication natively
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: akhq
+  namespace: kafka
+  labels:
+    app: akhq
+    cluster-region: us
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - akhq.us.canhnv.com
+      secretName: akhq-tls
+  rules:
+    - host: akhq.us.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: akhq
+                port:
+                  number: 80

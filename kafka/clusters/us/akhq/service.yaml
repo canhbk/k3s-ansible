@@ -1,0 +1,23 @@
+# AKHQ Service for US Kafka Cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: akhq
+  namespace: kafka
+  labels:
+    app: akhq
+    cluster-region: us
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+    - name: management
+      port: 28081
+      targetPort: 28081
+      protocol: TCP
+  selector:
+    app: akhq
