@@ -15,6 +15,7 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 | us | Production | `us` | <https://65.49.60.35:6443> | US Production Services | North America |
 | vn | Production | `vn` | <https://vps22.canhnv.com:6443> | Vietnam Production Services | Asia-Pacific |
 | vn2 | CI/CD Infrastructure | N/A | N/A (GitHub Runners) | GitHub Actions Self-Hosted Runners | Asia-Pacific |
+| vn3 | CI/CD Infrastructure | N/A | N/A (GitHub Runners) | GitHub Actions Self-Hosted Runners | Asia-Pacific |
 
 ## Cluster Details
 
@@ -122,6 +123,21 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 - **Documentation**: [VN2 GitHub Runners Guide](./clusters/vn2/GITHUB_RUNNERS.md)
 - **Last Updated**: 2026-01-25
 
+#### VN3 Infrastructure (GitHub Runners)
+
+- **Purpose**: CI/CD for murror and canh-nv organizations
+- **Infrastructure Type**: Self-Hosted GitHub Actions Runners
+- **Total Runners**: 8 runners across 4 nodes
+- **Organizations**: murror, canh-nv
+- **Runner Nodes**:
+  - vps5-h2cloud-vn (180.93.98.54): vn3-murror-1, vn3-canh-nv-1
+  - vps18-h2cloud-vn (180.93.98.101): vn3-murror-2, vn3-canh-nv-2
+  - vps17-h2cloud-vn (180.93.98.15): vn3-murror-3, vn3-canh-nv-3
+  - vps12-h2cloud-vn (180.93.98.10): vn3-murror-4, vn3-canh-nv-4
+- **Capabilities**: Docker, Node.js 22, pnpm, kubectl, Helm
+- **Documentation**: [VN3 GitHub Runners Guide](./clusters/vn3/GITHUB_RUNNERS.md)
+- **Last Updated**: 2026-01-25
+
 ## Access Management
 
 ### Switching Between Clusters
@@ -206,12 +222,19 @@ ansible-playbook playbooks/site.yml -i inventory.vn.yml
 
 ```bash
 # Quick health check script
-for context in dev eu jp sg sg2 us vn vn2; do
+for context in dev eu jp sg sg2 us vn; do
   echo "Checking cluster: $context"
   kubectl config use-context $context
   kubectl get nodes
   echo "---"
 done
+
+# Check GitHub runner infrastructure
+echo "Checking VN2 GitHub Runners"
+ansible -i inventory.vn2-runners.yml runner_hosts -m shell -a "systemctl is-active 'actions.runner.*'"
+
+echo "Checking VN3 GitHub Runners"
+ansible -i inventory.vn3-runners.yml runner_hosts -m shell -a "systemctl is-active 'actions.runner.*'"
 ```
 
 ## Best Practices
