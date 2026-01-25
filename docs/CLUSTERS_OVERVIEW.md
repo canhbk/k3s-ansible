@@ -42,6 +42,11 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 - **Security Level**: Strict
 - **Default Namespace**: `default`
 - **Compliance**: GDPR compliant infrastructure
+- **Key Services**:
+  - Elasticsearch 8.17.0 (elasticsearch namespace)
+  - Kibana 8.17.0 (elasticsearch namespace)
+  - kube-prometheus-stack (Prometheus, Grafana, Alertmanager)
+  - ECK Operator 2.16.1 (Elastic Cloud on Kubernetes)
 
 #### JP Cluster
 

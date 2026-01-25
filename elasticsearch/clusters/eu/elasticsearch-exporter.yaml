@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elasticsearch-exporter-credentials
+  namespace: elasticsearch
+type: Opaque
+stringData:
+  ES_URI: "https://elastic:REPLACE_WITH_PASSWORD@elasticsearch-eu-es-http:9200"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-exporter
+  namespace: elasticsearch
+  labels:
+    app: elasticsearch-exporter
+    cluster: eu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch-exporter
+  template:
+    metadata:
+      labels:
+        app: elasticsearch-exporter
+        cluster: eu
+    spec:
+      containers:
+        - name: exporter
+          image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.8.0
+          args:
+            - "--es.uri=$(ES_URI)"
+            - "--es.ssl-skip-verify"
+            - "--es.all"
+            - "--es.indices"
+            - "--es.indices_settings"
+            - "--es.indices_mappings"
+            - "--es.shards"
+            - "--collector.snapshots"
+            - "--collector.clustersettings"
+          env:
+            - name: ES_URI
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-exporter-credentials
+                  key: ES_URI
+          ports:
+            - containerPort: 9114
+              name: metrics
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9114
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 9114
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-exporter
+  namespace: elasticsearch
+  labels:
+    app: elasticsearch-exporter
+    cluster: eu
+spec:
+  selector:
+    app: elasticsearch-exporter
+  ports:
+    - name: metrics
+      port: 9114
+      targetPort: 9114
+  type: ClusterIP

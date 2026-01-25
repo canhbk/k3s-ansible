@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: elasticsearch-exporter
+  namespace: elasticsearch
+  labels:
+    app: elasticsearch-exporter
+    cluster: eu
+    release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: elasticsearch-exporter
+  namespaceSelector:
+    matchNames:
+      - elasticsearch
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: http
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - targetLabel: cluster
+          replacement: eu

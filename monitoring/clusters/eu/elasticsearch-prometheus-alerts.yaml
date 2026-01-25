@@ -1,0 +1,101 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: elasticsearch-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: elasticsearch-cluster-alerts
+      interval: 30s
+      rules:
+        - alert: ElasticsearchClusterHealthRed
+          expr: elasticsearch_cluster_health_status{cluster="eu", color="red"} == 1
+          for: 2m
+          labels:
+            severity: critical
+            namespace: elasticsearch
+            cluster: eu
+          annotations:
+            summary: "Elasticsearch cluster health is RED (EU Cluster)"
+            description: "Primary shards are unassigned. Data may be unavailable."
+
+        - alert: ElasticsearchClusterHealthYellow
+          expr: elasticsearch_cluster_health_status{cluster="eu", color="yellow"} == 1
+          for: 10m
+          labels:
+            severity: warning
+            namespace: elasticsearch
+            cluster: eu
+          annotations:
+            summary: "Elasticsearch cluster health is YELLOW (EU Cluster)"
+            description: "Replica shards are unassigned."
+
+        - alert: ElasticsearchNodesDown
+          expr: elasticsearch_cluster_health_number_of_nodes{cluster="eu"} < 1
+          for: 1m
+          labels:
+            severity: critical
+            namespace: elasticsearch
+            cluster: eu
+          annotations:
+            summary: "Elasticsearch nodes are down (EU Cluster)"
+            description: "Only {{ $value }} node(s) are up."
+
+        - alert: ElasticsearchUnassignedShards
+          expr: elasticsearch_cluster_health_unassigned_shards{cluster="eu"} > 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: elasticsearch
+            cluster: eu
+          annotations:
+            summary: "Elasticsearch has unassigned shards (EU Cluster)"
+            description: "{{ $value }} unassigned shards detected."
+
+        - alert: ElasticsearchDiskUsageHigh
+          expr: (elasticsearch_filesystem_data_used_bytes{cluster="eu"} / elasticsearch_filesystem_data_size_bytes{cluster="eu"}) * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+            namespace: elasticsearch
+            cluster: eu
+          annotations:
+            summary: "Elasticsearch disk usage is high (EU Cluster)"
+            description: "Disk usage is {{ $value | humanizePercentage }}."
+
+        - alert: ElasticsearchDiskUsageCritical
+          expr: (elasticsearch_filesystem_data_used_bytes{cluster="eu"} / elasticsearch_filesystem_data_size_bytes{cluster="eu"}) * 100 > 90
+          for: 2m
+          labels:
+            severity: critical
+            namespace: elasticsearch
+            cluster: eu
+          annotations:
+            summary: "Elasticsearch disk usage is critical (EU Cluster)"
+            description: "Disk usage is {{ $value | humanizePercentage }}."
+
+        - alert: ElasticsearchJVMHeapUsageHigh
+          expr: (elasticsearch_jvm_memory_used_bytes{cluster="eu", area="heap"} / elasticsearch_jvm_memory_max_bytes{cluster="eu", area="heap"}) * 100 > 85
+          for: 5m
+          labels:
+            severity: warning
+            namespace: elasticsearch
+            cluster: eu
+          annotations:
+            summary: "Elasticsearch JVM heap usage is high (EU Cluster)"
+            description: "Heap usage is {{ $value | humanizePercentage }}."
+
+        - alert: ElasticsearchHighGCRate
+          expr: rate(elasticsearch_jvm_gc_collection_seconds_count{cluster="eu", gc="old"}[5m]) > 5
+          for: 5m
+          labels:
+            severity: warning
+            namespace: elasticsearch
+            cluster: eu
+          annotations:
+            summary: "Elasticsearch has high old GC rate (EU Cluster)"
+            description: "Old gen GC rate is {{ $value }} collections/sec."

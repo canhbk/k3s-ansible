@@ -1,0 +1,81 @@
+# EU cluster values for kube-prometheus-stack
+
+global:
+  additionalLabels:
+    cluster: eu
+    environment: production
+    region: europe
+
+prometheus:
+  prometheusSpec:
+    externalLabels:
+      cluster: eu
+      environment: production
+      region: europe
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        memory: 4Gi
+
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn-replicated
+          resources:
+            requests:
+              storage: 30Gi
+
+    replicas: 1
+
+grafana:
+  grafana.ini:
+    server:
+      domain: grafana.eu.k3s.canhnv.com
+      root_url: "https://grafana.eu.k3s.canhnv.com/"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+  persistence:
+    size: 5Gi
+    storageClassName: longhorn-replicated
+
+  replicas: 1
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn-replicated
+          resources:
+            requests:
+              storage: 5Gi
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+    replicas: 1
+
+nodeExporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+commonLabels:
+  cluster: eu
+  monitoring: kube-prometheus
