@@ -92,7 +92,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "count(up{namespace=\"kafka\", job=~\"kafka/kafka-cluster-metrics\"} == 1)",
+              "expr": "count(up{namespace=\"kafka\", job=~\"kafka/kafka-cluster-metrics\", pod=~\"kafka-us-kafka-brokers-.*\"} == 1)",
               "refId": "A"
             }
           ],

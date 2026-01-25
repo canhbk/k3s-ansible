@@ -54,7 +54,7 @@ spec:
 
         - alert: KafkaBrokerDown
           expr: |
-            count(up{namespace="kafka", strimzi_io_cluster="kafka-us", strimzi_io_kind="Kafka"} == 1) < 2
+            count(up{namespace="kafka", strimzi_io_cluster="kafka-us", pod=~"kafka-us-kafka-brokers-.*"} == 1) < 2
           for: 2m
           labels:
             severity: critical
