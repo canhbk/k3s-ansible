@@ -16,6 +16,7 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 | vn | Production | `vn` | <https://vps22.canhnv.com:6443> | Vietnam Production Services | Asia-Pacific |
 | vn2 | CI/CD Infrastructure | N/A | N/A (GitHub Runners) | GitHub Actions Self-Hosted Runners | Asia-Pacific |
 | vn3 | CI/CD Infrastructure | N/A | N/A (GitHub Runners) | GitHub Actions Self-Hosted Runners | Asia-Pacific |
+| vn4 | CI/CD Infrastructure | N/A | N/A (GitHub Runners) | GitHub Actions Self-Hosted Runners | Asia-Pacific |
 
 ## Cluster Details
 
@@ -138,6 +139,22 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 - **Documentation**: [VN3 GitHub Runners Guide](./clusters/vn3/GITHUB_RUNNERS.md)
 - **Last Updated**: 2026-01-25
 
+#### VN4 Infrastructure (GitHub Runners)
+
+- **Purpose**: CI/CD for murror and canh-nv organizations
+- **Infrastructure Type**: Self-Hosted GitHub Actions Runners
+- **Total Runners**: 6 runners across 3 nodes
+- **Organizations**: murror, canh-nv
+- **Provider**: H2Cloud Vietnam
+- **Runner Nodes**:
+  - vps6-h2cloud-vn (160.191.245.246): vn4-murror-1, vn4-canh-nv-1
+  - vps13-h2cloud-vn (160.191.245.244): vn4-murror-2, vn4-canh-nv-2
+  - vps16-h2cloud-vn (160.191.245.234): vn4-murror-3, vn4-canh-nv-3
+- **Server Specs**: 4 vCPU, 9.7GB RAM, Ubuntu 24.04 LTS
+- **Capabilities**: Docker, Node.js 22, pnpm, kubectl, Helm
+- **Documentation**: [VN4 GitHub Runners Guide](./clusters/vn4/GITHUB_RUNNERS.md)
+- **Last Updated**: 2026-01-25
+
 ## Access Management
 
 ### Switching Between Clusters
@@ -235,6 +252,9 @@ ansible -i inventory.vn2-runners.yml runner_hosts -m shell -a "systemctl is-acti
 
 echo "Checking VN3 GitHub Runners"
 ansible -i inventory.vn3-runners.yml runner_hosts -m shell -a "systemctl is-active 'actions.runner.*'"
+
+echo "Checking VN4 GitHub Runners"
+ansible -i inventory.vn4-runners.yml runner_hosts -m shell -a "systemctl is-active 'actions.runner.*'"
 ```
 
 ## Best Practices
