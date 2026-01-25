@@ -1,203 +1,194 @@
-# VN2 Cluster (Vietnam Secondary)
+# VN2 Infrastructure (Vietnam Secondary)
 
 ## Overview
 
-The VN2 cluster is a production K3s cluster deployed in Vietnam, serving as the secondary Vietnam cluster for high availability and workload distribution.
+> **Important**: VN2 has been converted from a K3s cluster to a dedicated GitHub Actions self-hosted runner infrastructure.
 
-**Last Updated**: 2025-10-21
+The VN2 infrastructure consists of 4 VPS servers (vps28-31) that previously formed a K3s cluster and now serve as dedicated GitHub Actions self-hosted runners for CI/CD workflows.
 
-## Cluster Information
+**Last Updated**: 2026-01-25
 
-- **Context Name**: `vn2`
-- **API Endpoint**: `https://163.61.73.78:6443`
-- **K3s Version**: `v1.32.5+k3s1`
-- **Environment**: Production
+## Infrastructure Information
+
+- **Type**: GitHub Actions Self-Hosted Runners
+- **Previous Type**: K3s Cluster (decommissioned)
+- **Environment**: Production CI/CD
 - **Region**: Vietnam (vn2)
-- **Default Namespace**: `nsp-prod-murror`
+- **Organizations**: murror, canh-nv
+- **Total Runners**: 8 (2 per node)
 
-## Infrastructure
+## Runner Infrastructure
 
-### Control Plane Nodes (3)
+### Runner Nodes (4)
 
-| Hostname | Wireguard IP | External IP | Role | Status |
-|----------|--------------|-------------|------|--------|
-| vps29-bnix | 10.10.0.29 | 163.61.73.78 | control-plane, etcd, master | Ready |
-| vps30-bnix | 10.10.0.30 | 163.61.73.79 | control-plane, etcd, master | Ready |
-| vps31-bnix | 10.10.0.31 | 163.61.73.90 | control-plane, etcd, master | Ready |
+| Hostname | External IP | Runners | Status |
+|----------|-------------|---------|--------|
+| vps28-bnix | 163.61.73.77 | vn2-murror-1, vn2-canh-nv-1 | Active |
+| vps29-bnix | 163.61.73.78 | vn2-murror-2, vn2-canh-nv-2 | Active |
+| vps30-bnix | 163.61.73.79 | vn2-murror-3, vn2-canh-nv-3 | Active |
+| vps31-bnix | 163.61.73.90 | vn2-murror-4, vn2-canh-nv-4 | Active |
 
-### Agent Nodes (1)
-
-| Hostname | Wireguard IP | External IP | Role | Status | Added |
-|----------|--------------|-------------|------|--------|-------|
-| vps28-bnix | 10.10.0.28 | 163.61.73.77 | agent | Ready | 2025-10-21 |
+Each node runs two runner instances: one for the **murror** organization and one for the **canh-nv** organization.
 
 ## Network Configuration
 
-### Cluster Network
-
-- **Cluster CIDR**: `10.44.0.0/16`
-- **Service CIDR**: `10.45.0.0/16`
-- **Cluster DNS**: `10.45.0.10`
-- **Flannel Interface**: `wg0` (Wireguard)
-- **Backend**: VXLAN
-
-### Wireguard VPN
-
-All nodes communicate over a Wireguard VPN mesh on the `wg0` interface:
-- Private network: `10.10.0.0/24`
-- All K3s traffic routed through Wireguard for security
+- **Outbound Access**: GitHub.com, GHCR.io, Docker Hub
+- **Docker MTU**: 1400 (Wireguard optimized)
+- **DNS**: 8.8.8.8, 8.8.4.4
 
 ## Deployment Method
 
-This cluster was deployed manually using the k3s install script (not Ansible).
+The GitHub runners were deployed using Ansible playbooks.
 
-See: `k3s-with-k3sup/manual.md` for deployment commands and cluster setup history.
+See: `playbooks/setup-github-runners.yml` and `inventory.vn2-runners.yml`
 
-### Initial Setup (Historical)
+### Setup Commands
 
-The cluster was initialized on vps29-bnix with:
 ```bash
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.32.5+k3s1 \
-  INSTALL_K3S_EXEC="server --cluster-init --cluster-cidr=10.44.0.0/16 \
-  --service-cidr=10.45.0.0/16 --cluster-dns=10.45.0.10 --flannel-iface=wg0 \
-  --advertise-address=10.10.0.29 --tls-san=10.10.0.29 --tls-san=163.61.73.78 \
-  --tls-san=vps29.canhnv.com --node-label=region=vn2 --node-ip=10.10.0.29 \
-  --node-external-ip=163.61.73.78 --node-external-dns=vps29.canhnv.com" sh -
+# Load PAT credentials
+source vn2-runners.secrets
+
+# Deploy runners to all nodes
+ansible-playbook playbooks/setup-github-runners.yml -i inventory.vn2-runners.yml
 ```
 
-## Key Services
+## Key Capabilities
 
-- **Primary Use**: Murror production workloads
-- **Service Mesh**: Traefik ingress controller (default)
-- **Load Balancing**: svclb (K3s Service Load Balancer)
-- **CI/CD**: Actions Runner Controller (ARC) - GitHub self-hosted runners
+> **For comprehensive documentation, see [GitHub Runners Guide](./GITHUB_RUNNERS.md)**
 
-## Actions Runner Controller (ARC)
+- **Primary Use**: CI/CD for murror and canh-nv organizations
+- **Docker**: Docker-in-Docker support with Buildx
+- **Node.js**: Version 22 LTS with pnpm
+- **Kubernetes**: kubectl and Helm v3 for deployments
+- **Build Tools**: Full C/C++ toolchain, Python 3
 
-The VN2 cluster runs GitHub self-hosted runners using Actions Runner Controller v2.
+## Usage in Workflows
 
-### Components
-
-| Component | Namespace | Description |
-|-----------|-----------|-------------|
-| ARC Controller | `arc-systems` | Manages runner lifecycle and scaling |
-| Runner Scale Set | `arc-runners` | Auto-scaling runner pods (0-10) |
-| Listener | `arc-runners` | Listens for GitHub workflow events |
-
-### Configuration
-
-- **GitHub Scope**: Organization-level (`murror`)
-- **Runner Name**: `vn2-runners`
-- **Scaling**: 0-10 runners (auto-scale on demand)
-- **Container Mode**: Docker-in-Docker (DinD)
-- **Capabilities**: Docker builds, Node.js/pnpm, kubectl, Helm
-
-### Usage in Workflows
+### For murror Organization
 
 ```yaml
-# Use VN2 runners specifically
-runs-on: [self-hosted, vn2-runners]
-
-# Or use any self-hosted runner
-runs-on: [self-hosted]
+jobs:
+  build:
+    runs-on: [self-hosted, linux, x64, vn2, murror]
+    steps:
+      - uses: actions/checkout@v4
+      - run: pnpm install && pnpm build
 ```
 
-### Management Commands
+### For canh-nv Organization
 
-```bash
-# Check controller status
-kubectl -n arc-systems get pods
-
-# Check runner scale set
-kubectl -n arc-runners get autoscalingrunnerset
-
-# Check active runners
-kubectl -n arc-runners get pods -l app.kubernetes.io/component=runner
-
-# View controller logs
-kubectl -n arc-systems logs -l app.kubernetes.io/name=gha-runner-scale-set-controller -f
-
-# View listener logs
-kubectl -n arc-runners logs -l app.kubernetes.io/component=runner-scale-set-listener -f
+```yaml
+jobs:
+  build:
+    runs-on: [self-hosted, linux, x64, vn2, canh-nv]
+    steps:
+      - uses: actions/checkout@v4
+      - run: pnpm install && pnpm build
 ```
 
-### Installation
+### Documentation
 
-See: `arc/clusters/vn2/` for configuration files and `arc/scripts/install-arc.sh` for installation.
+For comprehensive documentation including:
+- Complete setup procedure
+- Pre-installed software details
+- Service management commands
+- Troubleshooting guides
+- Security best practices
+
+See: **[GitHub Runners Documentation](./GITHUB_RUNNERS.md)**
 
 ## Access
 
-### Kubectl Context
-
-```bash
-# Switch to vn2 cluster
-kubectl config use-context vn2
-
-# Verify access
-kubectl get nodes -o wide
-
-# Check running pods
-kubectl get pods -A
-```
-
 ### SSH Access
 
-All nodes are accessible via SSH as root user. Credentials are stored in:
-- `k3s-with-k3sup/wireguard-ansible/inventory/hosts.local.yaml`
+All nodes are accessible via SSH as root user for administrative tasks.
+
+```bash
+# Check runner status on a node
+ssh root@163.61.73.77 "systemctl status 'actions.runner.*'"
+
+# View runner logs
+ssh root@163.61.73.77 "journalctl -u actions.runner.murror-vn2-murror-1 -f"
+```
+
+### GitHub UI
+
+View runners in GitHub organization settings:
+- **murror**: https://github.com/organizations/murror/settings/actions/runners
+- **canh-nv**: https://github.com/organizations/canh-nv/settings/actions/runners
 
 ## Common Operations
 
-### Check Cluster Health
+### Check Runner Status
 
 ```bash
-kubectl config use-context vn2
-kubectl get nodes
-kubectl get pods -A
-kubectl top nodes
+# Check all runners on all nodes
+for ip in 163.61.73.77 163.61.73.78 163.61.73.79 163.61.73.90; do
+  echo "=== $ip ==="
+  ssh root@$ip "systemctl status 'actions.runner.*' --no-pager | grep -E '(\.service|Active:)'"
+done
 ```
 
-### Add New Agent Node
+### Restart a Runner
 
-1. Ensure the node has Wireguard configured and can reach control plane nodes
-2. Run the agent join command (see manual.md)
-3. Verify node joined: `kubectl get nodes`
-4. Update this documentation
+```bash
+ssh root@163.61.73.77 "systemctl restart actions.runner.murror-vn2-murror-1"
+```
 
-### Remove Agent Node
+### Update Runner Version
 
-1. Cordon the node: `kubectl cordon <node-name>`
-2. Drain the node: `kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data`
-3. SSH to node and uninstall: `/usr/local/bin/k3s-agent-uninstall.sh`
-4. Delete from cluster: `kubectl delete node <node-name>`
-5. Update this documentation
+```bash
+# Load credentials
+source vn2-runners.secrets
+
+# Update and redeploy
+ansible-playbook playbooks/setup-github-runners.yml \
+  -i inventory.vn2-runners.yml \
+  -e "runner_version=2.322.0" \
+  -e "force_reconfigure=true"
+```
 
 ## Troubleshooting
 
-### Pod Network Connectivity Issues
+### Runner Offline
 
-If pods on different nodes cannot communicate:
+1. Check service status: `ssh root@<ip> "systemctl status actions.runner.<name>"`
+2. Restart if needed: `ssh root@<ip> "systemctl restart actions.runner.<name>"`
+3. Check logs: `ssh root@<ip> "journalctl -u actions.runner.<name> -n 50"`
 
-1. Check Wireguard connectivity between nodes
-2. Verify flannel is running: `kubectl get pods -n kube-system | grep flannel`
-3. Restart K3s services if needed (see CLAUDE.md troubleshooting section)
+### Jobs Not Running
 
-### Node Not Ready
+1. Verify runner labels match workflow `runs-on` requirements
+2. Check if runners are online in GitHub UI
+3. Ensure runners are not all busy with other jobs
 
-1. SSH to the node
-2. Check K3s service: `systemctl status k3s-agent`
-3. Check logs: `journalctl -u k3s-agent -f`
-4. Verify Wireguard: `wg show`
+### Docker Issues
+
+```bash
+# Check Docker daemon
+ssh root@163.61.73.77 "systemctl status docker"
+
+# Test Docker
+ssh root@163.61.73.77 "docker run --rm hello-world"
+
+# Clean up disk space
+ssh root@163.61.73.77 "docker system prune -af"
+```
+
+For detailed troubleshooting, see [GitHub Runners Documentation](./GITHUB_RUNNERS.md#troubleshooting)
 
 ## Change History
 
 | Date | Change | Notes |
 |------|--------|-------|
+| 2026-01-25 | Converted to GitHub Actions runners | Decommissioned K3s cluster, converted all 4 nodes to self-hosted runners |
 | 2025-12-25 | Added Actions Runner Controller (ARC) | GitHub self-hosted runners with auto-scaling |
 | 2025-10-21 | Added vps28-bnix as agent node | Previous networking issues resolved, node rejoined cluster |
 | 2024-09-24 | Removed vps28-bnix | Due to networking issues |
 
 ## Related Documentation
 
+- **[GitHub Runners Guide](./GITHUB_RUNNERS.md)** - Comprehensive runner documentation
 - [Clusters Overview](../../CLUSTERS_OVERVIEW.md)
-- [Manual K3s Setup Guide](../../../k3s-with-k3sup/manual.md)
 - [Security Guidelines](../../SECURITY_GUIDELINES.md)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions/hosting-your-own-runners)

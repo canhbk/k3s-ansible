@@ -1,0 +1,24 @@
+[Unit]
+Description=GitHub Actions Runner ({{ service_org_name }} - {{ service_runner_name }})
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+ExecStart={{ service_runner_dir }}/runsvc.sh
+User={{ runner_user }}
+WorkingDirectory={{ service_runner_dir }}
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+Restart=always
+RestartSec=10
+
+Environment="RUNNER_ALLOW_RUNASROOT=1"
+Environment="DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1"
+
+NoNewPrivileges=false
+ProtectSystem=false
+PrivateTmp=false
+
+[Install]
+WantedBy=multi-user.target

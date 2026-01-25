@@ -1,0 +1,14 @@
+---
+- name: Create base runners directory
+  ansible.builtin.file:
+    path: "{{ runner_home }}/runners"
+    state: directory
+    owner: "{{ runner_user }}"
+    group: "{{ runner_group }}"
+    mode: '0755'
+
+- name: Download runner package
+  ansible.builtin.get_url:
+    url: "{{ runner_download_url }}"
+    dest: "/tmp/{{ runner_package }}"
+    mode: '0644'

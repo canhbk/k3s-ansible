@@ -1,0 +1,23 @@
+---
+- name: Create runner group
+  ansible.builtin.group:
+    name: "{{ runner_group }}"
+    state: present
+
+- name: Create runner user
+  ansible.builtin.user:
+    name: "{{ runner_user }}"
+    group: "{{ runner_group }}"
+    groups: docker
+    shell: /bin/bash
+    home: "{{ runner_home }}"
+    create_home: yes
+    state: present
+
+- name: Create work directory
+  ansible.builtin.file:
+    path: "{{ runner_work_dir }}"
+    state: directory
+    owner: "{{ runner_user }}"
+    group: "{{ runner_group }}"
+    mode: '0755'

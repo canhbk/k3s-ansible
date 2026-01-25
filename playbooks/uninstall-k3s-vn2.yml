@@ -1,0 +1,68 @@
+---
+- name: Uninstall K3s from VN2 cluster nodes
+  hosts: runner_hosts
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Check if k3s-uninstall.sh exists (server)
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s-uninstall.sh
+      register: k3s_server_uninstall
+
+    - name: Check if k3s-agent-uninstall.sh exists (agent)
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s-agent-uninstall.sh
+      register: k3s_agent_uninstall
+
+    - name: Run K3s server uninstall script
+      ansible.builtin.command: /usr/local/bin/k3s-uninstall.sh
+      when: k3s_server_uninstall.stat.exists
+      ignore_errors: yes
+
+    - name: Run K3s agent uninstall script
+      ansible.builtin.command: /usr/local/bin/k3s-agent-uninstall.sh
+      when: k3s_agent_uninstall.stat.exists and not k3s_server_uninstall.stat.exists
+      ignore_errors: yes
+
+    - name: Remove K3s data directory
+      ansible.builtin.file:
+        path: /var/lib/rancher
+        state: absent
+
+    - name: Remove K3s config directory
+      ansible.builtin.file:
+        path: /etc/rancher
+        state: absent
+
+    - name: Remove kubeconfig
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /root/.kube/config
+        - /home/{{ ansible_user }}/.kube/config
+
+    - name: Remove CNI configuration
+      ansible.builtin.file:
+        path: /etc/cni/net.d
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove k3s install script
+      ansible.builtin.file:
+        path: /usr/local/bin/k3s-install.sh
+        state: absent
+
+    - name: Clean up iptables rules
+      ansible.builtin.shell: |
+        iptables -F
+        iptables -t nat -F
+        iptables -t mangle -F
+        iptables -X
+      ignore_errors: yes
+
+    - name: Reboot node to ensure clean state
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+        msg: "Rebooting after K3s uninstallation"
+      when: reboot_after_uninstall | default(false)

@@ -1,0 +1,16 @@
+---
+- name: Include dependency installation
+  ansible.builtin.include_tasks: install_dependencies.yml
+
+- name: Include user creation
+  ansible.builtin.include_tasks: create_user.yml
+
+- name: Include runner download
+  ansible.builtin.include_tasks: download_runner.yml
+
+- name: Configure and register runners for each organization
+  ansible.builtin.include_tasks: configure_runner.yml
+  loop: "{{ github_organizations }}"
+  loop_control:
+    loop_var: org
+    label: "{{ org.name }}"

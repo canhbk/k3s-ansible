@@ -1,0 +1,15 @@
+{
+  "mtu": {{ docker_mtu }},
+  "default-network-opts": {
+    "bridge": {
+      "com.docker.network.driver.mtu": "{{ docker_mtu }}"
+    }
+  },
+  "dns": ["8.8.8.8", "8.8.4.4"],
+  "storage-driver": "overlay2",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}

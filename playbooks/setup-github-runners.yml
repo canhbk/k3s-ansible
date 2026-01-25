@@ -1,0 +1,11 @@
+---
+- name: Setup GitHub Actions Self-Hosted Runners
+  hosts: runner_hosts
+  become: true
+  gather_facts: true
+  roles:
+    - role: github_runner
+  vars:
+    runner_version: "2.321.0"
+    node_version: "22"
+    docker_mtu: 1400

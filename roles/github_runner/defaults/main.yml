@@ -1,0 +1,13 @@
+---
+runner_version: "2.321.0"
+runner_user: "runner"
+runner_group: "runner"
+runner_home: "/home/{{ runner_user }}"
+runner_work_dir: "{{ runner_home }}/work"
+github_api_url: "https://api.github.com"
+github_url: "https://github.com"
+default_runner_labels: "self-hosted,linux,x64"
+runner_service_enabled: true
+runner_service_state: started
+docker_mtu: 1400
+node_version: "22"

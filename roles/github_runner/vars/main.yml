@@ -1,0 +1,5 @@
+---
+runner_arch: "x64"
+runner_platform: "linux"
+runner_package: "actions-runner-{{ runner_platform }}-{{ runner_arch }}-{{ runner_version }}.tar.gz"
+runner_download_url: "https://github.com/actions/runner/releases/download/v{{ runner_version }}/{{ runner_package }}"

@@ -21,6 +21,11 @@ Welcome to the comprehensive documentation for the K3s Ansible infrastructure pr
 
 - **[Production Guidelines](./clusters/production/README.md)** - Production cluster best practices
 
+#### CI/CD Infrastructure
+
+- **[VN2 GitHub Runners](./clusters/vn2/GITHUB_RUNNERS.md)** - Self-hosted runner fleet documentation
+- **[VN2 Overview](./clusters/vn2/README.md)** - VN2 infrastructure overview
+
 ### Service Documentation
 
 #### PostgreSQL

@@ -68,3 +68,7 @@ database/postgresql/clusters/vn/secrets-r2-backup.yaml
 
 # AKHQ secrets
 kafka/clusters/*/akhq/secret.yaml
+
+# GitHub PAT secrets (never commit)
+*.secrets
+.env.local

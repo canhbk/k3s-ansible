@@ -14,7 +14,7 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 | sg3 | Production | `sg3` | <https://15.235.211.39:6443> | Singapore OVH Production Services | Asia-Pacific |
 | us | Production | `us` | <https://65.49.60.35:6443> | US Production Services | North America |
 | vn | Production | `vn` | <https://vps22.canhnv.com:6443> | Vietnam Production Services | Asia-Pacific |
-| vn2 | Production | `vn2` | <https://163.61.73.78:6443> | Vietnam Secondary Services | Asia-Pacific |
+| vn2 | CI/CD Infrastructure | N/A | N/A (GitHub Runners) | GitHub Actions Self-Hosted Runners | Asia-Pacific |
 
 ## Cluster Details
 
@@ -105,17 +105,22 @@ This document provides a comprehensive overview of all K3s clusters managed by t
 - **Default Namespace**: `postgres-db`
 - **Special Features**: Database-centric workloads
 
-#### VN2 Cluster (Vietnam Secondary)
+#### VN2 Infrastructure (GitHub Runners)
 
-- **Purpose**: Secondary Vietnam services
-- **Security Level**: Strict
-- **Default Namespace**: `nsp-prod-murror`
-- **Key Services**: Murror production workloads
-- **Cluster Configuration**:
-  - 3 Control Plane Nodes: vps29-bnix, vps30-bnix, vps31-bnix
-  - 1 Agent Node: vps28-bnix (added 2025-10-21)
-- **Network**: Wireguard VPN over wg0 interface
-- **Last Updated**: 2025-10-21
+> **Note**: VN2 has been converted from a K3s cluster to GitHub Actions self-hosted runner infrastructure.
+
+- **Purpose**: CI/CD for murror and canh-nv organizations
+- **Infrastructure Type**: Self-Hosted GitHub Actions Runners
+- **Total Runners**: 8 runners across 4 nodes
+- **Organizations**: murror, canh-nv
+- **Runner Nodes**:
+  - vps28-bnix (163.61.73.77): vn2-murror-1, vn2-canh-nv-1
+  - vps29-bnix (163.61.73.78): vn2-murror-2, vn2-canh-nv-2
+  - vps30-bnix (163.61.73.79): vn2-murror-3, vn2-canh-nv-3
+  - vps31-bnix (163.61.73.90): vn2-murror-4, vn2-canh-nv-4
+- **Capabilities**: Docker, Node.js 22, pnpm, kubectl, Helm
+- **Documentation**: [VN2 GitHub Runners Guide](./clusters/vn2/GITHUB_RUNNERS.md)
+- **Last Updated**: 2026-01-25
 
 ## Access Management
 
