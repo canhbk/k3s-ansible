@@ -104,6 +104,31 @@ Maintain a minimal privilege model for all automated operations.
    - Creating or modifying configuration files
    - Git operations
 
+### Murror DevOps Alpha Agent
+
+For all DevOps tasks related to the Murror ecosystem on the SG3 Alpha environment, use the `murror-devops-alpha` agent. This is a globally available agent registered in `/Users/canhnv/.claude/agents/murror-devops-alpha.md`.
+
+**Capabilities**:
+- Service health checks (pods, deployments, endpoints)
+- Log analysis and debugging
+- CI/CD pipeline status
+- Database connectivity checks
+- Configuration and secret management
+- Scaling and restart operations
+- Cross-reference local code with deployed services
+
+**Services Covered**:
+- Murror API (`nsp-alpha-murror`)
+- Murror AI (`nsp-alpha-murror-ai`)
+- Auth Service, Notification Service, Statistic Service (`murror-platform`)
+- Auth Service UI (`nsp-auth-service-alpha`)
+
+**Local Repositories**:
+- `/Users/canhnv/development/murror/murror-api`
+- `/Users/canhnv/development/murror/viasr-api`
+- `/Users/canhnv/development/murror/murror-platform`
+- `/Users/canhnv/development/canhnv/k3s-ansible`
+
 ## Project Overview
 
 This is an Ansible-based automation project for deploying and managing K3s Kubernetes clusters. K3s is a lightweight Kubernetes distribution designed for edge, IoT, and resource-constrained environments.
