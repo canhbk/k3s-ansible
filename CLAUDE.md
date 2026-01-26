@@ -291,6 +291,7 @@ For deployment tasks, reference the following source code repositories for bette
 - **Auth Service Backend**: `/Users/canhnv/development/murror/auth-service` - Authentication service backend (deployed to US cluster)
 - **Auth Service UI**: `/Users/canhnv/development/murror/auth-service-ui` - Authentication service frontend (deployed to US cluster)
 - **Numerology Platform**: `/Users/canhnv/development/numerology` - Numerology web platform (see detailed section below)
+- **Vylos Platform**: `/Users/canhnv/development/vylos` - AI-powered business analyst platform (see detailed section below)
 
 ### Numerology Project
 
@@ -382,6 +383,144 @@ Uses CloudNativePG (CNPG) PostgreSQL operator on each cluster:
 - Namespace: `postgres-db`
 - Service: `postgresql-rw.postgres-db`
 - Database: `numerology`
+
+### Vylos Platform
+
+**Repository**: `/Users/canhnv/development/vylos`
+
+An AI-powered business analyst platform built as a Turborepo + pnpm monorepo.
+
+#### Applications
+
+| App | Type | Port | Description |
+|-----|------|------|-------------|
+| backend | NestJS API | 3001 | REST API with PostgreSQL, Redis/BullMQ queues |
+| web | Next.js | 3000 | Marketing/landing pages |
+| web-client | React+Vite | 8080 (nginx) | Main user-facing SPA |
+
+#### Packages
+
+| Package | Description |
+|---------|-------------|
+| @repo/ui | Shared React component library |
+| @repo/eslint-config | ESLint configuration |
+| @repo/typescript-config | TypeScript configuration |
+
+#### Backend Architecture (DDD)
+
+The backend follows Domain-Driven Design principles:
+
+```
+src/
+├── config/              # Database and environment configuration
+├── modules/             # Feature modules with DDD layers
+│   ├── auth/            # Authentication & authorization
+│   ├── project/         # Project management
+│   ├── ai/              # AI processing (OpenAI, Anthropic)
+│   └── export/          # Export functionality
+├── shared/              # Cross-cutting concerns
+│   ├── database/        # PostgreSQL connection & seeds
+│   ├── queue/           # BullMQ job queue setup
+│   ├── events/          # Domain event emitter
+│   └── ...
+└── migrations/          # Database migrations
+```
+
+#### Deployment Environments
+
+| Environment | Cluster | Namespace | Domain Pattern |
+|-------------|---------|-----------|----------------|
+| Preview | Dev | vylos-pr-X | `*-pr-X.vylos.app` |
+| Alpha | SG3 | vylos | `*-alpha.vylos.app` |
+| Production | VN | vylos | `*.vylos.app` |
+
+#### Domains
+
+**Alpha (SG3 Cluster)**:
+- `api-alpha.vylos.app` - Backend API
+- `web-alpha.vylos.app` - Landing page
+- `app-alpha.vylos.app` - Web client
+
+**Production (VN Cluster)**:
+- `api.vylos.app` - Backend API
+- `vylos.app` - Landing page
+- `app.vylos.app` - Web client
+
+#### CI/CD Pipeline
+
+GitHub Actions workflows in `.github/workflows/`:
+
+1. **ci.yml** - Format check, lint, typecheck, test, build on PR/push
+2. **release.yml** - Semantic versioning with monorepo support
+3. **docker-build.yml** - Build and push to GHCR (`ghcr.io/canhnv/vylos/*`)
+4. **preview.yml** - Creates preview environments for each PR
+5. **deploy.yml** - Helm deploy to alpha/prod environments
+6. **cleanup-preview.yml** - Cleans up PR preview environments
+
+#### Key Files
+
+- `.github/deploy-config.json` - Helm deployment configuration
+- `.github/services-config.json` - Docker build configuration
+- `scripts/helm-deploy.cjs` - Deployment script
+- `apps/*/helm/` - Helm charts for each app
+
+#### GitHub Configuration
+
+**Environments**: `alpha`, `prod`
+
+**Secrets** (per environment):
+- `KUBE_CONFIG` - Base64-encoded kubeconfig
+- `GHCR_TOKEN` - GitHub Container Registry PAT
+- `BACKEND__DB_PASSWORD` - PostgreSQL password
+- `BACKEND__JWT_SECRET` - JWT signing secret
+- `BACKEND__OPENAI_API_KEY` - OpenAI API key
+- `BACKEND__ANTHROPIC_API_KEY` - Anthropic API key
+
+**Variables** (per environment):
+- `INGRESS_CLASS_NAME` - traefik
+- `INGRESS_CLUSTER_ISSUER` - letsencrypt-prod (or cluster issuer)
+- `BACKEND__INGRESS_HOST` - API domain
+- `BACKEND__DB_HOST` - postgresql-rw.postgres-db
+- `BACKEND__DB_PORT` - 5432
+- `BACKEND__DB_USERNAME` - vylos
+- `BACKEND__DB_NAME` - vylos
+- `BACKEND__REDIS_HOST` - Redis host
+
+#### Common Commands
+
+```bash
+cd /Users/canhnv/development/vylos
+
+# Development
+pnpm install
+pnpm dev
+
+# Build & Test
+pnpm build
+pnpm test
+pnpm lint
+pnpm format
+pnpm check-types
+
+# Per-app commands
+turbo dev --filter=backend
+turbo build --filter=web
+turbo lint --filter=web-client
+```
+
+#### External Dependencies
+
+- **PostgreSQL**: CloudNativePG in `postgres-db` namespace
+- **Redis**: Shared cluster instance for BullMQ queues
+- **OpenAI API**: AI features
+- **Anthropic API**: AI features
+
+#### Docker Images
+
+All images use multi-stage builds with non-root users:
+- `ghcr.io/canhnv/vylos/backend` - NestJS (node:22-alpine, user: nestjs)
+- `ghcr.io/canhnv/vylos/web` - Next.js standalone (node:22-alpine, user: nextjs)
+- `ghcr.io/canhnv/vylos/web-client` - Nginx (nginx-unprivileged:1.27-alpine)
 
 ## Important Variables
 
