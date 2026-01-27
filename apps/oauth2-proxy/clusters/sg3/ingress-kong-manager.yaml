@@ -1,0 +1,46 @@
+---
+# Certificate for Kong Manager domain
+# This is needed because the ingress is in oauth2-proxy namespace
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kong-manager-tls
+  namespace: oauth2-proxy
+spec:
+  secretName: kong-manager-tls
+  issuerRef:
+    name: canhnv-com-prod
+    kind: ClusterIssuer
+  commonName: "kong-manager.sg3.canhnv.com"
+  dnsNames:
+    - "kong-manager.sg3.canhnv.com"
+---
+# Ingress for OAuth2 paths on kong-manager domain
+# This handles /oauth2/* paths for the authentication flow
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kong-manager-oauth2
+  namespace: oauth2-proxy
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Higher priority to match before the main kong-manager ingress
+    traefik.ingress.kubernetes.io/router.priority: "100"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - kong-manager.sg3.canhnv.com
+      secretName: kong-manager-tls
+  rules:
+    - host: kong-manager.sg3.canhnv.com
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 80

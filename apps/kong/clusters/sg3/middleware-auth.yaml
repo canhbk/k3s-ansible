@@ -1,4 +1,5 @@
-# Basic Authentication Middleware for Kong Manager
+# Basic Authentication Middleware for Kong Manager (deprecated - keeping for reference)
+# Use kong-manager-oauth2-chain instead
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -8,11 +9,119 @@ spec:
   basicAuth:
     secret: kong-manager-basic-auth
 ---
-# Secret for basic auth credentials
+# CORS Middleware for Kong Admin API
+# This allows Kong Manager GUI to make cross-origin requests
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: kong-admin-cors
+  namespace: kong
+spec:
+  headers:
+    accessControlAllowCredentials: true
+    accessControlAllowOriginList:
+      - "https://kong-manager.sg3.canhnv.com"
+    accessControlAllowMethods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+      - HEAD
+    accessControlAllowHeaders:
+      - Authorization
+      - Content-Type
+      - Kong-Admin-Token
+      - Accept
+      - Origin
+      - X-Requested-With
+    accessControlExposeHeaders:
+      - X-Kong-Admin-Latency-Ms
+    accessControlMaxAge: 86400
+    addVaryHeader: true
+---
+# Basic Authentication Middleware for Kong Admin API (deprecated - no longer used)
+# apiVersion: traefik.io/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: kong-admin-auth
+#   namespace: kong
+# spec:
+#   basicAuth:
+#     secret: kong-admin-basic-auth
+# ---
+# ForwardAuth middleware pointing to OAuth2 Proxy (local to kong namespace)
+# Uses authResponseHeadersRegex to capture redirect headers from OAuth2 Proxy
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: oauth2-proxy-forward
+  namespace: kong
+spec:
+  forwardAuth:
+    address: http://oauth2-proxy.oauth2-proxy.svc.cluster.local/oauth2/auth
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-Auth-Request-User
+      - X-Auth-Request-Email
+      - X-Auth-Request-Preferred-Username
+      - X-Auth-Request-Groups
+      - Authorization
+    authResponseHeadersRegex: "^X-Auth-"
+---
+# Note: oauth2-proxy-errors middleware with cross-namespace service reference removed
+# Traefik errors middleware cannot reference services in different namespaces
+# Use oauth2-proxy-errors@oauth2-proxy-oauth2-proxy-errors instead (from oauth2-proxy namespace)
+---
+# Middleware Chain: CORS headers first, then OAuth2 Proxy
+# This ensures preflight (OPTIONS) requests get CORS headers
+# without being blocked by authentication
+# Note: Using oauth2-proxy-errors from oauth2-proxy namespace to avoid cross-namespace service reference issue
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: kong-admin-chain
+  namespace: kong
+spec:
+  chain:
+    middlewares:
+      - name: kong-admin-cors
+      - name: oauth2-proxy-forward
+      - name: oauth2-proxy-errors
+        namespace: oauth2-proxy
+---
+# Chain for Kong Manager: OAuth2 Proxy only (no CORS needed)
+# Note: Using oauth2-proxy-errors from oauth2-proxy namespace to avoid cross-namespace service reference issue
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: kong-manager-oauth2-chain
+  namespace: kong
+spec:
+  chain:
+    middlewares:
+      - name: oauth2-proxy-forward
+      - name: oauth2-proxy-errors
+        namespace: oauth2-proxy
+---
+# Secret for Kong Manager basic auth credentials
 apiVersion: v1
 kind: Secret
 metadata:
   name: kong-manager-basic-auth
+  namespace: kong
+type: Opaque
+stringData:
+  users: |
+    admin:$apr1$6Z2PgllB$zcHgtVjiywFZEBsqLrY011
+---
+# Secret for Kong Admin API basic auth credentials
+# Using the same credentials as Kong Manager for convenience
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kong-admin-basic-auth
   namespace: kong
 type: Opaque
 stringData:

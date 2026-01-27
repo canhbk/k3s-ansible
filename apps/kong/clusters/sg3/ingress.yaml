@@ -50,7 +50,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     # Basic auth middleware for security (create separately)
-    traefik.ingress.kubernetes.io/router.middlewares: kong-admin-auth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: kong-kong-admin-chain@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:

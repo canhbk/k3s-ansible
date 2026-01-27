@@ -38,5 +38,10 @@ metadata:
 spec:
   chain:
     middlewares:
-      - name: oauth2-proxy-auth
+      # IMPORTANT: errors middleware MUST be BEFORE forwardAuth
+      # When forwardAuth returns 401, it breaks the chain and doesn't
+      # trigger middlewares declared after it. By placing errors first,
+      # it can intercept and handle 401 responses from forwardAuth.
+      # See: https://github.com/traefik/traefik/issues/12172
       - name: oauth2-proxy-errors
+      - name: oauth2-proxy-auth

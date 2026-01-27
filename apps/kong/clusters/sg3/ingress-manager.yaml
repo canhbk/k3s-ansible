@@ -1,4 +1,6 @@
 # Ingress for Kong Manager GUI
+# OAuth2 paths (/oauth2/*) are handled by a separate ingress in the oauth2-proxy namespace
+# See: /apps/oauth2-proxy/clusters/sg3/ingress-kong-manager.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,8 +10,9 @@ metadata:
     cert-manager.io/cluster-issuer: "canhnv-com-prod"
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    # Basic auth middleware for security
-    traefik.ingress.kubernetes.io/router.middlewares: kong-kong-manager-auth@kubernetescrd
+    # OAuth2 Proxy middleware for security
+    # Using oauth2-proxy-chain from oauth2-proxy namespace for proper cross-namespace support
+    traefik.ingress.kubernetes.io/router.middlewares: oauth2-proxy-oauth2-proxy-chain@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
@@ -20,6 +23,7 @@ spec:
     - host: kong-manager.sg3.canhnv.com
       http:
         paths:
+          # Kong Manager - protected by OAuth2 middleware
           - path: /
             pathType: Prefix
             backend:
