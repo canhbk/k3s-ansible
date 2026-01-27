@@ -28,6 +28,12 @@ Welcome to the comprehensive documentation for the K3s Ansible infrastructure pr
 
 ### Service Documentation
 
+#### Authentication
+
+- **[oauth2-proxy Overview](./services/oauth2-proxy/README.md)** - Centralized OAuth2 authentication proxy
+- **[oauth2-proxy Deployment](./services/oauth2-proxy/DEPLOYMENT.md)** - Deploy oauth2-proxy to clusters
+- **[Protecting Services](./services/oauth2-proxy/PROTECTING_SERVICES.md)** - Secure services with OAuth2
+
 #### PostgreSQL
 
 - **[PostgreSQL Exposure Guide](./services/postgresql/EXPOSURE.md)** - How to safely expose PostgreSQL

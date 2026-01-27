@@ -1,0 +1,120 @@
+# oauth2-proxy base Helm values
+# Shared across all clusters
+
+replicaCount: 2
+
+image:
+  registry: quay.io
+  repository: oauth2-proxy/oauth2-proxy
+  tag: "v7.6.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  portNumber: 80
+  appProtocol: http
+
+probeEnabled: true
+
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 0
+  timeoutSeconds: 1
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 0
+  timeoutSeconds: 5
+  periodSeconds: 10
+  successThreshold: 1
+
+securityContext:
+  enabled: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 2000
+  runAsGroup: 2000
+  seccompProfile:
+    type: RuntimeDefault
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 2000
+  runAsGroup: 2000
+  fsGroup: 2000
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - oauth2-proxy
+          topologyKey: kubernetes.io/hostname
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: oauth2-proxy
+
+ingress:
+  enabled: false
+
+metrics:
+  enabled: true
+  port: 44180
+  portName: metrics
+  servicemonitor:
+    enabled: false
+
+config:
+  cookieName: "_oauth2_proxy"
+  configFile: |-
+    upstreams = ["static://200"]
+    email_domains = ["*"]
+    cookie_secure = true
+    cookie_samesite = "lax"
+    cookie_httponly = true
+    cookie_expire = "168h"
+    cookie_refresh = "1h"
+    set_xauthrequest = true
+    set_authorization_header = true
+    pass_access_token = true
+    pass_authorization_header = true
+    pass_user_headers = true
+    skip_provider_button = false
+    silence_ping_logging = true
+    reverse_proxy = true
+    real_client_ip_header = "X-Forwarded-For"
+
+extraArgs:
+  whitelist-domain: ".canhnv.com"
+  cookie-domain: ".canhnv.com"
+
+podLabels:
+  prometheus: kube-prometheus-stack

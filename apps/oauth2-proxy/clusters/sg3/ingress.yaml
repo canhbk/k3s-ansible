@@ -1,0 +1,40 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: oauth2-proxy-tls
+  namespace: oauth2-proxy
+spec:
+  secretName: oauth2-proxy-tls
+  issuerRef:
+    name: canhnv-com-prod
+    kind: ClusterIssuer
+  commonName: "oauth2-proxy.sg3.canhnv.com"
+  dnsNames:
+    - "oauth2-proxy.sg3.canhnv.com"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-proxy
+  namespace: oauth2-proxy
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - oauth2-proxy.sg3.canhnv.com
+      secretName: oauth2-proxy-tls
+  rules:
+    - host: oauth2-proxy.sg3.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 80

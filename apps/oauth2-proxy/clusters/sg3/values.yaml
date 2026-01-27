@@ -1,0 +1,59 @@
+# oauth2-proxy SG3 cluster values
+
+global:
+  additionalLabels:
+    cluster: sg3
+    environment: production
+    region: singapore
+    provider: ovh
+
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+config:
+  existingSecret: oauth2-proxy-secrets
+  configFile: |-
+    upstreams = ["static://200"]
+    email_domains = ["*"]
+    cookie_secure = true
+    cookie_samesite = "lax"
+    cookie_httponly = true
+    cookie_expire = "168h"
+    cookie_refresh = "1h"
+    set_xauthrequest = true
+    set_authorization_header = true
+    pass_access_token = true
+    pass_authorization_header = true
+    pass_user_headers = true
+    skip_provider_button = false
+    silence_ping_logging = true
+    reverse_proxy = true
+    real_client_ip_header = "X-Forwarded-For"
+    provider = "google"
+
+extraArgs:
+  provider: google
+  whitelist-domain: ".canhnv.com,.sg3.canhnv.com"
+  cookie-domain: ".canhnv.com"
+  redirect-url: "https://oauth2-proxy.sg3.canhnv.com/oauth2/callback"
+
+podLabels:
+  app: oauth2-proxy
+  cluster: sg3
+  prometheus: kube-prometheus-stack
+
+extraEnv:
+  - name: OAUTH2_PROXY_COOKIE_DOMAIN
+    value: ".canhnv.com"
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "44180"
+  prometheus.io/path: "/metrics"

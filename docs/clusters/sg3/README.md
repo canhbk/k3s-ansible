@@ -526,3 +526,45 @@ kubectl logs -n monitoring -l app.kubernetes.io/name=grafana
 ```
 
 See [Monitoring SG3 Documentation](../../../monitoring/clusters/sg3/README.md) for detailed information.
+
+## Authentication and Authorization
+
+### oauth2-proxy
+
+**Version**: v7.6.0
+**Namespace**: oauth2-proxy
+**Domain**: https://oauth2-proxy.sg3.canhnv.com
+
+oauth2-proxy provides centralized OAuth2 authentication using Google as the identity provider. It integrates with Traefik's ForwardAuth middleware to protect services.
+
+#### Configuration
+
+- **Provider**: Google OAuth
+- **Replicas**: 2 (high availability)
+- **Cookie Domain**: .canhnv.com
+- **Session Duration**: 168h (7 days)
+- **Metrics**: Prometheus ServiceMonitor enabled
+
+#### Protecting Services
+
+Add this annotation to any Ingress to require authentication:
+
+```yaml
+annotations:
+  traefik.ingress.kubernetes.io/router.middlewares: oauth2-proxy-oauth2-proxy-chain@kubernetescrd
+```
+
+#### Operations
+
+```bash
+# Check status
+kubectl get pods -n oauth2-proxy
+
+# View logs
+kubectl logs -n oauth2-proxy -l app.kubernetes.io/name=oauth2-proxy
+
+# Test health
+curl https://oauth2-proxy.sg3.canhnv.com/ping
+```
+
+See [oauth2-proxy SG3 Documentation](../../../apps/oauth2-proxy/clusters/sg3/README.md) for detailed information.
