@@ -50,6 +50,9 @@ env:
   status_listen: "0.0.0.0:8100"
   # Log level for production
   log_level: warn
+  # Kong Manager GUI settings
+  admin_gui_url: "https://kong-manager.sg3.canhnv.com"
+  admin_gui_api_url: "https://kong-admin.sg3.canhnv.com"
 
 # Custom labels for this cluster
 labels:
@@ -76,3 +79,7 @@ topologySpreadConstraints:
     labelSelector:
       matchLabels:
         app.kubernetes.io/name: kong
+
+# Kong Manager (GUI) - SG3 specific settings
+manager:
+  enabled: true

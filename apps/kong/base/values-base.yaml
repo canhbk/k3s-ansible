@@ -56,6 +56,17 @@ status:
     containerPort: 8100
     servicePort: 8100
 
+# Kong Manager (GUI) Configuration
+manager:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: true
+    containerPort: 8002
+    servicePort: 8002
+  tls:
+    enabled: false  # TLS handled by Traefik ingress
+
 # Ingress Controller Settings
 ingressController:
   enabled: true
@@ -172,6 +183,8 @@ env:
   trusted_ips: "0.0.0.0/0,::/0"
   real_ip_header: X-Forwarded-For
   real_ip_recursive: "on"
+  # Kong Manager settings
+  admin_gui_listen: "0.0.0.0:8002"
 
 # Affinity for HA - spread across nodes
 affinity:

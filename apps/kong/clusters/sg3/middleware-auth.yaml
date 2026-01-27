@@ -1,0 +1,20 @@
+# Basic Authentication Middleware for Kong Manager
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: kong-manager-auth
+  namespace: kong
+spec:
+  basicAuth:
+    secret: kong-manager-basic-auth
+---
+# Secret for basic auth credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kong-manager-basic-auth
+  namespace: kong
+type: Opaque
+stringData:
+  users: |
+    admin:$apr1$6Z2PgllB$zcHgtVjiywFZEBsqLrY011

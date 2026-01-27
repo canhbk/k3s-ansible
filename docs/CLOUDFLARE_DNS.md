@@ -92,6 +92,15 @@ dig +short subdomain.canhnv.com @1.1.1.1
 | web-alpha.clotheshop | A | 15.235.197.12 | SG3 |
 | admin-alpha.clotheshop | A | 15.235.197.12 | SG3 |
 
+### Kong API Gateway (SG3)
+
+| Subdomain | Type | Target IP | Cluster | Purpose |
+|-----------|------|-----------|---------|---------|
+| kong.sg3 | A | 15.235.197.12 | SG3 | Kong Proxy |
+| api.sg3 | A | 15.235.197.12 | SG3 | Kong Proxy (Alias) |
+| kong-admin.sg3 | A | 15.235.197.12 | SG3 | Kong Admin API |
+| kong-manager.sg3 | A | 15.235.197.12 | SG3 | Kong Manager GUI |
+
 ## Token Permissions
 
 The token requires:

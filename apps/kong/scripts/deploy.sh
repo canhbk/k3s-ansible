@@ -81,6 +81,18 @@ if [ -f "$CLUSTER_DIR/ingress.yaml" ]; then
     kubectl apply -f "$CLUSTER_DIR/ingress.yaml"
 fi
 
+# Apply Kong Manager ingress configuration
+if [ -f "$CLUSTER_DIR/ingress-manager.yaml" ]; then
+    echo -e "${YELLOW}Applying Kong Manager ingress configuration...${NC}"
+    kubectl apply -f "$CLUSTER_DIR/ingress-manager.yaml"
+fi
+
+# Apply authentication middleware
+if [ -f "$CLUSTER_DIR/middleware-auth.yaml" ]; then
+    echo -e "${YELLOW}Applying authentication middleware...${NC}"
+    kubectl apply -f "$CLUSTER_DIR/middleware-auth.yaml"
+fi
+
 # Apply Grafana dashboard
 MONITORING_DIR="$SCRIPT_DIR/../../monitoring/clusters/$CLUSTER"
 if [ -f "$MONITORING_DIR/kong-dashboard-configmap.yaml" ]; then
@@ -110,6 +122,7 @@ echo ""
 echo -e "${GREEN}Access Information:${NC}"
 echo "Kong Proxy: https://kong.$CLUSTER.canhnv.com"
 echo "Kong Admin API: kubectl port-forward -n kong svc/kong-kong-admin 8001:8001"
+echo "Kong Manager: https://kong-manager.$CLUSTER.canhnv.com"
 echo ""
 echo "Grafana Dashboard: https://grafana.$CLUSTER.k3s.canhnv.com"
 echo "(Import dashboard: Kong API Gateway - SG3)"
