@@ -1,0 +1,78 @@
+# SG3 cluster values for Kong Ingress Controller
+# Production configuration with HA
+
+# Global labels
+global:
+  additionalLabels:
+    cluster: sg3
+    environment: production
+    region: singapore
+    provider: ovh
+
+# Kong Gateway Configuration
+deployment:
+  kong:
+    replicaCount: 2  # HA across nodes
+
+# Ingress Controller
+ingressController:
+  replicaCount: 2  # HA across nodes
+
+  # Resources for SG3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+  # Labels for ServiceMonitor discovery
+  serviceAccount:
+    annotations: {}
+    labels:
+      prometheus: kube-prometheus-stack
+
+# Kong Gateway Resources for SG3
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 2
+    memory: 2Gi
+
+# Environment overrides for SG3
+env:
+  # Cluster-specific identifier
+  kong_cluster_id: sg3
+  # Enable all status endpoint metrics
+  status_listen: "0.0.0.0:8100"
+  # Log level for production
+  log_level: warn
+
+# Custom labels for this cluster
+labels:
+  cluster: sg3
+  monitoring: enabled
+
+# Annotations
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8100"
+  prometheus.io/path: "/metrics"
+
+# Pod labels for ServiceMonitor matching
+podLabels:
+  app: kong
+  cluster: sg3
+  prometheus: kube-prometheus-stack
+
+# Topology spread constraints for better HA
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: kong

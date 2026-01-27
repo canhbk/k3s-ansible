@@ -1,0 +1,63 @@
+# ServiceMonitor for Kong Gateway Prometheus metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kong-gateway
+  namespace: kong
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app: kong
+    cluster: sg3
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kong
+  namespaceSelector:
+    matchNames:
+      - kong
+  endpoints:
+    # Status API endpoint for Kong metrics
+    - port: status
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: true
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - targetLabel: cluster
+          replacement: sg3
+---
+# ServiceMonitor for Kong Ingress Controller metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kong-ingress-controller
+  namespace: kong
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app: kong-ingress-controller
+    cluster: sg3
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+  namespaceSelector:
+    matchNames:
+      - kong
+  endpoints:
+    - port: cmetrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - targetLabel: cluster
+          replacement: sg3

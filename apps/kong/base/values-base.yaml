@@ -1,0 +1,194 @@
+# Base values for Kong Ingress Controller
+# Shared across all clusters
+# Cluster-specific values should override these
+
+# Kong replicas at root level
+replicaCount: 2
+
+# Kong Gateway Deployment Configuration
+deployment:
+  kong:
+    enabled: true
+    replicaCount: 2
+
+  # Kong Ingress Controller
+  ingressController:
+    enabled: true
+    # Use stable immutable tag for production
+    image:
+      repository: kong/kubernetes-ingress-controller
+      tag: "3.5"
+    # Leader election for HA
+    args:
+      - --leader-elect
+      - --watch-namespace=
+
+# Kong Gateway Proxy Configuration
+proxy:
+  enabled: true
+  type: ClusterIP  # Use Ingress for external access
+  http:
+    enabled: true
+    containerPort: 8000
+    servicePort: 80
+  tls:
+    enabled: true
+    containerPort: 8443
+    servicePort: 443
+    # Enable HTTP/2 for better performance
+    parameters:
+      - http2
+
+# Admin API - Internal only
+admin:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: true
+    containerPort: 8001
+    servicePort: 8001
+
+# Status API for metrics
+status:
+  enabled: true
+  http:
+    enabled: true
+    containerPort: 8100
+    servicePort: 8100
+
+# Ingress Controller Settings
+ingressController:
+  enabled: true
+  image:
+    repository: kong/kubernetes-ingress-controller
+    tag: "3.5"
+
+  # RBAC
+  rbac:
+    create: true
+    enableClusterRoles: true
+
+  # Admission Webhook for validation
+  admissionWebhook:
+    enabled: true
+    failurePolicy: Fail
+    port: 8080
+
+  # Resource limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Environment variables
+  env:
+    # Election ID for HA
+    election_id: kong-ingress-controller-leader
+
+# Kong Gateway Resource Limits
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 2
+    memory: 2Gi
+
+# Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+
+# Update Strategy
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+# Liveness and Readiness Probes
+livenessProbe:
+  httpGet:
+    path: /status
+    port: status
+    scheme: HTTP
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /status/ready
+    port: status
+    scheme: HTTP
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Service Monitor for Prometheus
+serviceMonitor:
+  enabled: false  # We'll create custom ServiceMonitor
+
+# Gateway Plugin defaults
+env:
+  # Database-less mode
+  database: "off"
+  # Enable Prometheus plugin
+  plugins: bundled
+  # Nginx worker processes
+  nginx_worker_processes: auto
+  # Proxy timeouts
+  proxy_read_timeout: 60000
+  proxy_connect_timeout: 10000
+  proxy_send_timeout: 60000
+  # Upstream keepalive
+  upstream_keepalive_pool_size: 60
+  upstream_keepalive_max_requests: 100
+  upstream_keepalive_idle_timeout: 60
+  # DNS resolver - disabled, Kong uses default Kubernetes DNS
+  # dns_resolver: kube-dns.kube-system.svc.cluster.local
+  # Log format
+  proxy_access_log: /dev/stdout
+  proxy_error_log: /dev/stderr
+  # Trusted IPs for X-Forwarded headers
+  trusted_ips: "0.0.0.0/0,::/0"
+  real_ip_header: X-Forwarded-For
+  real_ip_recursive: "on"
+
+# Affinity for HA - spread across nodes
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - kong
+          topologyKey: kubernetes.io/hostname
+
+# Tolerations - none by default
+tolerations: []
+
+# Node selector - none by default
+nodeSelector: {}

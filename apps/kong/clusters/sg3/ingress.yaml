@@ -1,0 +1,70 @@
+# Ingress for Kong Gateway Proxy (external access via Traefik)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kong-proxy
+  namespace: kong
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Pass through to Kong for handling
+    traefik.ingress.kubernetes.io/router.middlewares: ""
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - kong.sg3.canhnv.com
+        - api.sg3.canhnv.com
+      secretName: kong-proxy-tls
+  rules:
+    - host: kong.sg3.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kong-kong-proxy
+                port:
+                  number: 80
+    - host: api.sg3.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kong-kong-proxy
+                port:
+                  number: 80
+---
+# Ingress for Kong Admin API (optional - for internal management)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kong-admin
+  namespace: kong
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Basic auth middleware for security (create separately)
+    traefik.ingress.kubernetes.io/router.middlewares: kong-admin-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - kong-admin.sg3.canhnv.com
+      secretName: kong-admin-tls
+  rules:
+    - host: kong-admin.sg3.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kong-kong-admin
+                port:
+                  number: 8001

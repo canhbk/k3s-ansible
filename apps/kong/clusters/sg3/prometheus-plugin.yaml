@@ -1,0 +1,17 @@
+# KongClusterPlugin for Prometheus metrics
+# This enables Kong to expose Prometheus metrics on the status API
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: prometheus
+  labels:
+    global: "true"
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: prometheus
+config:
+  status_code_metrics: true
+  latency_metrics: true
+  bandwidth_metrics: true
+  upstream_health_metrics: true
+  per_consumer: false

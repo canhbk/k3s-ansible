@@ -1,0 +1,290 @@
+# Prometheus Alert Rules for Kong API Gateway
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kong-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app: kube-prometheus-stack
+    cluster: sg3
+spec:
+  groups:
+    # Kong Gateway Health Alerts
+    - name: kong-gateway-health
+      interval: 30s
+      rules:
+        # Critical: Kong Gateway down
+        - alert: KongGatewayDown
+          expr: |
+            up{job="kong-gateway", namespace="kong"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "Kong Gateway instance {{ $labels.pod }} is down"
+            description: "Kong Gateway pod {{ $labels.pod }} has been unavailable for more than 2 minutes."
+
+        # Critical: All Kong instances down
+        - alert: KongGatewayAllDown
+          expr: |
+            count(up{job="kong-gateway", namespace="kong"} == 1) == 0
+          for: 1m
+          labels:
+            severity: critical
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "All Kong Gateway instances are down"
+            description: "No Kong Gateway instances are responding. This is a complete API gateway outage."
+
+        # Warning: Kong Gateway unhealthy
+        - alert: KongGatewayUnhealthy
+          expr: |
+            kong_dataplane_last_seen < (time() - 60)
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "Kong Gateway {{ $labels.pod }} is unhealthy"
+            description: "Kong Gateway {{ $labels.pod }} has not reported health for more than 5 minutes."
+
+    # Kong Latency Alerts
+    - name: kong-latency
+      interval: 30s
+      rules:
+        # Warning: High request latency (P95 > 500ms)
+        - alert: KongHighRequestLatencyP95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(kong_request_latency_ms_bucket{namespace="kong"}[5m])) by (le, service)
+            ) > 500
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "High request latency on Kong service {{ $labels.service }}"
+            description: "95th percentile latency is {{ $value | printf \"%.2f\" }}ms for service {{ $labels.service }}."
+
+        # Critical: Very high request latency (P95 > 2000ms)
+        - alert: KongVeryHighRequestLatencyP95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(kong_request_latency_ms_bucket{namespace="kong"}[5m])) by (le, service)
+            ) > 2000
+          for: 5m
+          labels:
+            severity: critical
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "Very high request latency on Kong service {{ $labels.service }}"
+            description: "95th percentile latency is {{ $value | printf \"%.2f\" }}ms for service {{ $labels.service }}."
+
+        # Warning: High Kong internal latency
+        - alert: KongHighInternalLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(kong_kong_latency_ms_bucket{namespace="kong"}[5m])) by (le)
+            ) > 50
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "High Kong internal processing latency"
+            description: "Kong's internal processing latency (routing + plugins) is {{ $value | printf \"%.2f\" }}ms at P95."
+
+    # Kong Error Rate Alerts
+    - name: kong-error-rates
+      interval: 30s
+      rules:
+        # Warning: High 4xx error rate (> 5%)
+        - alert: KongHigh4xxErrorRate
+          expr: |
+            (
+              sum(rate(kong_http_requests_total{namespace="kong", code=~"4.."}[5m])) by (service)
+              /
+              sum(rate(kong_http_requests_total{namespace="kong"}[5m])) by (service)
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "High 4xx error rate on Kong service {{ $labels.service }}"
+            description: "4xx error rate is {{ $value | humanizePercentage }} for service {{ $labels.service }}."
+
+        # Critical: High 5xx error rate (> 1%)
+        - alert: KongHigh5xxErrorRate
+          expr: |
+            (
+              sum(rate(kong_http_requests_total{namespace="kong", code=~"5.."}[5m])) by (service)
+              /
+              sum(rate(kong_http_requests_total{namespace="kong"}[5m])) by (service)
+            ) > 0.01
+          for: 5m
+          labels:
+            severity: critical
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "High 5xx error rate on Kong service {{ $labels.service }}"
+            description: "5xx error rate is {{ $value | humanizePercentage }} for service {{ $labels.service }}."
+
+        # Critical: Very high 5xx error rate (> 5%)
+        - alert: KongVeryHigh5xxErrorRate
+          expr: |
+            (
+              sum(rate(kong_http_requests_total{namespace="kong", code=~"5.."}[5m])) by (service)
+              /
+              sum(rate(kong_http_requests_total{namespace="kong"}[5m])) by (service)
+            ) > 0.05
+          for: 2m
+          labels:
+            severity: critical
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "Very high 5xx error rate on Kong service {{ $labels.service }}"
+            description: "5xx error rate is {{ $value | humanizePercentage }} for service {{ $labels.service }}. Immediate attention required."
+
+    # Kong Resource Alerts
+    - name: kong-resources
+      interval: 30s
+      rules:
+        # Warning: High memory usage
+        - alert: KongHighMemoryUsage
+          expr: |
+            (
+              sum(container_memory_working_set_bytes{namespace="kong", pod=~"kong-.*", container="kong"})
+              /
+              sum(container_spec_memory_limit_bytes{namespace="kong", pod=~"kong-.*", container="kong"})
+            ) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "Kong pods using high memory"
+            description: "Kong pods are using {{ $value | humanizePercentage }} of their memory limit."
+
+        # Warning: High CPU usage
+        - alert: KongHighCPUUsage
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="kong", pod=~"kong-.*", container="kong"}[5m]))
+              /
+              sum(container_spec_cpu_quota{namespace="kong", pod=~"kong-.*", container="kong"} / 100000)
+            ) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "Kong pods using high CPU"
+            description: "Kong pods are using {{ $value | humanizePercentage }} of their CPU limit."
+
+        # Warning: Pod restarts
+        - alert: KongPodRestarts
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="kong", pod=~"kong-.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "Kong pod {{ $labels.pod }} is restarting"
+            description: "Pod {{ $labels.pod }} has restarted {{ $value | humanize }} times in the last 15 minutes."
+
+    # Kong Upstream Health Alerts
+    - name: kong-upstream-health
+      interval: 30s
+      rules:
+        # Warning: Upstream target unhealthy
+        - alert: KongUpstreamTargetUnhealthy
+          expr: |
+            kong_upstream_target_health{state="unhealthy"} == 1
+          for: 2m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "Kong upstream target is unhealthy"
+            description: "Upstream {{ $labels.upstream }} target {{ $labels.target }} is in unhealthy state."
+
+        # Critical: All upstream targets unhealthy
+        - alert: KongAllUpstreamTargetsUnhealthy
+          expr: |
+            count(kong_upstream_target_health{state="healthy"} == 1) by (upstream) == 0
+            and count(kong_upstream_target_health) by (upstream) > 0
+          for: 2m
+          labels:
+            severity: critical
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "All targets for upstream {{ $labels.upstream }} are unhealthy"
+            description: "No healthy targets available for upstream {{ $labels.upstream }}. Services may be unavailable."
+
+    # Kong Ingress Controller Alerts
+    - name: kong-ingress-controller
+      interval: 30s
+      rules:
+        # Warning: KIC config push failures
+        - alert: KongIngressControllerConfigPushFailed
+          expr: |
+            increase(ingress_controller_configuration_push_count{success="false", namespace="kong"}[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong-ingress-controller
+          annotations:
+            summary: "Kong Ingress Controller config push failures"
+            description: "KIC has failed to push configuration to Kong Gateway {{ $value }} times in the last 5 minutes."
+
+        # Warning: KIC high translation time
+        - alert: KongIngressControllerSlowTranslation
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(ingress_controller_translation_count_bucket{namespace="kong"}[5m])) by (le)
+            ) > 5
+          for: 5m
+          labels:
+            severity: warning
+            cluster: sg3
+            service: kong-ingress-controller
+          annotations:
+            summary: "Kong Ingress Controller slow configuration translation"
+            description: "KIC configuration translation is taking {{ $value | printf \"%.2f\" }}s at P95."
+
+    # Kong Bandwidth Alerts
+    - name: kong-bandwidth
+      interval: 30s
+      rules:
+        # Info: High bandwidth throughput
+        - alert: KongHighBandwidthThroughput
+          expr: |
+            sum(rate(kong_bandwidth_bytes{namespace="kong", direction="egress"}[5m])) > 100000000
+          for: 10m
+          labels:
+            severity: info
+            cluster: sg3
+            service: kong
+          annotations:
+            summary: "High bandwidth throughput through Kong"
+            description: "Kong is handling {{ $value | humanize }}B/s of egress traffic."
