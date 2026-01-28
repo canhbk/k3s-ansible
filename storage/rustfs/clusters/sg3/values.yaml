@@ -17,10 +17,11 @@ image:
 replicaCount: 1
 
 # Longhorn storage for persistence
-persistence:
-  enabled: true
-  storageClass: longhorn
-  size: 15Gi
+# Note: The Helm chart uses 'storageclass' (not 'persistence') for PVC configuration
+storageclass:
+  name: longhorn
+  dataStorageSize: 15Gi
+  logStorageSize: 1Gi
 
 # S3 API and Console credentials
 secret:

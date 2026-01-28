@@ -95,3 +95,12 @@ kubectl logs -n rustfs deployment/rustfs
 
 - `values.yaml` - Helm chart values
 - `ingress.yaml` - Traefik ingress configuration
+
+## Migration History
+
+- **2025-01-28**: Migrated from `local-path` (256Mi) to `longhorn` (15Gi) storage class for better data resilience
+- **2025-01-07**: Initial deployment with local-path storage
+
+## Notes
+
+The RustFS Helm chart uses `storageclass.name` parameter instead of the more common `persistence.storageClass`. See values.yaml for correct configuration.

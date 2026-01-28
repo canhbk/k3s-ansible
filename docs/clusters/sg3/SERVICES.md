@@ -38,6 +38,13 @@ This document provides a quick reference for all services deployed on the SG3 cl
 |---------|-----|-----------|---------|----------------|
 | **RabbitMQ** | https://rabbitmq.sg3.canhnv.com | rabbitmq | Message broker HA cluster (3 replicas) | (from secret rabbitmq-default-user) |
 
+### Storage Services
+
+| Service | URL | Namespace | Purpose | Authentication |
+|---------|-----|-----------|---------|----------------|
+| **RustFS S3 API** | https://rustfs.sg3.canhnv.com | rustfs | S3-compatible object storage | rustfsadmin / (see secret) |
+| **RustFS Console** | https://rustfs-console.sg3.canhnv.com | rustfs | RustFS web management console | rustfsadmin / (see secret) |
+
 ### Applications
 
 | Service | URL | Namespace | Purpose | Authentication |
@@ -188,6 +195,21 @@ kubectl get secret rabbitmq-default-user -n rabbitmq \
 
 **Note**: For detailed connection information and examples, see [rabbitmq/clusters/sg3/CONNECTION_INFO.md](../../../rabbitmq/clusters/sg3/CONNECTION_INFO.md)
 
+### RustFS Credentials
+
+The credentials are stored in the Helm values file:
+- **Access Key**: rustfsadmin
+- **Secret Key**: (see values.yaml in storage/rustfs/clusters/sg3/)
+
+Or retrieve from Kubernetes secret:
+
+```bash
+kubectl get secret rustfs-creds -n rustfs \
+  -o jsonpath='{.data.access-key}' | base64 -d && echo
+kubectl get secret rustfs-creds -n rustfs \
+  -o jsonpath='{.data.secret-key}' | base64 -d && echo
+```
+
 ## Service Health Checks
 
 ### Check All Services Status
@@ -307,6 +329,7 @@ kubectl describe cluster postgresql-sg3-pgvector -n postgres-db
 
 ## Change Log
 
+- **2025-01-28**: Added RustFS S3-compatible storage service (15Gi Longhorn storage)
 - **2025-01-14**:
   - Added Auth Service (murror-platform) for AmberCare Alpha environment
   - Added Auth Service UI (nsp-auth-service-alpha) for AmberCare Alpha environment
