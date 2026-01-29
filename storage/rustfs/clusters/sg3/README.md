@@ -91,16 +91,79 @@ kubectl get ingress -n rustfs
 kubectl logs -n rustfs deployment/rustfs
 ```
 
+## Bucket Policies
+
+### Public Buckets
+
+The following buckets are configured with public read access for anonymous GetObject requests:
+
+| Bucket Name | Purpose | Policy File | Public URL Pattern |
+|-------------|---------|-------------|-------------------|
+| `murror-articles-alpha` | Alpha environment article storage | `bucket-policy-murror-articles-alpha.json` | `https://rustfs.sg3.canhnv.com/murror-articles-alpha/{path}` |
+| `murror-articles-preview` | Preview environment article storage | `bucket-policy-murror-articles-preview.json` | `https://rustfs.sg3.canhnv.com/murror-articles-preview/{path}` |
+
+**Security Notes:**
+- Directory listing (ListBucket) is denied for security
+- Only GetObject requests are allowed
+- Objects are accessible via direct URL without authentication
+- Useful for serving public assets like article cover images
+
+### Applying Bucket Policies
+
+Using Python with boto3:
+
+```python
+import boto3
+import json
+from botocore.client import Config
+
+s3_client = boto3.client(
+    's3',
+    endpoint_url='https://rustfs.sg3.canhnv.com',
+    aws_access_key_id='rustfsadmin',
+    aws_secret_access_key='__REDACTED__',
+    config=Config(signature_version='s3v4'),
+    verify=True
+)
+
+# Read and apply policy
+with open('bucket-policy-murror-articles-alpha.json', 'r') as f:
+    policy = json.load(f)
+
+s3_client.put_bucket_policy(
+    Bucket='murror-articles-alpha',
+    Policy=json.dumps(policy)
+)
+```
+
+### Testing Public Access
+
+```bash
+# Test file access (should return HTTP 200)
+curl -I "https://rustfs.sg3.canhnv.com/murror-articles-alpha/path/to/file.jpg"
+
+# Test directory listing (should return HTTP 403)
+curl -I "https://rustfs.sg3.canhnv.com/murror-articles-alpha/"
+
+# Test non-existent file (should return HTTP 404)
+curl -I "https://rustfs.sg3.canhnv.com/murror-articles-alpha/nonexistent.jpg"
+```
+
 ## Files
 
 - `values.yaml` - Helm chart values
 - `ingress.yaml` - Traefik ingress configuration
+- `bucket-policy-murror-articles-alpha.json` - Public read policy for alpha bucket
+- `bucket-policy-murror-articles-preview.json` - Public read policy for preview bucket
 
 ## Migration History
 
+- **2026-01-29**: Configured public read access for `murror-articles-alpha` and `murror-articles-preview` buckets
 - **2025-01-28**: Migrated from `local-path` (256Mi) to `longhorn` (15Gi) storage class for better data resilience
 - **2025-01-07**: Initial deployment with local-path storage
 
 ## Notes
 
 The RustFS Helm chart uses `storageclass.name` parameter instead of the more common `persistence.storageClass`. See values.yaml for correct configuration.
+
+RustFS uses S3v4 signature for authentication. Use `--api s3v4` or `Config(signature_version='s3v4')` when configuring S3 clients.
