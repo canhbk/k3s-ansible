@@ -26,7 +26,7 @@ Default credentials (change after first login):
 
 - **Storage Class**: longhorn
 - **Capacity**: 15Gi
-- **Replicas**: 3 (Longhorn default)
+- **Longhorn Replicas**: 1 (reduced from default 3 due to cluster disk pressure)
 
 ## Usage
 
@@ -158,6 +158,7 @@ curl -I "https://rustfs.sg3.canhnv.com/murror-articles-alpha/nonexistent.jpg"
 
 ## Migration History
 
+- **2026-01-31**: Reduced Longhorn replica count from 3 to 1 (volume faulted due to insufficient disk space for multi-replica scheduling)
 - **2026-01-29**: Configured public read access for `murror-articles-alpha` and `murror-articles-preview` buckets
 - **2025-01-28**: Migrated from `local-path` (256Mi) to `longhorn` (15Gi) storage class for better data resilience
 - **2025-01-07**: Initial deployment with local-path storage

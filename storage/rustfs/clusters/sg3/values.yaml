@@ -18,6 +18,8 @@ replicaCount: 1
 
 # Longhorn storage for persistence
 # Note: The Helm chart uses 'storageclass' (not 'persistence') for PVC configuration
+# Longhorn replica count set to 1 via volume patch (cluster has insufficient disk space for 3 replicas)
+# Applied: kubectl -n longhorn-system patch volumes.longhorn.io <pvc-name> --type=merge -p '{"spec":{"numberOfReplicas":1}}'
 storageclass:
   name: longhorn
   dataStorageSize: 15Gi
