@@ -1,0 +1,49 @@
+# EU Cluster RustFS Standalone Configuration
+# S3-compatible object storage for application storage
+# Deployment Date: 2025-01-31
+
+mode:
+  standalone:
+    enabled: true
+  distributed:
+    enabled: false
+
+image:
+  repository: rustfs/rustfs
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Standalone uses single replica
+replicaCount: 1
+
+# Longhorn storage for persistence
+# Reduced to 25Gi per user request
+storageclass:
+  name: longhorn
+  dataStorageSize: 25Gi
+  logStorageSize: 1Gi
+
+# S3 API and Console credentials
+secret:
+  rustfs:
+    access_key: rustfsadmin
+    secret_key: __REDACTED__
+
+# Ingress handled separately for cert-manager integration
+ingress:
+  enabled: false
+
+# Resource limits
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 100m
+  limits:
+    memory: 1Gi
+    cpu: 500m
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 9000
+  consolePort: 9001

@@ -1,0 +1,56 @@
+# RustFS S3 API Ingress for EU Cluster
+# Access via: https://rustfs.eu.canhnv.com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rustfs-api
+  namespace: rustfs
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - rustfs.eu.canhnv.com
+      secretName: rustfs.eu.canhnv.com-tls
+  rules:
+    - host: rustfs.eu.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rustfs-svc
+                port:
+                  number: 9000
+---
+# RustFS Web Console Ingress for EU Cluster
+# Access via: https://rustfs-console.eu.canhnv.com
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rustfs-console
+  namespace: rustfs
+  annotations:
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - rustfs-console.eu.canhnv.com
+      secretName: rustfs-console.eu.canhnv.com-tls
+  rules:
+    - host: rustfs-console.eu.canhnv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rustfs-svc
+                port:
+                  number: 9001
