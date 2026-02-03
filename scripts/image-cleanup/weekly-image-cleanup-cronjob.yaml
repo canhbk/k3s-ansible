@@ -1,0 +1,212 @@
+# Weekly Container Image Cleanup CronJob
+# Automatically cleans up unused container images on all nodes
+# Schedule: Every Sunday at 2:00 AM
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: image-cleanup-sa
+  namespace: kube-system
+  labels:
+    app: image-cleanup
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: image-cleanup-role
+  labels:
+    app: image-cleanup
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["list", "get"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "delete", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list", "get", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: image-cleanup-binding
+  labels:
+    app: image-cleanup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: image-cleanup-role
+subjects:
+  - kind: ServiceAccount
+    name: image-cleanup-sa
+    namespace: kube-system
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: weekly-image-cleanup
+  namespace: kube-system
+  labels:
+    app: image-cleanup
+spec:
+  schedule: "0 2 * * 0"  # Every Sunday at 2:00 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: image-cleanup
+        component: controller
+    spec:
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app: image-cleanup
+            component: controller
+        spec:
+          serviceAccountName: image-cleanup-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: controller
+              image: bitnami/kubectl:1.31
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -e
+                  echo "=== Weekly Image Cleanup Controller ==="
+                  echo "Started at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+                  
+                  # Get all node names
+                  NODES=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
+                  echo "Discovered nodes: $NODES"
+                  
+                  # Generate unique run ID
+                  RUN_ID=$(date +%Y%m%d%H%M%S)
+                  
+                  # Create cleanup job for each node
+                  for NODE in $NODES; do
+                    JOB_NAME="image-cleanup-${NODE}-${RUN_ID}"
+                    echo "Creating cleanup job for node: $NODE (job: $JOB_NAME)"
+                    
+                    kubectl apply -f - <<EOF
+                  apiVersion: batch/v1
+                  kind: Job
+                  metadata:
+                    name: ${JOB_NAME}
+                    namespace: kube-system
+                    labels:
+                      app: image-cleanup
+                      component: node-cleanup
+                      node: ${NODE}
+                      run-id: "${RUN_ID}"
+                  spec:
+                    ttlSecondsAfterFinished: 3600
+                    backoffLimit: 2
+                    template:
+                      metadata:
+                        labels:
+                          app: image-cleanup
+                          component: node-cleanup
+                          node: ${NODE}
+                      spec:
+                        nodeSelector:
+                          kubernetes.io/hostname: ${NODE}
+                        hostNetwork: true
+                        hostPID: true
+                        restartPolicy: Never
+                        tolerations:
+                          - operator: Exists
+                        containers:
+                          - name: cleanup
+                            image: alpine:3.19
+                            resources:
+                              requests:
+                                cpu: 50m
+                                memory: 32Mi
+                              limits:
+                                cpu: 500m
+                                memory: 128Mi
+                            securityContext:
+                              privileged: true
+                            command:
+                              - nsenter
+                              - --target
+                              - "1"
+                              - --mount
+                              - --uts
+                              - --ipc
+                              - --net
+                              - --pid
+                              - --
+                              - sh
+                              - -c
+                              - |
+                                echo "=== Image Cleanup on ${NODE} ==="
+                                echo "Started at: \$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+                                
+                                # Show disk usage before cleanup
+                                echo ""
+                                echo "Disk usage before cleanup:"
+                                df -h /var/lib/rancher/k3s/agent/containerd || df -h /
+                                
+                                # List images before cleanup
+                                echo ""
+                                echo "Images before cleanup:"
+                                crictl images | head -20
+                                IMAGE_COUNT_BEFORE=\$(crictl images -q | wc -l)
+                                echo "Total images: \$IMAGE_COUNT_BEFORE"
+                                
+                                # Perform cleanup
+                                echo ""
+                                echo "Running image cleanup..."
+                                crictl rmi --prune 2>&1 || true
+                                
+                                # Show results
+                                echo ""
+                                echo "Images after cleanup:"
+                                crictl images | head -20
+                                IMAGE_COUNT_AFTER=\$(crictl images -q | wc -l)
+                                echo "Total images: \$IMAGE_COUNT_AFTER"
+                                
+                                # Show disk usage after cleanup
+                                echo ""
+                                echo "Disk usage after cleanup:"
+                                df -h /var/lib/rancher/k3s/agent/containerd || df -h /
+                                
+                                # Summary
+                                REMOVED=\$((IMAGE_COUNT_BEFORE - IMAGE_COUNT_AFTER))
+                                echo ""
+                                echo "=== Cleanup Summary ==="
+                                echo "Images removed: \$REMOVED"
+                                echo "Completed at: \$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+                  EOF
+                  done
+                  
+                  # Wait for all cleanup jobs to complete
+                  echo ""
+                  echo "Waiting for cleanup jobs to complete..."
+                  for NODE in $NODES; do
+                    JOB_NAME="image-cleanup-${NODE}-${RUN_ID}"
+                    echo "Waiting for job: $JOB_NAME"
+                    kubectl wait --for=condition=complete --timeout=600s job/$JOB_NAME -n kube-system || \
+                      echo "Warning: Job $JOB_NAME did not complete successfully"
+                  done
+                  
+                  # Print summary
+                  echo ""
+                  echo "=== Final Summary ==="
+                  echo "All cleanup jobs processed"
+                  kubectl get jobs -n kube-system -l app=image-cleanup,run-id="${RUN_ID}" -o wide
+                  echo ""
+                  echo "Controller completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
