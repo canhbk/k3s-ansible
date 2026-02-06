@@ -20,7 +20,7 @@ metadata:
 spec:
   images:
     - major: 17
-      image: pgvector/pgvector:0.8.0-pg17
+      image: pgvector/pgvector:0.8.1-pg17
 
 ---
 apiVersion: postgresql.cnpg.io/v1
@@ -110,6 +110,14 @@ spec:
   storage:
     storageClass: longhorn-vn
     size: 20Gi
+
+  # Barman Cloud Plugin for backup (pgvector image lacks built-in barman-cloud)
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: pgvector-cnpg-backup-store
+        serverName: postgresql-pgvector-cnpg-vn
 
 ---
 # Database definitions

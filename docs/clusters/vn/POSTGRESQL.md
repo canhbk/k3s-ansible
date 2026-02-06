@@ -2,12 +2,13 @@
 
 ## Overview
 
-PostgreSQL is deployed on the VN cluster with two separate instances:
+PostgreSQL is deployed on the VN cluster with three instances:
 
 1. **postgresql-ha**: Standard PostgreSQL 17 HA cluster (CloudNative-PG managed)
-2. **postgresql-pgvector**: PostgreSQL 17 with pgvector extension (**Manual StatefulSet** - see note below)
+2. **postgresql-pgvector-cnpg**: PostgreSQL 17 with pgvector extension (CloudNative-PG managed, R2 backup enabled)
+3. **postgresql-pgvector**: PostgreSQL 17 with pgvector extension (**Manual StatefulSet** - legacy, kept for rollback)
 
-**IMPORTANT**: The postgresql-pgvector instance is currently running as a manual StatefulSet due to disk space issues. See [POSTGRESQL_PGVECTOR_MANUAL.md](./POSTGRESQL_PGVECTOR_MANUAL.md) for details.
+**NOTE**: As of 2026-02-06, murror-ai has been migrated from `postgresql-pgvector` (manual StatefulSet) to `postgresql-pgvector-cnpg` (CNPG-managed). The manual StatefulSet is kept running for rollback purposes. See [POSTGRESQL_PGVECTOR_MANUAL.md](./POSTGRESQL_PGVECTOR_MANUAL.md) for the manual StatefulSet details.
 
 ## Internal Access
 
@@ -105,6 +106,27 @@ PostgreSQL HA cluster is configured with automated backups to Cloudflare R2:
 - **WAL Archiving**: Enabled with gzip compression
 - **First Recovery Point**: 2025-12-08T09:30:06Z
 
+### PostgreSQL pgvector CNPG Backup Configuration
+
+The pgvector CNPG cluster also has automated backups to Cloudflare R2 via the Barman Cloud Plugin:
+
+- **Provider**: Cloudflare R2 (via Barman Cloud Plugin sidecar)
+- **Bucket**: `murror-api-prod-postgres-backup`
+- **Path**: `s3://murror-api-prod-postgres-backup/postgresql-pgvector-cnpg-vn/`
+- **Schedule**: Every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
+- **Retention**: 30 days
+- **WAL Archiving**: Enabled with gzip compression (via barman-cloud sidecar)
+- **Image**: `pgvector/pgvector:0.8.1-pg17` (pgvector v0.8.1)
+- **Plugin**: `barman-cloud.cloudnative-pg.io` v0.6.0
+
+**Note**: Unlike postgresql-ha which uses the built-in barman-cloud tools in the CNPG standard image, the pgvector cluster uses the Barman Cloud Plugin (sidecar injection) because the `pgvector/pgvector` image doesn't include barman-cloud tools. The cluster's `postgresUID: 999` is immutable and prevents switching to the standard CNPG image (which uses UID 26).
+
+#### Manifest Files
+
+- `database/postgresql/clusters/vn/cluster-pgvector-cnpg.yaml` — Cluster definition with plugin config
+- `database/postgresql/clusters/vn/objectstore-pgvector-cnpg.yaml` — ObjectStore CRD for R2 backup
+- `database/postgresql/clusters/vn/scheduled-backup-pgvector-cnpg-hourly.yaml` — ScheduledBackup (6-hourly)
+
 ### Backup Status
 
 ```bash
@@ -140,16 +162,23 @@ On 2025-12-08, the VN cluster backup was successfully restored to the EU cluster
 - **Storage Class**: `longhorn-vn`
 - **Status**: Healthy
 
-### postgresql-pgvector
+### postgresql-pgvector-cnpg (CNPG-managed, active)
+
+- **PVC**: `postgresql-pgvector-cnpg-1`
+- **Size**: 20Gi
+- **Storage Class**: `longhorn-vn`
+- **Status**: Healthy, backup enabled
+- **Database Size**: ~1.3GB (murror-ai)
+- **Connection**: `postgresql-pgvector-cnpg-rw.postgres-db:5432`
+- **Used by**: murror-ai (nsp-prod-murror-ai namespace)
+
+### postgresql-pgvector (Manual StatefulSet, legacy)
 
 - **PVC**: `postgresql-pgvector-1`
 - **Size**: 20Gi (expanded from 4Gi on 2025-12-11)
 - **Storage Class**: `longhorn-vn`
-- **Status**: Healthy
-- **Node**: vps22-vnix (migrated from vps33)
-- **Database Size**: 1.2GB (murror-ai)
-- **Vector Records**: ~50,491 article_documents (498MB data + 396MB indexes)
-- **Current Usage**: 5.1GB / 20GB (26%)
+- **Status**: Running but no longer serving applications
+- **Note**: Kept for rollback. Will be decommissioned after extended verification.
 
 ## Monitoring & Alerting
 
@@ -205,11 +234,33 @@ Access via: `https://grafana.vn.k3s.canhnv.com`
 
 **Prevention**: Archive mode now properly disabled. WAL retention controlled by `max_wal_size` (1GB) and `wal_keep_size` (512MB).
 
+### 2026-02-06: pgvector Database Migration to CNPG with R2 Backup
+
+**Issue**: The pgvector database (`postgresql-pgvector`, manual StatefulSet) had no backup configured, posing data loss risk for ~1.2GB of murror-ai data.
+
+**Solution**:
+1. Updated existing CNPG cluster (`postgresql-pgvector-cnpg`) with Barman Cloud Plugin for R2 backup
+2. Created ObjectStore CRD and ScheduledBackup (every 6 hours, 30-day retention)
+3. Migrated murror-ai data from manual StatefulSet to CNPG cluster via pg_dump/pg_restore
+4. Switched murror-ai connection from `postgresql-pgvector-rw` to `postgresql-pgvector-cnpg-rw`
+
+**Key technical decisions**:
+- Used `pgvector/pgvector:0.8.1-pg17` image (not CNPG standard) due to immutable `postgresUID: 999`
+- Used Barman Cloud Plugin (sidecar) for backup since pgvector image lacks barman-cloud tools
+- Manual StatefulSet kept running for rollback safety
+
+**Results**:
+- WAL archiving: Continuous archiving working
+- Scheduled backups: Every 6 hours to R2
+- Data integrity: All records verified matching between source and target
+- murror-ai: Successfully serving from CNPG cluster
+
 ## Last Updated
 
-- Date: 2026-01-22
+- Date: 2026-02-06
 - Service Type: NodePort
 - NodePort: 30432
-- Backup: Cloudflare R2 (Hourly, 30-day retention)
-- Storage: postgresql-pgvector-1 at 26% usage (5.1GB/20GB)
+- Backup (postgresql-ha): Cloudflare R2 (Hourly, 30-day retention)
+- Backup (postgresql-pgvector-cnpg): Cloudflare R2 via Barman Cloud Plugin (Every 6 hours, 30-day retention)
+- murror-ai connection: `postgresql-pgvector-cnpg-rw.postgres-db:5432/murror-ai`
 - Monitoring: Prometheus alerts with Slack notifications
