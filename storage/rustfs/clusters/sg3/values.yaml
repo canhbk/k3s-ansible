@@ -23,7 +23,7 @@ replicaCount: 1
 storageclass:
   name: longhorn
   dataStorageSize: 15Gi
-  logStorageSize: 1Gi
+  logStorageSize: 5Gi
 
 # S3 API and Console credentials
 secret:
