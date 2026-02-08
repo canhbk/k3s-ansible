@@ -71,7 +71,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: controller
-              image: bitnami/kubectl:1.31
+              image: bitnami/kubectl:latest
               resources:
                 requests:
                   cpu: 50m
