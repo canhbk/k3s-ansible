@@ -121,7 +121,7 @@ s3_client = boto3.client(
     's3',
     endpoint_url='https://rustfs.sg3.canhnv.com',
     aws_access_key_id='rustfsadmin',
-    aws_secret_access_key='__REDACTED__',
+    aws_secret_access_key='<YOUR_SECRET_KEY>',
     config=Config(signature_version='s3v4'),
     verify=True
 )

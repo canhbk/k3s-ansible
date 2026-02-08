@@ -33,7 +33,7 @@ storageclass:
 secret:
   rustfs:
     access_key: rustfsadmin
-    secret_key: __REDACTED__
+    secret_key: <CHANGE_ME_RUSTFS_SECRET_KEY>
 
 # Ingress handled separately for cert-manager integration
 ingress:

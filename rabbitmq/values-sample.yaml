@@ -1,0 +1,31 @@
+# RabbitMQ Helm Values Template
+# Copy this file and replace placeholders for each cluster:
+#   cp values-sample.yaml clusters/<cluster>/values.yaml
+#
+# Generate password: openssl rand -base64 32
+# Generate Erlang cookie: openssl rand -hex 16
+#
+# WARNING: Never commit the actual values.yaml files with real passwords!
+
+# Authentication credentials
+auth:
+  username: rabbitmq
+  password: "<GENERATE_WITH_openssl_rand_-base64_32>"
+  erlangCookie: "<GENERATE_WITH_openssl_rand_-hex_16>"
+
+# Adjust these per cluster:
+replicaCount: 1
+
+persistence:
+  enabled: true
+  storageClass: "longhorn"
+  size: 2Gi
+
+service:
+  type: LoadBalancer
+  ports:
+    amqp: 5672
+    manager: 15672
+  managerPortEnabled: true
+
+# See rabbitmq/clusters/sg3/values.yaml.example for full HA configuration

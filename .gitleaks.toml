@@ -1,0 +1,66 @@
+# Gitleaks configuration for k3s-ansible repository
+# Install: brew install gitleaks
+# Scan: gitleaks detect --source .
+# Scan history: gitleaks detect --source . --log-opts --all
+
+title = "k3s-ansible gitleaks config"
+
+[extend]
+useDefault = true
+
+# Custom rules for infrastructure secrets
+[[rules]]
+id = "ansible-ssh-password"
+description = "Ansible SSH password in inventory"
+regex = '''ansible_ssh_pass:\s*\S+'''
+keywords = ["ansible_ssh_pass"]
+
+[[rules]]
+id = "k3s-cluster-token"
+description = "K3s cluster join token"
+regex = '''token:\s*"[^"]{16,}"'''
+keywords = ["token"]
+
+[[rules]]
+id = "rabbitmq-password"
+description = "RabbitMQ password in config"
+regex = '''password:\s*[A-Za-z0-9_\-!@#$%^&*]{16,}'''
+keywords = ["password"]
+[rules.allowlist]
+paths = [
+  '''.*-sample\.yaml$''',
+  '''.*-sample\.yml$''',
+  '''.*\.template$''',
+  '''.*\.example$''',
+  '''inventory\.yml\.example$''',
+]
+
+[[rules]]
+id = "erlang-cookie"
+description = "RabbitMQ Erlang cookie"
+regex = '''erlangCookie:\s*[a-f0-9]{32,}'''
+keywords = ["erlangCookie"]
+
+[[rules]]
+id = "cloudflare-api-token"
+description = "Cloudflare API token"
+regex = '''[A-Za-z0-9_-]{40}'''
+keywords = ["cloudflare-token"]
+
+[[rules]]
+id = "r2-secret-key"
+description = "Cloudflare R2 secret access key"
+regex = '''SECRET_ACCESS_KEY:\s*"?[a-f0-9]{64}"?'''
+keywords = ["SECRET_ACCESS_KEY"]
+
+# Global allowlist - files that are safe to have "secret-like" patterns
+[allowlist]
+paths = [
+  '''.*-sample\.yaml$''',
+  '''.*-sample\.yml$''',
+  '''.*\.template$''',
+  '''.*\.example$''',
+  '''inventory\.yml\.example$''',
+  '''\.gitleaks\.toml$''',
+  '''CLAUDE\.md$''',
+]

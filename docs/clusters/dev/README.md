@@ -113,7 +113,7 @@ Common development domains:
 - Message broker for async communication
 - **Version**: RabbitMQ 3.13 with Management plugin
 - **Management UI**: `https://dev.rabbitmq.ambercare.app` (HTTPS enabled)
-- **Internal AMQP**: `amqp://admin:__REDACTED__@rabbitmq.rabbitmq.svc.cluster.local:5672/`
+- **Internal AMQP**: `amqp://admin:<PASSWORD>@rabbitmq.rabbitmq.svc.cluster.local:5672/`
 - **Storage**: 2Gi local-path
 - **Documentation**: [RabbitMQ Details](./RABBITMQ.md)
 

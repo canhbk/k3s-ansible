@@ -14,7 +14,7 @@
 
 ### 1. rabbitmq (Super Admin)
 - **Username**: `rabbitmq`
-- **Password**: `__REDACTED__`
+- **Password**: `<PASSWORD_FROM_K8S_SECRET>`
 - **Tags**: administrator
 - **Permissions**: Full access to all vhosts
 
@@ -31,7 +31,7 @@ kubectl get secret rabbitmq-admin-credentials -n rabbitmq -o jsonpath='{.data.pa
 
 ### 3. default_user_Gb8LE9ly6K9D7thXs9I (Auto-generated)
 - **Username**: `default_user_Gb8LE9ly6K9D7thXs9I`
-- **Password**: `__REDACTED__`
+- **Password**: `<AUTO_GENERATED_PASSWORD>`
 - **Tags**: administrator
 
 ## Exchanges Created
@@ -96,7 +96,7 @@ All queues are properly bound to their respective exchanges with correct routing
 ### Management UI
 - **URL**: https://rabbitmq.sg3.canhnv.com
 - **Recommended User**: `admin` (get password from secret)
-- **Alternative User**: `rabbitmq` / `__REDACTED__`
+- **Alternative User**: `rabbitmq` / `<PASSWORD_FROM_K8S_SECRET>`
 
 ### Internal Service (from within cluster)
 

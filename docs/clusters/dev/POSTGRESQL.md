@@ -450,7 +450,7 @@ kubectl delete svc -n postgres-db postgres-murror-ai
 
 Connection string example (use any available node IP):
 ```
-postgresql://be:__REDACTED__@180.93.96.54:30543/murror-be?schema=public
+postgresql://be:<PASSWORD>@180.93.96.54:30543/murror-be?schema=public
 ```
 
 To remove this access:

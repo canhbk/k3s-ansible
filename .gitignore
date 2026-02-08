@@ -2,39 +2,51 @@ venv
 .venv
 .vscode
 .vagrant
-inventory.yml
-inventory.*.yml
-playbook/debug.yml
-
-# PostgreSQL secrets with actual passwords
-*.local
-secrets.yaml.local
-**/secrets.yaml.local
-
-# Inventory files with sensitive data
-inventory.*.local.yml
-inventory.prod.yml
-inventory.vn.yml
-inventory.vn-2.yml
-inventory.db.yml
-
-# Backup files
-*.backup
-*.bak
-
-# Database dumps
-*.sql
-*.dump
-
-# Longhorn sensitive files
-longhorn/.secrets.env
-longhorn/longhornctl
-longhorn/auth
-longhorn/basic-auth
-**/basic-auth-secret.yaml
 .idea/
 
-# Kubernetes kubeconfig files with tokens
+# Playbook debug files
+playbook/debug.yml
+
+# =============================================================
+# INVENTORY FILES (contain SSH passwords and cluster tokens)
+# =============================================================
+# All inventory files are ignored - use inventory-sample.yml or
+# inventory.yml.example as templates
+inventory.yml
+inventory.*.yml
+!inventory-sample.yml
+
+# Keep the example template
+inventory.yml.example
+
+# =============================================================
+# KUBERNETES SECRETS AND TOKENS
+# =============================================================
+# Generic secret patterns
+**/secrets/
+**/*-token.yaml
+**/basic-auth-secret.yaml
+
+# Cloudflare R2 backup credentials (all clusters)
+**/secrets-r2-backup.yaml
+
+# PostgreSQL notification user secrets (all clusters)
+**/secrets-notifications*.yaml
+
+# Pact Broker secrets
+pact-broker/base/secret.yaml
+pact-broker/database/pact-broker-db-secret.yaml
+
+# RabbitMQ credentials in values files (all clusters)
+rabbitmq/clusters/*/values.yaml
+rabbitmq/clusters/*/rabbitmq-cluster.yaml
+
+# AKHQ secrets (Kafka UI)
+kafka/clusters/*/akhq/secret.yaml
+
+# =============================================================
+# KUBECONFIG FILES (contain cluster certs and tokens)
+# =============================================================
 *.kubeconfig.yaml
 **/kubeconfig.yaml
 **/kubeconfig
@@ -45,12 +57,16 @@ kubeconfig*
 dev-logger.kubeconfig.yaml
 kubeconfig-sg3*
 
-# Kubernetes secrets and tokens
-**/secrets/
-**/*-token.yaml
+# Karmada split-configs (contain cluster private keys)
+k3s-with-k3sup/karmada-ansible/split-configs/config-*
 
-# Local files with actual credentials (never commit these)
+# =============================================================
+# LOCAL FILES WITH CREDENTIALS
+# =============================================================
+*.local
 *.local.yaml
+secrets.yaml.local
+**/secrets.yaml.local
 **/secrets.local.yaml
 **/admin-secret.local.yaml
 **/backend-influxdb-config.local.yaml
@@ -63,12 +79,36 @@ kubeconfig-sg3*
 redis/clusters/dev/oauth2-proxy/values.yaml
 database/postgresql/clusters/vn/secrets-r2-backup.yaml
 
+# =============================================================
+# SENSITIVE FILE TYPES
+# =============================================================
 # GitHub App private keys
 *.private-key.pem
 
-# AKHQ secrets
-kafka/clusters/*/akhq/secret.yaml
-
-# GitHub PAT secrets (never commit)
+# Environment files
 *.secrets
 .env.local
+.env
+
+# =============================================================
+# BACKUP AND TEMPORARY FILES
+# =============================================================
+*.backup
+*.bak
+*.sql
+*.dump
+
+# Longhorn sensitive files
+longhorn/.secrets.env
+longhorn/longhornctl
+longhorn/auth
+longhorn/basic-auth
+
+# =============================================================
+# KEEP TEMPLATE/SAMPLE FILES (exceptions)
+# =============================================================
+# These template files with placeholder values should be tracked
+!**/*-sample.yaml
+!**/*-sample.yml
+!**/*.template
+!**/*.example

@@ -1,0 +1,47 @@
+# SG3 RabbitMQ Cluster Operator Template
+# Copy and replace placeholders with actual values:
+#   cp rabbitmq-cluster-sample.yaml rabbitmq-cluster.yaml
+#
+# WARNING: Never commit the actual file with real passwords!
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq
+  namespace: rabbitmq
+spec:
+  replicas: 3
+  image: rabbitmq:4.0.9-management-alpine
+  persistence:
+    storageClassName: longhorn
+    storage: 2Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  rabbitmq:
+    additionalConfig: |
+      vm_memory_high_watermark.relative = 0.6
+      disk_free_limit.absolute = 1GB
+      default_queue_type = quorum
+      consumer_timeout = 3600000
+    additionalPlugins:
+      - rabbitmq_prometheus
+      - rabbitmq_shovel
+      - rabbitmq_shovel_management
+  service:
+    type: LoadBalancer
+---
+# Secret for RabbitMQ credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-credentials
+  namespace: rabbitmq
+type: Opaque
+stringData:
+  username: rabbitmq
+  password: "<GENERATE_SECURE_PASSWORD>"

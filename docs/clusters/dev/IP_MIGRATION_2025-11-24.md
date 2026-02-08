@@ -84,12 +84,12 @@
 
 - **Old Connection String**:
   ```
-  postgresql://be:__REDACTED__@154.26.131.23:30543/murror-be?schema=public
+  postgresql://be:<PASSWORD>@154.26.131.23:30543/murror-be?schema=public
   ```
 
 - **New Connection String** (use any new node IP):
   ```
-  postgresql://be:__REDACTED__@180.93.96.54:30543/murror-be?schema=public
+  postgresql://be:<PASSWORD>@180.93.96.54:30543/murror-be?schema=public
   ```
 
 - **Database**: murror-be
