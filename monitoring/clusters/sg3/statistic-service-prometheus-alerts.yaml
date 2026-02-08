@@ -1,0 +1,130 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: statistic-service-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: statistic-service-pod-alerts
+      interval: 30s
+      rules:
+        - alert: StatisticServicePodNotReady
+          expr: |
+            kube_pod_status_ready{namespace="murror-platform", pod=~"statistic-service-.*", condition="true"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: statistic-service
+            cluster: sg3
+          annotations:
+            summary: "Statistic Service pod is not ready"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been in a non-ready state for more than 5 minutes."
+
+        - alert: StatisticServicePodRestarts
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="murror-platform", pod=~"statistic-service-.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: statistic-service
+            cluster: sg3
+          annotations:
+            summary: "Statistic Service pod is restarting"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last 15 minutes."
+
+        - alert: StatisticServiceContainerCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="murror-platform", pod=~"statistic-service-.*"}[15m]) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            namespace: murror-platform
+            app: statistic-service
+            cluster: sg3
+          annotations:
+            summary: "Statistic Service container is crash looping"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is crash looping with {{ $value }} restarts per second over the last 15 minutes."
+
+        - alert: StatisticServiceDeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas{namespace="murror-platform", deployment="statistic-service"}
+            !=
+            kube_deployment_status_replicas_available{namespace="murror-platform", deployment="statistic-service"}
+          for: 10m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: statistic-service
+            cluster: sg3
+          annotations:
+            summary: "Statistic Service deployment replicas mismatch"
+            description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has {{ $value }} replicas available, but {{ $labels.replicas }} are specified."
+
+        - alert: StatisticServiceHighMemoryUsage
+          expr: |
+            (
+              sum(container_memory_working_set_bytes{namespace="murror-platform", pod=~"statistic-service-.*", container!=""})
+              /
+              sum(container_spec_memory_limit_bytes{namespace="murror-platform", pod=~"statistic-service-.*", container!=""})
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: statistic-service
+            cluster: sg3
+          annotations:
+            summary: "Statistic Service high memory usage"
+            description: "Statistic Service pods in namespace {{ $labels.namespace }} are using more than 90% of their memory limit."
+
+        - alert: StatisticServiceNoPodsRunning
+          expr: |
+            sum(kube_pod_status_phase{namespace="murror-platform", pod=~"statistic-service-.*", phase="Running"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+            namespace: murror-platform
+            app: statistic-service
+            cluster: sg3
+          annotations:
+            summary: "No Statistic Service pods are running"
+            description: "No Statistic Service pods are in a running state in namespace {{ $labels.namespace }}. This is a critical service outage."
+
+    - name: statistic-service-application-alerts
+      interval: 30s
+      rules:
+        - alert: StatisticServiceHighErrorRate
+          expr: |
+            (
+              sum(rate(statistic_service_http_requests_total{status_code=~"5.."}[5m]))
+              /
+              sum(rate(statistic_service_http_requests_total[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: statistic-service
+            cluster: sg3
+          annotations:
+            summary: "Statistic Service high error rate"
+            description: "Statistic Service has more than 5% 5xx error rate over the last 5 minutes."
+
+        - alert: StatisticServiceHighLatency
+          expr: |
+            histogram_quantile(0.95, sum(rate(statistic_service_http_request_duration_seconds_bucket[5m])) by (le)) > 2
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: statistic-service
+            cluster: sg3
+          annotations:
+            summary: "Statistic Service high latency"
+            description: "Statistic Service p95 latency is above 2 seconds over the last 5 minutes."

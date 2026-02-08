@@ -1,0 +1,130 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: auth-service-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: auth-service-pod-alerts
+      interval: 30s
+      rules:
+        - alert: AuthServicePodNotReady
+          expr: |
+            kube_pod_status_ready{namespace="murror-platform", pod=~"auth-service-.*", condition="true"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: auth-service
+            cluster: sg3
+          annotations:
+            summary: "Auth Service pod is not ready"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been in a non-ready state for more than 5 minutes."
+
+        - alert: AuthServicePodRestarts
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="murror-platform", pod=~"auth-service-.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: auth-service
+            cluster: sg3
+          annotations:
+            summary: "Auth Service pod is restarting"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last 15 minutes."
+
+        - alert: AuthServiceContainerCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="murror-platform", pod=~"auth-service-.*"}[15m]) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            namespace: murror-platform
+            app: auth-service
+            cluster: sg3
+          annotations:
+            summary: "Auth Service container is crash looping"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is crash looping with {{ $value }} restarts per second over the last 15 minutes."
+
+        - alert: AuthServiceDeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas{namespace="murror-platform", deployment="auth-service"}
+            !=
+            kube_deployment_status_replicas_available{namespace="murror-platform", deployment="auth-service"}
+          for: 10m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: auth-service
+            cluster: sg3
+          annotations:
+            summary: "Auth Service deployment replicas mismatch"
+            description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has {{ $value }} replicas available, but {{ $labels.replicas }} are specified."
+
+        - alert: AuthServiceHighMemoryUsage
+          expr: |
+            (
+              sum(container_memory_working_set_bytes{namespace="murror-platform", pod=~"auth-service-.*", container!=""})
+              /
+              sum(container_spec_memory_limit_bytes{namespace="murror-platform", pod=~"auth-service-.*", container!=""})
+            ) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: auth-service
+            cluster: sg3
+          annotations:
+            summary: "Auth Service high memory usage"
+            description: "Auth Service pods in namespace {{ $labels.namespace }} are using more than 90% of their memory limit."
+
+        - alert: AuthServiceNoPodsRunning
+          expr: |
+            sum(kube_pod_status_phase{namespace="murror-platform", pod=~"auth-service-.*", phase="Running"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+            namespace: murror-platform
+            app: auth-service
+            cluster: sg3
+          annotations:
+            summary: "No Auth Service pods are running"
+            description: "No Auth Service pods are in a running state in namespace {{ $labels.namespace }}. This is a critical service outage."
+
+    - name: auth-service-application-alerts
+      interval: 30s
+      rules:
+        - alert: AuthServiceHighErrorRate
+          expr: |
+            (
+              sum(rate(auth_service_http_requests_total{status_code=~"5.."}[5m]))
+              /
+              sum(rate(auth_service_http_requests_total[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: auth-service
+            cluster: sg3
+          annotations:
+            summary: "Auth Service high error rate"
+            description: "Auth Service has more than 5% 5xx error rate over the last 5 minutes."
+
+        - alert: AuthServiceHighLatency
+          expr: |
+            histogram_quantile(0.95, sum(rate(auth_service_http_request_duration_seconds_bucket[5m])) by (le)) > 2
+          for: 5m
+          labels:
+            severity: warning
+            namespace: murror-platform
+            app: auth-service
+            cluster: sg3
+          annotations:
+            summary: "Auth Service high latency"
+            description: "Auth Service p95 latency is above 2 seconds over the last 5 minutes."
