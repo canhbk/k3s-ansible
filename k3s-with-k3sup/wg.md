@@ -46,7 +46,7 @@ PersistentKeepalive = 25
 [Interface]
 Address = 10.10.0.22/24
 ListenPort = 51820
-PrivateKey = __REDACTED__
+PrivateKey = <WIREGUARD_PRIVATE_KEY>
 # (optional) post-up iptables rule to allow forwarding
 PostUp = iptables -A FORWARD -i wg0 -j ACCEPT
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT

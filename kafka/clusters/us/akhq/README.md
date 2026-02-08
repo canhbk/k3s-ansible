@@ -134,7 +134,7 @@ metadata:
     app: akhq
 type: Opaque
 stringData:
-  jwt-secret: "__REDACTED__"
+  jwt-secret: "<GENERATE_WITH_openssl_rand_-base64_32>"
   admin-password-hash: "$2b$10$XYZ123..."
   reader-password-hash: "$2b$10$ABC456..."
 ```

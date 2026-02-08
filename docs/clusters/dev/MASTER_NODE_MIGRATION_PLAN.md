@@ -270,33 +270,33 @@ k3s_cluster:
       hosts:
         163.61.110.117:  # vps5-h2cloud-vn - NEW MASTER
           ansible_user: root
-          ansible_ssh_pass: __REDACTED__
+          ansible_ssh_pass: <SSH_PASSWORD>
     agent:
       hosts:
         154.26.131.23:  # vps7 - NOW AGENT
           ansible_user: root
-          ansible_ssh_pass: __REDACTED__
+          ansible_ssh_pass: <SSH_PASSWORD>
         160.191.245.234:  # vps16-h2cloud-vn
           ansible_user: root
-          ansible_ssh_pass: __REDACTED__
+          ansible_ssh_pass: <SSH_PASSWORD>
         163.61.110.120:  # vps17-h2cloud-vn
           ansible_user: root
-          ansible_ssh_pass: __REDACTED__
+          ansible_ssh_pass: <SSH_PASSWORD>
         160.250.136.247:  # vps18-h2cloud-vn
           ansible_user: root
-          ansible_ssh_pass: __REDACTED__
+          ansible_ssh_pass: <SSH_PASSWORD>
         103.157.204.15:  # vps12-h2cloud-vn
           ansible_user: root
-          ansible_ssh_pass: __REDACTED__
+          ansible_ssh_pass: <SSH_PASSWORD>
         160.191.245.244:  # vps13-h2cloud-vn
           ansible_user: root
-          ansible_ssh_pass: __REDACTED__
+          ansible_ssh_pass: <SSH_PASSWORD>
 
   vars:
     ansible_port: 22
     ansible_user: debian
     k3s_version: v1.30.2+k3s1
-    token: "__REDACTED__"
+    token: "<CLUSTER_TOKEN>"
     api_endpoint: "{{ hostvars[groups['server'][0]]['ansible_host'] | default(groups['server'][0]) }}"
     extra_server_args: "--prefer-bundled-bin"
     extra_agent_args: "--prefer-bundled-bin"
@@ -767,10 +767,10 @@ Issues: [List any known issues]
 
 ```bash
 # Connect to new master
-ssh root@163.61.110.117  # Password: __REDACTED__
+ssh root@163.61.110.117  # Password: <SSH_PASSWORD>
 
 # Connect to old master (now worker)
-ssh root@154.26.131.23   # Password: __REDACTED__
+ssh root@154.26.131.23   # Password: <SSH_PASSWORD>
 ```
 
 ### B. Useful Kubernetes Commands

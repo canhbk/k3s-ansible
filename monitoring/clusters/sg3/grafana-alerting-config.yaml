@@ -15,7 +15,7 @@ data:
           - uid: slack-murror-ai-receiver
             type: slack
             settings:
-              url: https://hooks.slack.com/services/__REDACTED__2
+              url: https://hooks.slack.com/services/<SLACK_WEBHOOK_URL>
               title: ':robot_face: [{{ .Status | toUpper }}] Murror AI - {{ .GroupLabels.alertname }}'
               text: |
                 {{ range .Alerts }}
@@ -33,7 +33,7 @@ data:
           - uid: slack-murror-api-receiver
             type: slack
             settings:
-              url: https://hooks.slack.com/services/__REDACTED__2
+              url: https://hooks.slack.com/services/<SLACK_WEBHOOK_URL>
               title: ':warning: [{{ .Status | toUpper }}] Murror API - {{ .GroupLabels.alertname }}'
               text: |
                 {{ range .Alerts }}
