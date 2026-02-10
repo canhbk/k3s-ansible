@@ -11,7 +11,9 @@ RUN set -eux && \
     curl -Lsf https://packagecloud.io/timescale/timescaledb/gpgkey \
       | gpg --dearmor > /etc/apt/trusted.gpg.d/timescale.gpg && \
     apt-get update && \
-    apt-get install -y --no-install-recommends timescaledb-2-postgresql-17 && \
+    apt-get install -y --no-install-recommends \
+      timescaledb-2-postgresql-17 \
+      postgresql-17-partman && \
     apt-get purge -y curl gnupg && \
     apt-get autoremove -y && \
     rm -f /etc/apt/sources.list.d/timescaledb.list /etc/apt/trusted.gpg.d/timescale.gpg && \

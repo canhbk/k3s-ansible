@@ -2,7 +2,7 @@
 
 ## Overview
 
-High-availability PostgreSQL 17.2 cluster with pgvector and TimescaleDB extensions deployed on the sg3 Kubernetes cluster using CloudNativePG (CNPG) operator.
+High-availability PostgreSQL 17.2 cluster with pgvector, TimescaleDB, and pg_partman extensions deployed on the sg3 Kubernetes cluster using CloudNativePG (CNPG) operator.
 
 **Deployment Date**: November 25, 2025
 **Cluster Name**: `postgresql-sg3-pgvector`
@@ -13,7 +13,7 @@ High-availability PostgreSQL 17.2 cluster with pgvector and TimescaleDB extensio
 ### Architecture
 - **Instances**: 3 (1 primary + 2 async replicas)
 - **PostgreSQL Version**: 17.2
-- **Extensions**: pgvector 0.8.0, TimescaleDB 2.x
+- **Extensions**: pgvector 0.8.0, TimescaleDB 2.x, pg_partman
 - **Storage**: Longhorn (3-replica distributed storage)
 - **High Availability**: Automatic failover enabled
 
@@ -194,6 +194,62 @@ kubectl exec postgresql-sg3-pgvector-1 -n postgres-db -- \
   psql -U postgres -c "SHOW shared_preload_libraries;"
 ```
 
+## pg_partman Usage
+
+### Extension Info
+- **Name**: pg_partman
+- **Shared Preload**: Background worker loaded via `shared_preload_libraries` (`pg_partman_bgw`)
+- **Purpose**: Automated management of native PostgreSQL declarative partitioning
+
+### Enable Extension
+```sql
+-- Create the extension in target databases
+CREATE EXTENSION IF NOT EXISTS pg_partman;
+```
+
+### Example Usage
+
+```sql
+-- Create a parent table for partitioning
+CREATE TABLE events (
+  id BIGSERIAL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  event_type TEXT NOT NULL,
+  payload JSONB
+) PARTITION BY RANGE (created_at);
+
+-- Set up automatic monthly partitioning with pg_partman
+SELECT partman.create_parent(
+  p_parent_table := 'public.events',
+  p_control := 'created_at',
+  p_interval := '1 month',
+  p_premake := 3
+);
+
+-- Verify partitions were created
+SELECT * FROM partman.part_config;
+
+-- View existing partitions
+SELECT inhrelid::regclass AS partition_name
+FROM pg_inherits
+WHERE inhparent = 'public.events'::regclass
+ORDER BY inhrelid::regclass::text;
+
+-- Run maintenance manually (normally handled by pg_partman_bgw)
+SELECT partman.run_maintenance();
+```
+
+### Verify pg_partman
+```bash
+# Check extension is installed
+kubectl exec postgresql-sg3-pgvector-1 -n postgres-db -- \
+  psql -U postgres -d murror-api -c "\dx pg_partman"
+
+# Check background worker is loaded
+kubectl exec postgresql-sg3-pgvector-1 -n postgres-db -- \
+  psql -U postgres -c "SHOW shared_preload_libraries;"
+```
+
 ## Monitoring
 
 ### Prometheus
@@ -352,6 +408,7 @@ This was resolved during deployment but may occur on future redeployments.
 - ✅ Replication lag < 1 second
 - ✅ pgvector extension operational
 - ✅ TimescaleDB extension operational
+- ✅ pg_partman extension operational
 - ✅ Prometheus scraping metrics
 - ✅ Grafana dashboards available
 - ✅ Alert rules configured
@@ -370,4 +427,5 @@ For issues or questions, refer to:
 - CloudNativePG documentation: https://cloudnative-pg.io/
 - pgvector documentation: https://github.com/pgvector/pgvector
 - TimescaleDB documentation: https://docs.timescale.com/
+- pg_partman documentation: https://github.com/pgpartman/pg_partman
 - Longhorn documentation: https://longhorn.io/docs/

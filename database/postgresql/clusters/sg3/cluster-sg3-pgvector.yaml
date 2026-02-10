@@ -90,7 +90,7 @@ spec:
         - CREATE EXTENSION IF NOT EXISTS timescaledb;
 
   # Image configuration - custom image with pgvector + TimescaleDB
-  imageName: ghcr.io/murror/cnpg-postgresql:17.2-ts2
+  imageName: ghcr.io/murror/cnpg-postgresql:17.2-ts3a
 
   # Storage configuration
   storage:
@@ -115,9 +115,11 @@ spec:
   postgresql:
     shared_preload_libraries:
       - timescaledb
+      - pg_partman_bgw
     parameters:
       timescaledb.max_background_workers: "8"
       timescaledb.telemetry_level: "off"
+      pg_partman_bgw.dbname: "murror-api,murror-ai"
       max_connections: "200"
       shared_buffers: "512MB"
       effective_cache_size: "3GB"
