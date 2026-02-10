@@ -2,7 +2,7 @@
 
 ## Overview
 
-High-availability PostgreSQL 17.2 cluster with pgvector extension deployed on the sg3 Kubernetes cluster using CloudNativePG (CNPG) operator.
+High-availability PostgreSQL 17.2 cluster with pgvector and TimescaleDB extensions deployed on the sg3 Kubernetes cluster using CloudNativePG (CNPG) operator.
 
 **Deployment Date**: November 25, 2025
 **Cluster Name**: `postgresql-sg3-pgvector`
@@ -13,7 +13,7 @@ High-availability PostgreSQL 17.2 cluster with pgvector extension deployed on th
 ### Architecture
 - **Instances**: 3 (1 primary + 2 async replicas)
 - **PostgreSQL Version**: 17.2
-- **Extensions**: pgvector 0.8.0
+- **Extensions**: pgvector 0.8.0, TimescaleDB 2.x
 - **Storage**: Longhorn (3-replica distributed storage)
 - **High Availability**: Automatic failover enabled
 
@@ -122,6 +122,77 @@ CREATE INDEX ON documents USING hnsw (embedding vector_l2_ops);
 - `<->`: L2 (Euclidean) distance
 - `<=>`: Cosine distance (1 - cosine similarity)
 - `<#>`: Inner product distance
+
+## TimescaleDB Usage
+
+### Extension Info
+- **Name**: timescaledb
+- **Shared Preload**: Loaded via `shared_preload_libraries`
+- **Telemetry**: Disabled (`timescaledb.telemetry_level: off`)
+- **Background Workers**: 8 (`timescaledb.max_background_workers: 8`)
+
+### Example Usage
+
+```sql
+-- Create a time-series table
+CREATE TABLE sensor_data (
+  time TIMESTAMPTZ NOT NULL,
+  device_id TEXT NOT NULL,
+  value DOUBLE PRECISION
+);
+
+-- Convert to hypertable (automatic time-based partitioning)
+SELECT create_hypertable('sensor_data', 'time');
+
+-- Insert data
+INSERT INTO sensor_data (time, device_id, value)
+VALUES (NOW(), 'device-1', 42.5);
+
+-- Time-bucket aggregation (e.g., hourly averages)
+SELECT time_bucket('1 hour', time) AS bucket,
+       device_id,
+       AVG(value) AS avg_value
+FROM sensor_data
+WHERE time > NOW() - INTERVAL '24 hours'
+GROUP BY bucket, device_id
+ORDER BY bucket DESC;
+
+-- Continuous aggregate (materialized view with auto-refresh)
+CREATE MATERIALIZED VIEW hourly_averages
+WITH (timescaledb.continuous) AS
+SELECT time_bucket('1 hour', time) AS bucket,
+       device_id,
+       AVG(value) AS avg_value,
+       COUNT(*) AS sample_count
+FROM sensor_data
+GROUP BY bucket, device_id;
+
+-- Add refresh policy
+SELECT add_continuous_aggregate_policy('hourly_averages',
+  start_offset => INTERVAL '3 hours',
+  end_offset => INTERVAL '1 hour',
+  schedule_interval => INTERVAL '1 hour');
+
+-- Compression policy (compress chunks older than 7 days)
+ALTER TABLE sensor_data SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'device_id'
+);
+SELECT add_compression_policy('sensor_data', INTERVAL '7 days');
+
+-- Retention policy (drop data older than 90 days)
+SELECT add_retention_policy('sensor_data', INTERVAL '90 days');
+```
+
+### Verify TimescaleDB
+```bash
+kubectl exec postgresql-sg3-pgvector-1 -n postgres-db -- \
+  psql -U postgres -d app -c "\dx timescaledb"
+
+# Check shared_preload_libraries
+kubectl exec postgresql-sg3-pgvector-1 -n postgres-db -- \
+  psql -U postgres -c "SHOW shared_preload_libraries;"
+```
 
 ## Monitoring
 
@@ -280,6 +351,7 @@ This was resolved during deployment but may occur on future redeployments.
 - ✅ All PVCs using Longhorn storage class
 - ✅ Replication lag < 1 second
 - ✅ pgvector extension operational
+- ✅ TimescaleDB extension operational
 - ✅ Prometheus scraping metrics
 - ✅ Grafana dashboards available
 - ✅ Alert rules configured
@@ -297,4 +369,5 @@ This was resolved during deployment but may occur on future redeployments.
 For issues or questions, refer to:
 - CloudNativePG documentation: https://cloudnative-pg.io/
 - pgvector documentation: https://github.com/pgvector/pgvector
+- TimescaleDB documentation: https://docs.timescale.com/
 - Longhorn documentation: https://longhorn.io/docs/

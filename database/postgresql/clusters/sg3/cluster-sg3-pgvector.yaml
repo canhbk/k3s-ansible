@@ -87,9 +87,10 @@ spec:
         name: app-sg3-secret
       postInitSQL:
         - CREATE EXTENSION IF NOT EXISTS vector;
+        - CREATE EXTENSION IF NOT EXISTS timescaledb;
 
-  # Image configuration - using default CNPG PostgreSQL image
-  imageName: ghcr.io/cloudnative-pg/postgresql:17.2
+  # Image configuration - custom image with pgvector + TimescaleDB
+  imageName: ghcr.io/murror/cnpg-postgresql:17.2-ts2
 
   # Storage configuration
   storage:
@@ -112,7 +113,11 @@ spec:
 
   # PostgreSQL configuration optimized for mixed workload
   postgresql:
+    shared_preload_libraries:
+      - timescaledb
     parameters:
+      timescaledb.max_background_workers: "8"
+      timescaledb.telemetry_level: "off"
       max_connections: "200"
       shared_buffers: "512MB"
       effective_cache_size: "3GB"
