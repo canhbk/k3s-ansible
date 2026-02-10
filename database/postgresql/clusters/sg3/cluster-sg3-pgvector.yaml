@@ -88,6 +88,8 @@ spec:
       postInitSQL:
         - CREATE EXTENSION IF NOT EXISTS vector;
         - CREATE EXTENSION IF NOT EXISTS timescaledb;
+        - CREATE SCHEMA IF NOT EXISTS partman;
+        - CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
 
   # Image configuration - custom image with pgvector + TimescaleDB
   imageName: ghcr.io/murror/cnpg-postgresql:17.2-ts3a
