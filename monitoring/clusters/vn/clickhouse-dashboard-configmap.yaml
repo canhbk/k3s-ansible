@@ -1,0 +1,269 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  clickhouse-overview.json: |-
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "title": "Overview",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "green", "value": 1 }
+                ]
+              },
+              "mappings": [
+                { "options": { "0": { "text": "DOWN" }, "1": { "text": "UP" } }, "type": "value" }
+              ]
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+          "title": "Status",
+          "type": "stat",
+          "targets": [
+            { "expr": "up{job=\"clickhouse\"}", "legendFormat": "Status" }
+          ]
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 6442450944 },
+                  { "color": "red", "value": 7516192768 }
+                ]
+              }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+          "title": "Memory Usage",
+          "type": "gauge",
+          "targets": [
+            { "expr": "ClickHouseMetrics_MemoryTracking", "legendFormat": "Memory" }
+          ],
+          "options": { "minVizHeight": 75, "minVizWidth": 75, "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "short" }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+          "title": "HTTP Connections",
+          "type": "stat",
+          "targets": [
+            { "expr": "ClickHouseMetrics_HTTPConnection", "legendFormat": "HTTP" }
+          ]
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "short" }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+          "title": "TCP Connections",
+          "type": "stat",
+          "targets": [
+            { "expr": "ClickHouseMetrics_TCPConnection", "legendFormat": "TCP" }
+          ]
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "short" }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+          "title": "Running Queries",
+          "type": "stat",
+          "targets": [
+            { "expr": "ClickHouseMetrics_Query", "legendFormat": "Queries" }
+          ]
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 150 },
+                  { "color": "red", "value": 300 }
+                ]
+              }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+          "title": "Max Parts in Partition",
+          "type": "stat",
+          "targets": [
+            { "expr": "ClickHouseMetrics_MaxPartCountForPartition", "legendFormat": "Parts" }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+          "title": "Queries",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10, "stacking": { "mode": "none" } } }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "title": "Queries per Second",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "rate(ClickHouseProfileEvents_SelectQuery[5m])", "legendFormat": "SELECT" },
+            { "expr": "rate(ClickHouseProfileEvents_InsertQuery[5m])", "legendFormat": "INSERT" },
+            { "expr": "rate(ClickHouseProfileEvents_Query[5m])", "legendFormat": "Total" }
+          ]
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "title": "Query Duration",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "ClickHouseProfileEvents_QueryTimeMicroseconds / ClickHouseProfileEvents_Query / 1e6", "legendFormat": "Avg Duration" },
+            { "expr": "rate(ClickHouseProfileEvents_QueryTimeMicroseconds[5m]) / rate(ClickHouseProfileEvents_Query[5m]) / 1e6", "legendFormat": "Avg Duration (rate)" }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+          "title": "Inserts & Data",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "rowsps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+          "title": "Inserted Rows/sec",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "rate(ClickHouseProfileEvents_InsertedRows[5m])", "legendFormat": "Rows/sec" }
+          ]
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "Bps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+          "title": "Inserted Bytes/sec",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "rate(ClickHouseProfileEvents_InsertedBytes[5m])", "legendFormat": "Bytes/sec" }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+          "title": "Resources",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 10 } }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+          "title": "Memory Usage Over Time",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "ClickHouseMetrics_MemoryTracking", "legendFormat": "Memory Used" },
+            { "expr": "8589934592", "legendFormat": "Limit (8GB)" }
+          ]
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+          "title": "Parts per Partition & Merges",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "ClickHouseMetrics_MaxPartCountForPartition", "legendFormat": "Max Parts" },
+            { "expr": "ClickHouseMetrics_Merge", "legendFormat": "Active Merges" }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+          "title": "Connections",
+          "type": "row"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "stacking": { "mode": "normal" } } }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+          "title": "Connections Over Time",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "ClickHouseMetrics_HTTPConnection", "legendFormat": "HTTP" },
+            { "expr": "ClickHouseMetrics_TCPConnection", "legendFormat": "TCP" },
+            { "expr": "ClickHouseMetrics_InterserverConnection", "legendFormat": "Interserver" }
+          ]
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10 } }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+          "title": "Failed Queries & Rejected Inserts",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "rate(ClickHouseProfileEvents_FailedQuery[5m])", "legendFormat": "Failed Queries" },
+            { "expr": "rate(ClickHouseProfileEvents_RejectedInserts[5m])", "legendFormat": "Rejected Inserts" }
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["clickhouse", "database", "analytics"],
+      "templating": { "list": [] },
+      "time": { "from": "now-6h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "ClickHouse Overview",
+      "uid": "clickhouse-overview-vn",
+      "version": 1
+    }

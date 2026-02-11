@@ -1,0 +1,90 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: clickhouse-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/name: clickhouse
+spec:
+  groups:
+    - name: clickhouse.rules
+      rules:
+        - alert: ClickHouseDown
+          expr: up{job="clickhouse"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            service: clickhouse
+            cluster: vn
+          annotations:
+            summary: "ClickHouse instance is down"
+            description: "ClickHouse instance {{ $labels.instance }} has been unreachable for more than 2 minutes."
+            runbook_url: "https://github.com/canhnv/k3s-ansible/blob/main/database/clickhouse/clusters/vn/README.md"
+
+        - alert: ClickHouseHighMemoryUsage
+          expr: ClickHouseMetrics_MemoryTracking / (8 * 1024 * 1024 * 1024) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            service: clickhouse
+            cluster: vn
+          annotations:
+            summary: "ClickHouse memory usage is high"
+            description: "ClickHouse memory usage is above 85% of the 8GB limit (current: {{ $value | humanizePercentage }})."
+
+        - alert: ClickHouseTooManyParts
+          expr: ClickHouseMetrics_MaxPartCountForPartition > 200
+          for: 5m
+          labels:
+            severity: warning
+            service: clickhouse
+            cluster: vn
+          annotations:
+            summary: "ClickHouse has too many parts in a partition"
+            description: "Maximum part count for a partition is {{ $value }}, which exceeds 200. This may slow down queries and merges."
+
+        - alert: ClickHouseRejectedInserts
+          expr: increase(ClickHouseProfileEvents_RejectedInserts[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            service: clickhouse
+            cluster: vn
+          annotations:
+            summary: "ClickHouse is rejecting inserts"
+            description: "ClickHouse has rejected {{ $value }} inserts in the last 5 minutes due to too many parts."
+
+        - alert: ClickHouseHighQueryRate
+          expr: rate(ClickHouseProfileEvents_Query[5m]) > 100
+          for: 10m
+          labels:
+            severity: warning
+            service: clickhouse
+            cluster: vn
+          annotations:
+            summary: "ClickHouse query rate is high"
+            description: "ClickHouse is processing more than 100 queries/sec (current: {{ $value | printf \"%.1f\" }} q/s) sustained for 10 minutes."
+
+        - alert: ClickHouseDiskUsageHigh
+          expr: ClickHouseMetrics_DiskUsed / ClickHouseMetrics_DiskTotal > 0.80
+          for: 5m
+          labels:
+            severity: warning
+            service: clickhouse
+            cluster: vn
+          annotations:
+            summary: "ClickHouse disk usage is above 80%"
+            description: "ClickHouse disk usage is at {{ $value | humanizePercentage }}."
+
+        - alert: ClickHouseDiskUsageCritical
+          expr: ClickHouseMetrics_DiskUsed / ClickHouseMetrics_DiskTotal > 0.90
+          for: 5m
+          labels:
+            severity: critical
+            service: clickhouse
+            cluster: vn
+          annotations:
+            summary: "ClickHouse disk usage is critical (>90%)"
+            description: "ClickHouse disk usage is at {{ $value | humanizePercentage }}. Immediate action required."
