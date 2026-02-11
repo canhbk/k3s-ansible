@@ -1,0 +1,4 @@
+# Docker cleanup for GitHub Actions runners
+# Managed by Ansible - do not edit manually
+0 */4 * * * root /usr/bin/docker system prune -af --filter "until=12h" --volumes 2>/dev/null || true
+0 */6 * * * root /usr/bin/find {{ runner_work_dir }}/_temp -mindepth 1 -mtime +1 -delete 2>/dev/null || true

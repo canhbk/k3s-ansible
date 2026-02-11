@@ -1,5 +1,5 @@
 ---
-runner_version: "2.321.0"
+runner_version: "2.323.0"
 runner_user: "runner"
 runner_group: "runner"
 runner_home: "/home/{{ runner_user }}"

@@ -1,0 +1,23 @@
+---
+- name: Deploy Docker cleanup cron job
+  ansible.builtin.template:
+    src: docker-cleanup.cron.j2
+    dest: /etc/cron.d/docker-cleanup
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Deploy runner health check script
+  ansible.builtin.template:
+    src: runner-health-check.sh.j2
+    dest: /opt/runner-health-check.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy runner health check cron job
+  ansible.builtin.cron:
+    name: "GitHub Actions runner health check"
+    minute: "*/5"
+    job: "/opt/runner-health-check.sh"
+    user: root

@@ -1,0 +1,20 @@
+#!/bin/bash
+# GitHub Actions Runner Health Check
+# Managed by Ansible - do not edit manually
+#
+# Checks if runner services have recent diagnostic logs (within 10 min).
+# If a runner appears stale, it is restarted via systemctl.
+
+for service in $(systemctl list-units --type=service --state=running --no-legend | grep actions.runner | awk '{print $1}'); do
+  runner_dir=$(systemctl show "$service" -p WorkingDirectory --value)
+  if [ -z "$runner_dir" ]; then
+    continue
+  fi
+
+  # Check if runner has a recent heartbeat log (within 10 min)
+  last_log=$(find "$runner_dir/_diag" -name "Runner_*.log" -mmin -10 2>/dev/null | head -1)
+  if [ -z "$last_log" ]; then
+    logger -t runner-health-check "Runner health check FAILED for $service - restarting"
+    systemctl restart "$service"
+  fi
+done

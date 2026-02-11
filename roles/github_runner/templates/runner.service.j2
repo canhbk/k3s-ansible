@@ -1,17 +1,26 @@
 [Unit]
 Description=GitHub Actions Runner ({{ service_org_name }} - {{ service_runner_name }})
-After=network.target docker.service
-Wants=docker.service
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
 
 [Service]
+ExecStartPre=-/usr/bin/docker system prune -f --filter "until=24h"
 ExecStart={{ service_runner_dir }}/runsvc.sh
 User={{ runner_user }}
 WorkingDirectory={{ service_runner_dir }}
-KillMode=process
+KillMode=mixed
 KillSignal=SIGTERM
 TimeoutStopSec=5min
 Restart=always
-RestartSec=10
+RestartSec=30
+
+# Force restart every 6 hours to clear zombie listeners
+RuntimeMaxSec=21600
+
+# Resource limits
+MemoryMax=6G
+MemoryHigh=4G
 
 Environment="RUNNER_ALLOW_RUNASROOT=1"
 Environment="DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1"
