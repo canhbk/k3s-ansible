@@ -11,6 +11,9 @@ for service in $(systemctl list-units --type=service --state=running --no-legend
     continue
   fi
 
+  # Clean up stale diagnostic page logs (older than 1 hour) to prevent file collisions
+  find "$runner_dir/_diag/pages" -name "*.log" -mmin +60 -delete 2>/dev/null
+
   # Check if runner has a recent heartbeat log (within 10 min)
   last_log=$(find "$runner_dir/_diag" -name "Runner_*.log" -mmin -10 2>/dev/null | head -1)
   if [ -z "$last_log" ]; then
