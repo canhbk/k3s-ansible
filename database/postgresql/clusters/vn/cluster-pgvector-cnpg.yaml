@@ -100,11 +100,17 @@ spec:
     name: superuser-pgvector-secret
 
   # Image configuration
-  imageCatalogRef:
-    apiGroup: postgresql.cnpg.io
-    kind: ClusterImageCatalog
-    name: postgresql-pgvector-cnpg
-    major: 17
+  imageName: ghcr.io/murror/cnpg-postgresql:17-ts-standalone
+
+  # PostgreSQL configuration
+  postgresql:
+    shared_preload_libraries:
+      - timescaledb
+      - pg_partman_bgw
+    parameters:
+      timescaledb.max_background_workers: "8"
+      timescaledb.telemetry_level: "off"
+      pg_partman_bgw.dbname: "murror-ai"
 
   # Storage configuration
   storage:

@@ -86,13 +86,27 @@ spec:
       locale: en_US.UTF-8
       secret:
         name: dev-secret
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS timescaledb;
+        - CREATE SCHEMA IF NOT EXISTS partman;
+        - CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
+        - GRANT USAGE ON SCHEMA partman TO PUBLIC;
+        - GRANT ALL ON ALL TABLES IN SCHEMA partman TO PUBLIC;
+        - GRANT ALL ON ALL SEQUENCES IN SCHEMA partman TO PUBLIC;
+        - GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA partman TO PUBLIC;
 
   # Image configuration
-  imageCatalogRef:
-    apiGroup: postgresql.cnpg.io
-    kind: ClusterImageCatalog
-    name: postgresql
-    major: 17
+  imageName: ghcr.io/murror/cnpg-postgresql:17.5-ts
+
+  # PostgreSQL configuration
+  postgresql:
+    shared_preload_libraries:
+      - timescaledb
+      - pg_partman_bgw
+    parameters:
+      timescaledb.max_background_workers: "8"
+      timescaledb.telemetry_level: "off"
+      pg_partman_bgw.dbname: "murror"
 
   # Storage configuration
   storage:
