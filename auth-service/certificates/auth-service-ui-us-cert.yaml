@@ -1,12 +1,12 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: auth-service-prod-us-tls
-  namespace: nsp-auth-service-prod
+  name: auth-ambercare-app-tls
+  namespace: murror-platform
 spec:
-  secretName: auth-service-prod-us-tls
+  secretName: auth-ambercare-app-tls
   issuerRef:
     name: ambercare-app
     kind: ClusterIssuer
   dnsNames:
-    - auth.us.ambercare.app
+    - auth.ambercare.app
