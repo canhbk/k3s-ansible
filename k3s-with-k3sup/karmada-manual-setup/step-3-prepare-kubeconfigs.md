@@ -56,11 +56,8 @@ ls -la ~/karmada-kubeconfigs/
 Transfer the kubeconfig files to vps26:
 
 ```bash
-# From your local machine, transfer files to vps26
-scp ~/karmada-kubeconfigs/kubeconfig-* root@65.49.60.35:/root/karmada-setup/configs/
-
-# Or if you have SSH config:
-# scp ~/karmada-kubeconfigs/kubeconfig-* vps26:/root/karmada-setup/configs/
+# From your local machine, transfer files to vps26 using SSH config and key-based auth
+scp ~/karmada-kubeconfigs/kubeconfig-* vps26:~/karmada-setup/configs/
 ```
 
 ## 3.5 Verify Kubeconfigs on vps26

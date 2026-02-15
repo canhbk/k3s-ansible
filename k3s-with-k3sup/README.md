@@ -70,7 +70,7 @@ k3sup join \
   --k3s-version v1.32.5+k3s1 \
   --server-ssh-port 22 \
   --ssh-port 22 \
-  --ssh-key ~/.ssh/canhnv_vps
+  --ssh-key ~/.ssh/canhnv
 
 ## Install treafik CRD
 

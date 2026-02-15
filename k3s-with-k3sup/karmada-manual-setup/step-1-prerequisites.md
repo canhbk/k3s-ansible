@@ -7,10 +7,7 @@ This document contains all the commands and checks you need to run before instal
 First, SSH into the United States control plane node:
 
 ```bash
-# SSH to vps26 (United States control plane)
-ssh root@65.49.60.35
-
-# Or if you have SSH config set up
+# SSH to vps26 (United States control plane) using SSH config and key-based auth
 ssh vps26
 ```
 
@@ -83,7 +80,7 @@ df -h
 
 # Minimum requirements:
 # - 2 CPU cores (4 recommended)
-# - 4GB RAM (8GB recommended)  
+# - 4GB RAM (8GB recommended)
 # - 20GB free disk space
 ```
 
