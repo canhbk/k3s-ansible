@@ -16,7 +16,7 @@ all:
     vps6:
       ansible_host: 160.191.245.246
       ansible_user: root
-      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      ansible_ssh_private_key_file: ~/.ssh/canhnv
       wg_ip: 10.10.0.6
 
     vps8:
@@ -74,25 +74,25 @@ all:
     vps28:
       ansible_host: 163.61.73.77
       ansible_user: root
-      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      ansible_ssh_private_key_file: ~/.ssh/canhnv
       wg_ip: 10.10.0.28
 
     vps29:
       ansible_host: 163.61.73.78
       ansible_user: root
-      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      ansible_ssh_private_key_file: ~/.ssh/canhnv
       wg_ip: 10.10.0.29
 
     vps30:
       ansible_host: 163.61.73.79
       ansible_user: root
-      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      ansible_ssh_private_key_file: ~/.ssh/canhnv
       wg_ip: 10.10.0.30
 
     vps31:
       ansible_host: 163.61.73.90
       ansible_user: root
-      # ansible_ssh_pass: <defined in hosts.local.yaml>
+      ansible_ssh_private_key_file: ~/.ssh/canhnv
       wg_ip: 10.10.0.31
 
     vps33:
