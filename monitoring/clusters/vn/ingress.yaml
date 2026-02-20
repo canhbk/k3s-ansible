@@ -4,7 +4,7 @@ metadata:
   name: grafana
   namespace: monitoring
   annotations:
-    cert-manager.io/cluster-issuer: "canhnv-com-staging"
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
@@ -31,7 +31,7 @@ metadata:
   name: prometheus
   namespace: monitoring
   annotations:
-    cert-manager.io/cluster-issuer: "canhnv-com-staging"
+    cert-manager.io/cluster-issuer: "canhnv-com-prod"
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
