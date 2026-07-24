@@ -106,8 +106,8 @@ psql "postgresql://app@15.235.211.39:31432/app"
 ```
 
 **Available Node IPs**:
-- Internal: 10.10.0.50-57 (any node)
-- External: 15.235.197.155, 15.235.211.39, etc. (check firewall rules)
+- Internal: 10.10.0.51, .52, .54, .56, .57 (any live node)
+- External: 15.235.211.39, 15.235.211.111, etc. (check firewall rules)
 
 **Note**: The NodePort service targets the primary instance only for read-write operations. For read-only access, use the internal cluster services.
 

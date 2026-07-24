@@ -2,7 +2,9 @@
 
 ## Overview
 
-The SG3 cluster is a production K3s cluster running on OVH cloud infrastructure in Singapore. It features a high-availability setup with 3 control plane nodes and 5 worker nodes, all interconnected via Wireguard mesh network for secure communication.
+The SG3 cluster is a production K3s cluster running on OVH cloud infrastructure in Singapore. It features a high-availability setup with 3 control plane nodes and 2 worker nodes, all interconnected via Wireguard mesh network for secure communication.
+
+> **2026-07-24**: Workers vps50, vps53, vps55 were removed after their hosts became unreachable (vps53/vps55 powered off; vps50 reprovisioned with new credentials). Local-path/single-replica Longhorn volumes on those nodes were lost. See Change Log.
 
 **Created**: November 24, 2025
 **Provider**: OVH Cloud
@@ -20,15 +22,14 @@ The SG3 cluster is a production K3s cluster running on OVH cloud infrastructure 
 | vps-4f55f951 (vps52) | 10.10.0.52 | 15.235.197.174 | Master 2 | Ubuntu 24.04.3 LTS |
 | vps-7bdd470c (vps54) | 10.10.0.54 | 15.235.197.175 | Master 3 | Ubuntu 24.04.3 LTS |
 
-### Worker Nodes (5)
+### Worker Nodes (2)
 
 | Hostname | Wireguard IP | Public IP | Role | Hardware |
 |----------|--------------|-----------|------|----------|
-| vps-01cb6324 (vps50) | 10.10.0.50 | 15.235.197.155 | Worker | Ubuntu 24.04.3 LTS |
-| vps-71eb1712 (vps53) | 10.10.0.53 | 15.235.197.12 | Worker | Ubuntu 24.04.3 LTS |
-| vps-ad357b71 (vps55) | 10.10.0.55 | 15.235.197.207 | Worker | Ubuntu 24.04.3 LTS |
 | vps-b623746f (vps56) | 10.10.0.56 | 15.235.211.111 | Worker | Ubuntu 24.04.3 LTS |
 | vps-d81b042b (vps57) | 10.10.0.57 | 15.235.197.222 | Worker | Ubuntu 24.04.3 LTS |
+
+> Removed 2026-07-24 (hosts unreachable): vps50 (10.10.0.50 / 15.235.197.155, reprovisioned), vps53 (10.10.0.53 / 15.235.197.12, down), vps55 (10.10.0.55 / 15.235.197.207, down).
 
 ## Network Configuration
 
@@ -79,9 +80,6 @@ ssh -i ~/.ssh/canhnv_vps ubuntu@15.235.197.174 # vps52 (master 2)
 ssh -i ~/.ssh/canhnv_vps ubuntu@15.235.197.175 # vps54 (master 3)
 
 # Worker nodes
-ssh -i ~/.ssh/canhnv_vps ubuntu@15.235.197.155 # vps50
-ssh -i ~/.ssh/canhnv_vps ubuntu@15.235.197.12  # vps53
-ssh -i ~/.ssh/canhnv_vps ubuntu@15.235.197.207 # vps55
 ssh -i ~/.ssh/canhnv_vps ubuntu@15.235.211.111 # vps56
 ssh -i ~/.ssh/canhnv_vps ubuntu@15.235.197.222 # vps57
 ```
@@ -279,6 +277,12 @@ See [AUTH_SERVICE.md](./AUTH_SERVICE.md) for detailed documentation.
 
 ## Change Log
 
+- **2026-07-24**: Removed unreachable workers vps50, vps53, vps55 (cluster now 3 masters + 2 workers)
+  - vps53 + vps55: hosts powered off (SSH + all ports dead), node objects deleted
+  - vps50: host reprovisioned (new SSH host key + credentials), stale node object deleted
+  - Data loss: `local-path` PVC `influxdb/influxdb-influxdb2` (was pinned to vps53) recreated on `longhorn`; single-replica Longhorn volume `clickhouse/data-clickhouse-0` (replica on vps55) faulted
+  - Cleaned up orphaned Pending `image-cleanup` and `helper-pod-delete-pvc` pods
+
 - **2025-01-14**: Added Auth Service (Alpha environment)
   - Created murror_auth_service database in PostgreSQL cluster
   - Deployed to murror-platform namespace
@@ -459,7 +463,7 @@ See [Rancher SG3 Documentation](../../../apps/rancher/clusters/sg3/README.md) fo
 - **Prometheus**: Metrics collection and time-series storage
 - **Grafana**: Visualization and dashboards
 - **Alertmanager**: Alert routing and management
-- **Node Exporter**: System metrics from all 8 nodes
+- **Node Exporter**: System metrics from all 5 nodes
 - **kube-state-metrics**: Kubernetes object metrics
 - **Prometheus Operator**: CRD management
 
@@ -502,7 +506,7 @@ All monitoring data uses **Longhorn distributed storage** with 3 replicas for hi
 #### Monitored Services
 
 The monitoring stack automatically collects metrics from:
-- All 8 cluster nodes (CPU, memory, disk, network)
+- All 5 cluster nodes (CPU, memory, disk, network)
 - Kubernetes components (API server, kubelet, CoreDNS)
 - Longhorn storage system (volume health, performance)
 - Rancher management plane

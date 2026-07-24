@@ -118,9 +118,9 @@ http://rabbitmq.rabbitmq.svc.cluster.local:15672
 # Management: port 15672
 # Prometheus: port 15692
 
-# Available IPs:
-15.235.197.12, 15.235.197.155, 15.235.197.174, 15.235.197.175
-15.235.197.207, 15.235.197.222, 15.235.211.111, 15.235.211.39
+# Available IPs (live nodes as of 2026-07-24):
+15.235.197.174, 15.235.197.175, 15.235.197.222
+15.235.211.39, 15.235.211.111
 ```
 
 ## Connection Examples
